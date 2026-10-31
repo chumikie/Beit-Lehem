@@ -39,3 +39,24 @@ test('gancho de toque está localizado no jogo Gemini, não no arquivo do mapa',
  assert.ok(game.includes('ambientHitTargets=ambientPeople'));
  assert.ok(!game.includes('localStorage.setItem(STORE,JSON.stringify({v:4'));
 });
+
+test('diálogos locais variam por toque e não exigem rede nem save',()=>{
+ const {say}=require('../gemini-modules/crowd-flow.js');
+ const world={day:1,minute:9*60};
+ const person={id:'passeio-4',hub:'mercado'};
+ const first=say(person,world),second=say(person,world);
+ assert.match(first,/feira/);
+ assert.match(second,/sorda/);
+ assert.notEqual(first,second);
+ assert.equal(say({id:'outra-pessoa',hub:'mercado'},world),'');
+});
+test('falas respondem ao lugar sem inventar coordenadas',()=>{
+ const {say}=require('../gemini-modules/crowd-flow.js');
+ for(const hub of ['xaviezao','sonho_doce','rodoviaria','parque_sao_luis','pedra_cordeiro']){
+  const line=say({id:'passeio-8',hub},{day:1,minute:10*60});
+  assert.ok(line.length>15&&line.length<150);
+ }
+ const fs=require('node:fs'),path=require('node:path');
+ const game=fs.readFileSync(path.join(__dirname,'../gemini-modules/game.js'),'utf8');
+ assert.ok(game.includes('RoncadorCrowdFlow.say(visitor,living)'));
+});
