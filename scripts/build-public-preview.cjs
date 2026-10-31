@@ -27,6 +27,20 @@ function cleanJpeg(encoded){
  if(result.at(-2)!==0xff||result.at(-1)!==0xd9)throw Error('Fim de JPEG inválido');
  return result.toString('base64');
 }
+// Fail closed: text, JavaScript and embedded map data all need privacy review.
+// These checks deliberately reject the current Gemini build; removing JPEG EXIF
+// alone does not make a private family-oriented game safe to distribute.
+function auditPublicContent(html){
+ const checks=[
+  ['rotinas ou contatos afetivos','RoncadorBelemContacts'],
+  ['âncora residencial particular','casa_varanda'],
+  ['referência de domicílio numerado',/\bCasa\s*(?:849|841)\b/i],
+  ['coordenada residencial particular',/\[\s*136\.5\s*,\s*578(?:\.0)?\s*\]/],
+  ['marcação interna de privacidade',/\b(?:PRIVATE|PRIVADO|PESSOAL[_ -]IDENTIFICAVEL)\b/i]
+ ];
+ const found=checks.filter(([,pattern])=>typeof pattern==='string'?html.includes(pattern):pattern.test(html)).map(([name])=>name);
+ if(found.length)throw Error('Cópia pública bloqueada: requer revisão de '+found.join(', ')+'. Nenhum arquivo novo foi gerado.');
+}
 function build(){
  let html=fs.readFileSync(input,'utf8');
  if(!html.includes('aria-label="Beit Lehem"')||
@@ -44,10 +58,11 @@ function build(){
  if(!font.test(html))throw Error('Fonte remota inesperada; revisar manualmente.');
  html=html.replace(font,'');
  if(html.includes('fonts.googleapis.com'))throw Error('Fontes externas permaneceram no pacote.');
+ auditPublicContent(html);
  fs.mkdirSync(path.dirname(output),{recursive:true});
  fs.writeFileSync(output,html,'utf8');
  console.log('Prévia sanitizada: '+path.relative(root,output)+' ('+Buffer.byteLength(html)+' bytes).');
  console.log('Duas fotos sem EXIF; fonte remota e cabeçalho interno removidos. NÃO PUBLICADO.');
 }
 if(require.main===module){try{build()}catch(error){console.error(error.message);process.exitCode=1;}}
-module.exports={cleanJpeg,build};
+module.exports={cleanJpeg,auditPublicContent,build};
