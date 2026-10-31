@@ -56,6 +56,10 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   html=replaceExactlyOnce(html,"c.translate(11,-7);c.scale(.82,.82);","c.translate(11,-7);c.scale(.82*bloom.scale,.82*bloom.scale);",'Escala da muda de Lúcia');
   html=replaceExactlyOnce(html,"c.arc(nod,-12,luciaGarden.claimed?3.8:2.6,0,7)","c.arc(nod,-12,[1.1,1.7,2.6,3.8][bloom.stage],0,7)",'Crescimento de Lúcia');
   html=replaceExactlyOnce(html,"$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “O carinho que a gente planta permanece.”'","$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “'+logic.growth(luciaGarden,living.day).caption+' O carinho que a gente planta permanece.”'",'Crescimento de Lúcia');
+  // Rosa joins the journal; the original trio keeps its earned album card.
+  html=replaceExactlyOnce(html,"if(sideNeighbors.seen.length===3)","if(window.RoncadorSecondaryNeighbors.coreProgress(sideNeighbors)===3)",'Elenco ampliado');
+  html=replaceExactlyOnce(html,"$('sideProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos';","$('sideProgress').textContent=sideNeighbors.seen.length+'/'+window.RoncadorSecondaryNeighbors.RESIDENTS.length+' conhecidos';",'Elenco ampliado');
+  html=replaceExactlyOnce(html,"$('sideJournalProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos'+(sideNeighbors.seen.length===3?' · álbum ✓':'');","$('sideJournalProgress').textContent=sideNeighbors.seen.length+'/'+library.RESIDENTS.length+' conhecidos'+(library.coreProgress(sideNeighbors)===3?' · álbum ✓':'');",'Elenco ampliado');
   // The author's Bolt tribute replaces the old provisional dog name in legacy scenery.
   html=html.replace(/\bPingo\b/g,'Bolt').replace(/\bpingo\b/g,'bolt');
   if (!html.startsWith('<!-- ARQUIVO DE REFERÊNCIA DE BEIT LEHEM')) {
