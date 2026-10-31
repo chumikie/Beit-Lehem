@@ -13,6 +13,15 @@
 2. O estudo ilustrativo de fachadas cresce de três para seis áreas: três referências centrais e três setores visuais preliminares ancorados em geometrias existentes. Nomes e limites exatos dos três novos setores continuam pendentes.
 3. O snapshot `previews/beit-lehem-development.html` é gerado a partir dos módulos de `dist/` e da V2.27; ele é a versão de desenvolvimento, não a prévia Gemini.
 
+## Integração Gemini já realizada na PR #1
+
+- Sete novos marcos locais ilustrativos (escola, ginásio, confeitaria, bar ficcional, Prefeitura, capela e igreja), com **posições confirmadas pelo autor com base em sua experiência e fotografias**. Essa confirmação local não altera o conteúdo extraído do OSM.
+- Cada marco tem identidade ilustrativa própria e pode receber uma rota pela malha existente. Os sete destinos tiveram rotas encontradas no teste de grafo a partir do ponto inicial.
+- As duas prévias de desenvolvimento foram atualizadas conjuntamente; Gemini Preview permanece separado como referência visual mais rica. A V2.27 está congelada.
+- [Índice de versões e organização](VERSOES-E-ESTRUTURA.md) centraliza links e evita gerar arquivos de cada commit.
+
+**Correção de rumo:** o Gemini é a direção principal de riqueza visual, não mero rascunho descartável. Integrar suas cenas e sistemas por etapas, preservando estabilidade, saves e território. A direção artística é **cozy do interior paraibano, não idol**. A inspeção visual real e os testes completos continuam pendentes.
+
 ## Próxima rodada
 
 1. Conferir a comparação visual do novo snapshot com a V2.27: amplitude do mapa, leitura das ruas, escala e continuidade das fachadas. O minimapa já mostra a extensão cartográfica completa com a janela do jogador destacada; o mapa ampliado alterna entre a região próxima e o território completo.
