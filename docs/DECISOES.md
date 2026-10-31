@@ -2,7 +2,7 @@
 
 - Nome oficial: **Beit Lehem**. Repositório privado: https://github.com/chumikie/Beit-Lehem.
 
-- V2.27 é a base estável, preservada em mapa, arte e comportamento; somente os rótulos do nome do jogo foram atualizados.
+- V2.27 é a referência técnica estável, congelada. **Por decisão posterior do autor, o experimento Gemini passa a ser a base principal das prévias em desenvolvimento**, por conter o mapa visual e sistemas mais completos.
 - V2.28 foi rejeitada. Não reutilizar seu corte territorial e seu novo elenco como padrão.
 - Território desejado: cidade de Belém/PB, distrito Rua Nova, caminhos rurais, serras e fauna/flora do entorno; encerrar antes de construir os demais núcleos urbanos.
 - Um mundo conectado; divisão por setores pode existir internamente para organização e desempenho.
@@ -17,4 +17,4 @@
 
 ## Crescimento a partir das referências Gemini
 
-A V2.27 é a base oficial de maior qualidade e extensão. O experimento Gemini é a referência com mais dados locais; suas informações são integradas em camadas graduais, sem substituir a arte ou reduzir o mundo. A malha OSM de 462 trechos permanece inalterada. As 17 propostas de nomes e superfícies locais permanecem desativadas até validação; nenhum rótulo pendente é exibido como dado confirmado. O estudo de fachadas cresce para seis zonas, mas as três novas zonas são estudos preliminares, sem confirmar nomes ou limites viários. O progresso já salvo nas três áreas antigas permanece válido. O snapshot do jogo em desenvolvimento é gerado a partir dos módulos de `dist/`.
+A V2.27 permanece preservada como recuperação. A linha principal de desenvolvimento agora deriva do Gemini; seus bugs, compatibilidade de save e apresentação móvel precisam ser corrigidos gradualmente sem encolher o mundo. A malha OSM de 462 trechos permanece inalterada. As 17 propostas de nomes e superfícies locais permanecem desativadas até validação; nenhum rótulo pendente é exibido como dado confirmado. O estudo de fachadas cresce para seis zonas, mas as três novas zonas são estudos preliminares, sem confirmar nomes ou limites viários. O progresso já salvo nas três áreas antigas permanece válido. O snapshot do jogo em desenvolvimento é gerado por `scripts/build-development-preview.cjs` a partir do Gemini. Os módulos de `dist/` continuam disponíveis para portar correções.
