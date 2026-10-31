@@ -14,7 +14,9 @@
    morning:'desenha linhas no seu caderninho',afternoon:'repassa os traços das fachadas',
    greeting:'Toda janela tem uma forma bonita. Gosto de imaginar as histórias atrás delas.',
    options:[{id:'desenho',label:'Desenhar uma janelinha junto',reply:'Nara acrescenta uma janela de arco ao seu caderno. “Olha só como ficou acolhedora!”'},
-    {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'}]},
+    {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'},
+    {id:'janela-bia',label:'✏️ Desenhar uma janela para a carta de Bia',reply:'Nara desenha uma janela aberta ao lado da carta: “Para lembrar que sempre existe um caminho de volta.”'},
+    {id:'paisagem-bia',label:'🌿 Desenhar a paisagem que Bia quer conhecer',reply:'Nara pinta um horizonte delicado: “Os sonhos também precisam de espaço no papel.”'}]},
   {id:'teo',name:'Téo',hub:'rodoviaria',variant:8,tone:'#85a0c5',icon:'✉️',role:'O colecionador de recados',
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
@@ -41,14 +43,16 @@
   return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
  }
  function availableOptions(def,context={}){
-  return def?.options?.filter(choice=>choice.id!=='banca'||(
-   def.id==='cica'&&context.marketMorning?.claimed===true
-  ))||[];
+  return def?.options?.filter(choice=>{
+   if(choice.id==='banca')return def.id==='cica'&&context.marketMorning?.claimed===true;
+   if(choice.id==='janela-bia'||choice.id==='paisagem-bia')return def.id==='nara'&&context.biaLetters?.claimed===true;
+   return true;
+  })||[];
  }
  function interact(state,clock,id,choiceId,context={}){
   const def=RESIDENTS.find(r=>r.id===id),choice=def?.options.find(o=>o.id===choiceId);
   if(!def||!choice)return{ok:false,reason:'Escolha indisponível.'};
-  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
+  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
