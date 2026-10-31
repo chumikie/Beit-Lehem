@@ -15,8 +15,8 @@ Beit Lehem explora Belém/PB, Rua Nova e o entorno rural e serrano. **Por decis�
 
 ## Código e geração
 
-- **Base de trabalho Gemini:** `references/gemini-2026-10-31/experimento-anonimizado.html.txt`, inicialmente preservada como monólito. Precisamos extrair seus sistemas gradualmente para módulos pequenos antes de alterações amplas.
-- **Prévia Gemini:** `scripts/build-gemini-preview.cjs` aplica uma correção de inicialização à cópia, sem alterar a fonte.
+- **Base de trabalho Gemini:** `references/gemini-2026-10-31/experimento-anonimizado.html.txt`, preservada como fonte original. A ferramenta `scripts/gemini-workbench.cjs` extrai somente os sistemas necessários para `gemini-modules/`, sem alterar o mapa original.
+- **Prévia Gemini:** `scripts/build-gemini-preview.cjs` aplica as edições isoladas de `gemini-modules/` e a correção de inicialização à cópia, sem alterar a fonte.
 - **Prévias principais:** `npm run build:development-preview` regenera ambas a partir do Gemini.
 - **Módulos V2.27:** `dist/` permanece como biblioteca de referência de código estável, incluindo roteamento, gestos, UI, fachadas e salvamento antigo. `npm run build` ainda gera a V2.27 modular como recurso de comparação; não é a prévia principal.
 
@@ -25,6 +25,8 @@ Com Node.js 18+:
 ```sh
 npm test
 npm run verify:baseline
+npm run gemini:list
+npm run gemini:check
 npm run build:development-preview
 npm run play:development-preview
 ```
@@ -37,4 +39,4 @@ A aparência deve seguir a riqueza de ruas, lugares e cotidiano do Gemini, com i
 
 Sem hospedagem, deploy, GitHub Pages ou merge sem autorização explícita.
 
-Leia [decisões](docs/DECISOES.md), [próximos passos](docs/PROXIMOS-PASSOS.md) e [mapa do código](docs/MAPA-DO-CODIGO.md).
+Para editar com pouco contexto de IA: **[guia de trabalho econômico](docs/COMO-TRABALHAR-COM-IA.md)**. Consulte também [decisões](docs/DECISOES.md), [próximos passos](docs/PROXIMOS-PASSOS.md) e [mapa do código](docs/MAPA-DO-CODIGO.md).
