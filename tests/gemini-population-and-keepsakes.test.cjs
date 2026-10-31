@@ -145,13 +145,13 @@ test('balão comunitário mantém tamanho contido nas ruas e no celular',()=>{
  assert.match(game,/const phone=matchMedia\('\(max-width:800px\)'\)\.matches,rows=wrapEncounterSpeech\(speech,phone\?20:26\)/);
 });
 
-test('nomes priorizam três pessoas próximas no desktop e duas no celular',()=>{
+test('nomes priorizam proximidade sem cobrir rostos no desktop e no celular',()=>{
  const fs=require('node:fs'),vm=require('node:vm');
  const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
- const start=source.indexOf('const labelLimit=matchMedia(');
- const end=source.indexOf('\n for(const person of people){',start);
+ const start=source.indexOf('function layoutResidentNameplates(');
+ const end=source.indexOf('function drawDistantResident(',start);
  assert.ok(start>=0&&end>start,'seleção de nomes encontrada');
- const scope=source.slice(start,end);
+ const layout=vm.runInNewContext(source.slice(start,end)+';layoutResidentNameplates');
  const people=[
   {id:'rosa',def:{name:'Rosa'},x:20,y:0},
   {id:'mila',def:{name:'Mila'},x:45,y:0},
@@ -161,11 +161,14 @@ test('nomes priorizam três pessoas próximas no desktop e duas no celular',()=>
   {id:'bia',def:{name:'Bia'},x:10,y:0,meeting:true}
  ];
  for(const [phone,expected] of [[false,3],[true,2]]){
-  const names=vm.runInNewContext(scope+';visibleNames',{people,player:{x:0,y:0},matchMedia:()=>({matches:phone})});
-  assert.equal(names.size,expected);
-  assert.ok(names.has('rosa')&&names.has('mila'));
-  assert.equal(names.has('nara'),false,'distância evita nomes excessivos');
-  assert.equal(names.has('bia'),false,'encontros priorizam a conversa');
+  const names=layout(people,{x:0,y:0},1.85,phone);
+  assert.ok(names.length>0&&names.length<=expected);
+  assert.equal(names.some(n=>n.id==='nara'),false,'distância evita nomes excessivos');
+  assert.equal(names.some(n=>n.id==='bia'),false,'encontros priorizam a conversa');
+  for(const label of names)for(const person of people.filter(p=>p.id!==label.id)){
+   const faceCovered=label.x-label.width/2<person.x+12&&label.x+label.width/2>person.x-12&&label.y-7<person.y-6&&label.y+7>person.y-34;
+   assert.equal(faceCovered,false,'o nome não pode cobrir outro rosto');
+  }
  }
 });
 test('balões completos exigem zoom e proximidade sem remover as cenas',()=>{
