@@ -71,9 +71,15 @@
     }
     c.fillStyle='#8c7d67';c.fillRect(left+home.w*.62,base+1.9,home.w*.25,home.h*.32);
     if(block==='feira'&&seed%3!==1){
-      const colors=['#d0a276','#7394a0','#cb846b'];c.fillStyle=colors[seed%3];
-      c.fillRect(left-1.3,base-2.2,home.w+2.6,3.2);
-      c.strokeStyle='#fff5dc';c.lineWidth=.65;for(let i=2;i<home.w;i+=4){c.beginPath();c.moveTo(left+i,base-2.2);c.lineTo(left+i,base+1);c.stroke();}
+      // Existing illustrative awning: a shaded canvas edge and subtle fabric
+      // rhythm, inspired by the 2007 market scene, not a current shop survey.
+      const colors=['#d0a276','#7394a0','#cb846b'];
+      c.fillStyle='#50483f32';c.fillRect(left-.8,base+1,home.w+1.6,1.6);
+      c.fillStyle=colors[seed%3];c.fillRect(left-1.3,base-2.2,home.w+2.6,3.2);
+      c.fillStyle='#fff7df56';c.fillRect(left-1.1,base-2,home.w+2.2,.7);
+      c.fillStyle='#65564d36';c.fillRect(left-1.3,base+.25,home.w+2.6,.65);
+      c.strokeStyle='#fff5dc';c.lineWidth=.65;
+      for(let i=2;i<home.w;i+=4){c.beginPath();c.moveTo(left+i,base-2.2);c.lineTo(left+i,base+1);c.stroke();}
     }
     if(block==='matriz'){
       // Quiet stucco reveals and eave shadows on existing illustrative houses.
