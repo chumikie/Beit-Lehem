@@ -28,6 +28,8 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   let html = fs.readFileSync(sourcePath, 'utf8');
   const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
   html=workbench.html;
+  // The author's Bolt tribute replaces the old provisional dog name in legacy scenery.
+  html=html.replace(/\bPingo\b/g,'Bolt').replace(/\bpingo\b/g,'bolt');
   if (!html.startsWith('<!-- ARQUIVO DE REFERÊNCIA DE BEIT LEHEM')) {
     throw new Error('A fonte não contém o cabeçalho de referência esperado; nenhuma prévia foi gerada.');
   }
