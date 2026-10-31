@@ -52,7 +52,8 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   );
   // Lúcia's existing planter ages with the fictional calendar. No new map points.
   html=replaceExactlyOnce(html,"window.RoncadorLuciaGarden.claim(luciaGarden)","window.RoncadorLuciaGarden.claim(luciaGarden,living.day)",'Crescimento de Lúcia');
-  html=replaceExactlyOnce(html,"c.save();c.translate(person.x+11,person.y-7);c.scale(.82,.82);","const bloom=window.RoncadorLuciaGarden.growth(luciaGarden,living.day);\n   c.save();c.translate(person.x+11,person.y-7);c.scale(.82*bloom.scale,.82*bloom.scale);",'Crescimento de Lúcia');
+  html=replaceExactlyOnce(html,"const nod=reduce?0:Math.sin(time*2.1)*.9;\n   c.save();","const nod=reduce?0:Math.sin(time*2.1)*.9;\n   const bloom=window.RoncadorLuciaGarden.growth(luciaGarden,living.day);\n   c.save();",'Crescimento de Lúcia');
+  html=replaceExactlyOnce(html,"c.translate(11,-7);c.scale(.82,.82);","c.translate(11,-7);c.scale(.82*bloom.scale,.82*bloom.scale);",'Escala da muda de Lúcia');
   html=replaceExactlyOnce(html,"c.arc(nod,-12,luciaGarden.claimed?3.8:2.6,0,7)","c.arc(nod,-12,[1.1,1.7,2.6,3.8][bloom.stage],0,7)",'Crescimento de Lúcia');
   html=replaceExactlyOnce(html,"$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “O carinho que a gente planta permanece.”'","$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “'+logic.growth(luciaGarden,living.day).caption+' O carinho que a gente planta permanece.”'",'Crescimento de Lúcia');
   // The author's Bolt tribute replaces the old provisional dog name in legacy scenery.

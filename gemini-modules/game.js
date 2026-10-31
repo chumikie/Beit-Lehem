@@ -858,9 +858,10 @@ function drawStreetLife(c,time,view){
  const event=window.RoncadorEncounterChoreography.current(living);
  if(event&&residents.concat(secondaries).filter(p=>(event.cast||[event.host,event.visitor]).includes(p.id)).every(p=>!p.arriving))window.RoncadorEncounterChoreography.apply(residents.concat(secondaries),living,event);
  const ambientPeople=[];
+ const conversationSpace=residents.concat(secondaries).filter(p=>greeted.includes(p.id));
  for(const passer of walkers){
   const occupied=residents.concat(secondaries,ambientPeople);
-  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed);
+  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed,conversationSpace);
   if(!at)continue;
   const passerNow=residentMotion.resolve({...passer,...at},elapsed,living.day);
   // A detour in progress keeps its walking pose; no mid-step wave or pause.

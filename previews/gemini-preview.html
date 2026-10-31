@@ -856,7 +856,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  function create(graph){
   let active=null,last=-1,day=null,nextCheck=0;
   let porches=[],junctions=[];
-  const cooldown=new Map(),personal=new Map();
+  const cooldown=new Map(),personal=new Map(),recentSpots=[];
   function setHouses(houses){
    // Match the same sparse, illustrated residential doorsteps as central-blocks.
    porches=Array.isArray(houses)?houses.filter(h=>
@@ -876,13 +876,14 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   }
   function apply(people,now,clock){
    if(!Number.isFinite(now)||!Number.isFinite(clock?.minute))return[];
-   if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();day=clock.day;}
+   if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();recentSpots.length=0;day=clock.day;}
    last=now;
+   for(let i=recentSpots.length-1;i>=0;i--)if(recentSpots[i].until<=now)recentSpots.splice(i,1);
    const eligible=p=>p&&!p.meeting&&!p.travel&&!p.arriving;
    if(clock.minute<7*60||clock.minute>=20*60)active=null;
    if(active){
     const pair=active.ids.map(id=>people.find(p=>p.id===id));
-    if(pair.some(p=>!eligible(p))||now-active.start>=(active.porch?5.2:4.4)){active=null;}
+    if(pair.some(p=>!eligible(p))||now-active.start>=active.duration){active=null;}
    }
    if(!active&&now>=nextCheck&&clock.minute>=7*60&&clock.minute<20*60){
     nextCheck=now+.4;
@@ -890,17 +891,27 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     outer:for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){
      const a=sorted[i],b=sorted[j],k=key(a.id,b.id),d=Math.hypot(a.x-b.x,a.y-b.y);
      if(!known.has(k)||d<23||d>64||nearJunction(a)||nearJunction(b)||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
+     const center={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+     // Keep the shared sidewalk free for other pedestrians and do not start
+     // another farewell in the same narrow stretch immediately afterward.
+     if(recentSpots.some(p=>Math.hypot(p.x-center.x,p.y-center.y)<68))continue;
+     if(people.some(other=>other.id!==a.id&&other.id!==b.id&&
+      Math.hypot(other.x-center.x,other.y-center.y)<34))continue;
      // Friends on separate streets or opposite sides of a block cannot greet
      // through buildings. No new connector or destination is invented.
      const road=graph?.route?.([a.x,a.y],[b.x,b.y]);
      if(!road||!Number.isFinite(road.distance)||road.distance>d*1.3+3)continue;
-     active={ids:[a.id,b.id],start:now,porch:nearbyPorch(a,b)};cooldown.set(k,now+55);
+     const porch=nearbyPorch(a,b);
+     const variation=(Array.from(k).reduce((sum,c)=>sum+c.charCodeAt(0),0)+Number(clock.day||0))%5;
+     const duration=4.05+variation*.18+(porch?.45:0);
+     active={ids:[a.id,b.id],start:now,porch,duration};
+     recentSpots.push({...center,until:now+duration+12});cooldown.set(k,now+55);
      for(const id of active.ids)personal.set(id,now+18);
      break outer;
     }
    }
    if(!active)return[];
-   const age=(now-active.start)*(active.porch?4.4/5.2:1),pair=active.ids.map(id=>people.find(p=>p.id===id));
+   const age=(now-active.start)*4.4/active.duration,pair=active.ids.map(id=>people.find(p=>p.id===id));
    for(let i=0;i<2;i++){
     const person=pair[i],friend=pair[1-i];
     person.moment=null;person.walking=false;
@@ -921,7 +932,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    }
    return active.ids.slice();
   }
-  return{apply,setHouses,setJunctions,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch}:null};
+  return{apply,setHouses,setJunctions,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch,duration:active.duration}:null};
  }
  return{LINKS,create};
 });
@@ -2081,6 +2092,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   {id:'carta-caminhos',title:'Uma carta para os caminhos',icon:'✉️',caption:'Você e Bia escreveram sobre saudade, planos e o que fica.',earned:s=>s?.biaLetters?.claimed===true},
   {id:'fitas-feira',title:'Fitas de bom-dia',icon:'🎀',caption:'Ciça e Damião dividiram um pequeno gesto de acolhimento.',earned:s=>s?.communitySeen?.includes('fitas-de-bom-dia')===true},
   {id:'desenho-jardim',title:'Uma folha desenhada',icon:'🎨',caption:'Uma lembrança de Nara e Lúcia encontrou lugar no caderno.',earned:s=>s?.communitySeen?.includes('memorias-do-jardim')===true},
+  {id:'caderno-bia-nara',title:'Desenhos para os caminhos',icon:'📖',caption:'Nara desenhou uma janela ou paisagem inspirada na carta de Bia.',earned:s=>s?.biaLetters?.claimed===true&&['janela-bia','paisagem-bia'].includes(s?.sideNeighbors?.choices?.nara)},
   {id:'bilhete-volta',title:'Um bilhete de volta',icon:'💌',caption:'O recado de Bia e Téo ganhou um caminho de volta.',earned:s=>s?.communitySeen?.includes('bilhete-de-volta')===true}
  ]);
  function collection(raw){
@@ -2108,7 +2120,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     else if(raw?.luciaGarden?.claimed)memory=['A mudinha que cuidamos ficou guardada aqui, junto da nossa conversa.','a muda que cuidamos','warm'];
     break;
    case 'bia':
-    if(known('bilhete-de-volta'))memory=['Téo prometeu guardar meu bilhete até a próxima volta.','o bilhete de Téo','joy'];
+    if(raw?.biaLetters?.claimed&&['janela-bia','paisagem-bia'].includes(neighbors.choices?.nara))memory=['Nara desenhou uma página para nossa carta. Agora ela tem um desenho para lembrar.','o desenho de Nara na carta','joy'];
+    else if(known('bilhete-de-volta'))memory=['Téo prometeu guardar meu bilhete até a próxima volta.','o bilhete de Téo','joy'];
     else if(known('caderno-compartilhado'))memory=['Nara desenhou uma janela na página em que escrevi meus planos.','o desenho de Nara','joy'];
     else if(raw?.biaLetters?.claimed)memory=['Voltei a ler a carta que escrevemos. A saudade cabe inteira numa página.','a carta que escrevemos','warm'];
     break;
@@ -2120,7 +2133,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     else if(neighbors.choices?.cica==='cores')memory=['Ainda guardo a dupla de cores que escolhemos.','as cores que escolhemos','warm'];
     break;
    case 'nara':
-    if(known('memorias-do-jardim'))memory=['Meu desenho da folhinha de Lúcia ficou na página mais bonita.','o desenho das folhas','joy'];
+    if(raw?.biaLetters?.claimed&&neighbors.choices?.nara==='janela-bia')memory=['A janela que desenhamos para Bia ainda está aberta naquela página.','a janela da carta de Bia','joy'];
+    else if(raw?.biaLetters?.claimed&&neighbors.choices?.nara==='paisagem-bia')memory=['Guardei o horizonte que pintamos para os planos de Bia.','a paisagem da carta de Bia','joy'];
+    else if(known('memorias-do-jardim'))memory=['Meu desenho da folhinha de Lúcia ficou na página mais bonita.','o desenho das folhas','joy'];
     else if(known('caderno-compartilhado'))memory=['Bia escreveu uma frase ao lado da janela que desenhei.','o caderno compartilhado','joy'];
     else if(neighbors.choices?.nara)memory=['Abri o caderno bem na página que desenhamos juntos.','nosso primeiro desenho','warm'];
     break;
@@ -2861,7 +2876,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   {id:'conversa',title:'Uma conversa no portão',story:'Uma lembrança inventada de ouvir alguém querido sem olhar para o relógio.'},
   {id:'chuva',title:'O cheiro da primeira chuva',story:'Uma lembrança inventada de terra molhada e esperança depois do calor.'}
  ];
- function fresh(){return{arrived:false,talked:false,work:[],memory:null,claimed:false};}
+ function fresh(){return{arrived:false,talked:false,work:[],memory:null,claimed:false,claimedDay:0};}
  function readyForMemory(state){return state.talked&&state.work.length===TASKS.length;}
  function ready(state){return readyForMemory(state)&&MEMORIES.some(m=>m.id===state.memory);}
  function restore(raw){
@@ -2873,16 +2888,26 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   }
   if(readyForMemory(state)&&MEMORIES.some(m=>m.id===raw.memory))state.memory=raw.memory;
   state.claimed=ready(state)&&raw.claimed===true;
+  if(state.claimed&&Number.isInteger(raw.claimedDay)&&raw.claimedDay>=1&&raw.claimedDay<=9999)state.claimedDay=raw.claimedDay;
   return state;
  }
  function arrive(state){if(state.arrived)return false;state.arrived=true;return true;}
  function meet(state){if(state.talked)return false;state.arrived=true;state.talked=true;return true;}
  function doWork(state,id){if(!state.talked||state.claimed||id!==TASKS[state.work.length]?.id)return false;state.work.push(id);return true;}
  function chooseMemory(state,id){if(!readyForMemory(state)||state.claimed||!MEMORIES.some(m=>m.id===id))return false;state.memory=id;return true;}
- function claim(state){if(state.claimed||!ready(state))return false;state.claimed=true;return true;}
+ function claim(state,day){if(state.claimed||!ready(state))return false;state.claimed=true;state.claimedDay=Number.isInteger(day)&&day>=1&&day<=9999?day:0;return true;}
+ function growth(state,day){
+  if(!state?.claimed)return{stage:0,caption:'A mudinha ainda espera seu cuidado.',flower:false,scale:.66};
+  // Saves anteriores à data de plantio mantêm a flor já conquistada.
+  if(!Number.isInteger(state.claimedDay)||state.claimedDay<1)return{stage:3,caption:'Uma flor do jardim já guarda essa lembrança.',flower:true,scale:1};
+  const days=Math.max(0,(Number.isInteger(day)?day:state.claimedDay)-state.claimedDay);
+  const stage=days>=5?3:days>=3?2:days>=1?1:0;
+  const captions=['A muda foi plantada hoje.','As primeiras folhas estão mais abertas.','Um botão de flor começa a aparecer.','A flor se abriu depois de alguns dias.'];
+  return{stage,caption:captions[stage],flower:stage===3,scale:[.7,.82,.92,1][stage]};
+ }
  function progress(state){return Number(state.arrived)+Number(state.talked)+Number(state.claimed);}
  function next(state){return !state.arrived?'arrival':!state.talked?'talk':!readyForMemory(state)?'work':!ready(state)?'memory':!state.claimed?'thank':'next';}
- return{TASKS,MEMORIES,fresh,restore,arrive,meet,doWork,chooseMemory,readyForMemory,ready,claim,progress,next};
+ return{TASKS,MEMORIES,fresh,restore,arrive,meet,doWork,chooseMemory,readyForMemory,ready,claim,growth,progress,next};
 });
 
 </script>
@@ -2942,7 +2967,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    morning:'desenha linhas no seu caderninho',afternoon:'repassa os traços das fachadas',
    greeting:'Toda janela tem uma forma bonita. Gosto de imaginar as histórias atrás delas.',
    options:[{id:'desenho',label:'Desenhar uma janelinha junto',reply:'Nara acrescenta uma janela de arco ao seu caderno. “Olha só como ficou acolhedora!”'},
-    {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'}]},
+    {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'},
+    {id:'janela-bia',label:'✏️ Desenhar uma janela para a carta de Bia',reply:'Nara desenha uma janela aberta ao lado da carta: “Para lembrar que sempre existe um caminho de volta.”'},
+    {id:'paisagem-bia',label:'🌿 Desenhar a paisagem que Bia quer conhecer',reply:'Nara pinta um horizonte delicado: “Os sonhos também precisam de espaço no papel.”'}]},
   {id:'teo',name:'Téo',hub:'rodoviaria',variant:8,tone:'#85a0c5',icon:'✉️',role:'O colecionador de recados',
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
@@ -2969,14 +2996,16 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
  }
  function availableOptions(def,context={}){
-  return def?.options?.filter(choice=>choice.id!=='banca'||(
-   def.id==='cica'&&context.marketMorning?.claimed===true
-  ))||[];
+  return def?.options?.filter(choice=>{
+   if(choice.id==='banca')return def.id==='cica'&&context.marketMorning?.claimed===true;
+   if(choice.id==='janela-bia'||choice.id==='paisagem-bia')return def.id==='nara'&&context.biaLetters?.claimed===true;
+   return true;
+  })||[];
  }
  function interact(state,clock,id,choiceId,context={}){
   const def=RESIDENTS.find(r=>r.id===id),choice=def?.options.find(o=>o.id===choiceId);
   if(!def||!choice)return{ok:false,reason:'Escolha indisponível.'};
-  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
+  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
@@ -3780,7 +3809,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
- function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN){
+ function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN,quietZones=[]){
   // Try nearby points first, then a few farther points along the same
   // mapped walking path. Never draw a decorative walker on a busy corner.
   const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
@@ -3802,6 +3831,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
    // House/shop footprints also reserve a small access strip for doorways.
    if(entrances.some(e=>Number.isFinite(e?.x)&&Number.isFinite(e?.y)&&Math.hypot(p.x-e.x,p.y-e.y)<15))continue;
+   if(quietZones.some(q=>Number.isFinite(q?.x)&&Number.isFinite(q?.y)&&Math.hypot(p.x-q.x,p.y-q.y)<46))continue;
    if(typeof id==='string'&&Number.isFinite(now))slots.set(id,{offset,time:now});
    return p;
   }
@@ -5022,9 +5052,10 @@ function drawStreetLife(c,time,view){
  const event=window.RoncadorEncounterChoreography.current(living);
  if(event&&residents.concat(secondaries).filter(p=>(event.cast||[event.host,event.visitor]).includes(p.id)).every(p=>!p.arriving))window.RoncadorEncounterChoreography.apply(residents.concat(secondaries),living,event);
  const ambientPeople=[];
+ const conversationSpace=residents.concat(secondaries).filter(p=>greeted.includes(p.id));
  for(const passer of walkers){
   const occupied=residents.concat(secondaries,ambientPeople);
-  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed);
+  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed,conversationSpace);
   if(!at)continue;
   const passerNow=residentMotion.resolve({...passer,...at},elapsed,living.day);
   // A detour in progress keeps its walking pose; no mid-step wave or pause.
@@ -5072,12 +5103,13 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
+   const bloom=window.RoncadorLuciaGarden.growth(luciaGarden,living.day);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82*bloom.scale,.82*bloom.scale);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
    c.fillStyle='#87ac77';c.beginPath();c.ellipse(-3,-7,4,2,-.6,0,7);c.ellipse(3,-10,4,2,.6,0,7);c.fill();
-   c.fillStyle='#e6b5cc';c.beginPath();c.arc(nod,-12,luciaGarden.claimed?3.8:2.6,0,7);c.fill();
+   c.fillStyle='#e6b5cc';c.beginPath();c.arc(nod,-12,[1.1,1.7,2.6,3.8][bloom.stage],0,7);c.fill();
    if(luciaGarden.work.includes('agua')){c.fillStyle='#94b6d0';c.beginPath();c.arc(9,-9+nod,1.2,0,7);c.arc(11,-5-nod,1,0,7);c.fill();}
    if(luciaGarden.claimed){c.fillStyle='#f5efd5';c.font='bold 8px system-ui';c.fillText('♥',-11,-17);}
    c.restore();
@@ -5571,7 +5603,7 @@ function renderLuciaGarden(line){
  $('luciaGardenThanks').hidden=!luciaGarden.claimed;
  const chosen=logic.MEMORIES.find(m=>m.id===luciaGarden.memory);
  $('luciaGardenFarewell').textContent=chosen?'Lúcia: “'+chosen.title+'... Uma lembrança assim merece crescer com carinho. Obrigada por dividir este instante comigo.”':'Lúcia sorri ao ver as primeiras folhas.';
- $('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “O carinho que a gente planta permanece.”':'Lúcia: “Minha mãe dizia que uma plantinha cresce junto das nossas histórias. Vamos cuidar desta?”';
+ $('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “'+logic.growth(luciaGarden,living.day).caption+' O carinho que a gente planta permanece.”':'Lúcia: “Minha mãe dizia que uma plantinha cresce junto das nossas histórias. Vamos cuidar desta?”';
  $('luciaGardenFinish').disabled=!logic.ready(luciaGarden);
  $('luciaGardenFinish').textContent=luciaGarden.claimed?'◫ Ver a lembrança no álbum ↗':logic.ready(luciaGarden)?'♡ Guardar a memória com Lúcia':'Cuide da planta e escolha uma memória';
 }
@@ -5585,7 +5617,7 @@ function showLuciaGarden(){
 function claimLuciaGarden(){
  if(!active)return;
  if(luciaGarden.claimed){$('luciaGardenDialog').close();renderAlbum();showDialog('albumDialog');return;}
- if(!nearChurch(100)||!luciaAvailable()||!window.RoncadorLuciaGarden.claim(luciaGarden))return;
+ if(!nearChurch(100)||!luciaAvailable()||!window.RoncadorLuciaGarden.claim(luciaGarden,living.day))return;
  const chosen=window.RoncadorLuciaGarden.MEMORIES.find(m=>m.id===luciaGarden.memory);
  living.notes.unshift({day:living.day,text:'Você cuidou de uma mudinha fictícia com Dona Lúcia e escolheu a memória: '+chosen.title+'.'});
  living.notes=living.notes.slice(0,12);
@@ -6180,12 +6212,12 @@ function renderSecondaryDialog(def,feedback){
  const portrait=document.createElement('canvas');portrait.width=110;portrait.height=107;portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Ilustração original de '+def.name);
  const c=portrait.getContext('2d');c.fillStyle='#edf0e5';c.fillRect(0,0,110,107);c.save();c.translate(55,82);c.scale(1.7,1.7);drawSecondaryWalker(c,{x:0,y:0,id:def.id,def,walking:false,variant:def.variant},.3);c.restore();wrap.append(portrait);
  const options=$('secondaryChoices');options.replaceChildren();
- for(const choice of def.options){
+ for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters})){
   const button=document.createElement('button');button.type='button';button.disabled=already;button.textContent=choice.label;
   button.onclick=()=>{
    const position=secondaryInStreets().find(p=>p.id===def.id);
    if(!position||Math.hypot(player.x-position.x,player.y-position.y)>=44){renderSecondaryDialog(def,'Caminhe até '+def.name+' novamente para continuar.');return;}
-   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id);
+   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters});
    renderSecondaryDialog(def,result.ok?result.reply:result.reason);
    if(result.ok){note(590,0,.12);note(740,.09,.14);save();if(result.unlocked&&result.first)notify('♡ Três novos vizinhos conhecidos! Uma lembrança apareceu no álbum.');}
   };options.append(button);

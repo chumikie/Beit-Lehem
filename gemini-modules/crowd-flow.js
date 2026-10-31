@@ -142,7 +142,7 @@
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
- function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN){
+ function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN,quietZones=[]){
   // Try nearby points first, then a few farther points along the same
   // mapped walking path. Never draw a decorative walker on a busy corner.
   const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
@@ -164,6 +164,7 @@
    if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
    // House/shop footprints also reserve a small access strip for doorways.
    if(entrances.some(e=>Number.isFinite(e?.x)&&Number.isFinite(e?.y)&&Math.hypot(p.x-e.x,p.y-e.y)<15))continue;
+   if(quietZones.some(q=>Number.isFinite(q?.x)&&Number.isFinite(q?.y)&&Math.hypot(p.x-q.x,p.y-q.y)<46))continue;
    if(typeof id==='string'&&Number.isFinite(now))slots.set(id,{offset,time:now});
    return p;
   }
