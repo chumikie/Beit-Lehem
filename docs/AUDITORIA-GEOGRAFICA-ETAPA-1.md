@@ -60,3 +60,13 @@ Uma busca adicional no histórico de colaboração recuperou os seguintes dados,
 - O usuário explicitou que o afloramento é muito maior que o desenho atual. **Separar a extensão da rocha do ponto de entrada da trilha e do cruzeiro/mirante** é requisito para a representação futura.
 
 **Decisão desta rodada:** manter os dados e a exploração como estão até confirmar pontos de acesso e extensão. A ordem aprovada continua: (1) destinos afastados, (2) águas e serras, (3) setores exploráveis. Nenhuma dessas fases deve apagar o território.
+
+## Validação de pinos públicos enviados pelo autor — 31/10/2026
+
+- **Pedra do Cordeiro**: [pino Google Maps enviado pelo autor](https://maps.app.goo.gl/iTuxSC6ae5THWokx8), latitude `-6.6984919`, longitude `-35.5472188`; projetado para aproximadamente `[-1134.22,-192.80]` no plano local do jogo. O pino é uma referência pontual, **não** o contorno do afloramento, a entrada da trilha ou sua área completa.
+- **Parque São Luís**: [pino Google Maps enviado pelo autor](https://maps.app.goo.gl/a89QrEmi3UBy841k9), latitude `-6.7129197`, longitude `-35.5237656`; projetado para aproximadamente `[1458.78,-1798.90]`. O Google Maps indica o lugar como **permanentemente fechado** na consulta; manter o local como patrimônio de memória do jogo, sem afirmar funcionamento atual.
+- Na geometria OSM preservada, o parque fica a ~0,5 unidade de uma via; a Pedra fica a ~802 unidades do trecho viário mais próximo encontrado. **Não inventar ligação para a Pedra**: acesso pedonal fica pendente de validação.
+- As duas correções foram implementadas como posições de marcos/POIs em memória no módulo Gemini, sem editar `source/`, `dist/map.json`, as 462 ruas ou os limites mundiais. São pinos de referência, não novos polígonos, superfícies ou trilhas.
+- A referência doméstica ficcional continua sem número residencial explícito nas interfaces inspecionadas; não incluir endereço privado nos documentos de geografia.
+
+**A verificar visualmente:** proporção da Pedra, acesso e vegetação; estilo de parque de memória; mapa ampliado e zoom. Não declarar passeio até a Pedra como concluído até haver trilha válida.
