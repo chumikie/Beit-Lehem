@@ -911,7 +911,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     const outward=Number.isFinite(person.heading)?(Math.cos(person.heading)>=0?1:-1):facing;
     const intensity=stage==='wave'
       ?smooth(Math.min((age-3.15)/.18,(3.85-age)/.18))
-      :stage==='chat'?smooth(Math.min((age-.65)/.35,(2.75-age)/.35)):1;
+      :stage==='chat'?smooth(Math.min((age-.65)/.35,(2.75-age)/.35))
+      :stage==='turn'?1-smooth((age-3.85)/.55):1;
     person.social={pose:stage==='wave'?'wave':stage==='chat'?'listen':'smile',
       facing:stage==='turn'?outward:facing,intensity,
       stage:stage==='look'||stage==='wave'||stage==='turn'?'farewell':stage,
@@ -2072,6 +2073,22 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  const PROTAGONISTS=['damiao','lucia','bia'];
  const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo'};
  const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.']};
+ // Permanent keepsakes are derived from existing quest completion flags.
+ // Unlike the 12 recent diary notes, these achievements cannot scroll away.
+ const KEEPSAKES=Object.freeze([
+  {id:'manha-mercado',title:'Uma manhã de mãos dadas com a feira',icon:'🧺',caption:'Você ajudou Damião a preparar a banca, e a manhã ganhou outra história.',earned:s=>s?.marketMorning?.claimed===true},
+  {id:'muda-matriz',title:'A flor que ficou na memória',icon:'🌱',caption:'Um cuidado partilhado com Lúcia perto da Matriz.',earned:s=>s?.luciaGarden?.claimed===true},
+  {id:'carta-caminhos',title:'Uma carta para os caminhos',icon:'✉️',caption:'Você e Bia escreveram sobre saudade, planos e o que fica.',earned:s=>s?.biaLetters?.claimed===true},
+  {id:'fitas-feira',title:'Fitas de bom-dia',icon:'🎀',caption:'Ciça e Damião dividiram um pequeno gesto de acolhimento.',earned:s=>s?.communitySeen?.includes('fitas-de-bom-dia')===true},
+  {id:'desenho-jardim',title:'Uma folha desenhada',icon:'🎨',caption:'Uma lembrança de Nara e Lúcia encontrou lugar no caderno.',earned:s=>s?.communitySeen?.includes('memorias-do-jardim')===true},
+  {id:'bilhete-volta',title:'Um bilhete de volta',icon:'💌',caption:'O recado de Bia e Téo ganhou um caminho de volta.',earned:s=>s?.communitySeen?.includes('bilhete-de-volta')===true}
+ ]);
+ function collection(raw){
+  return KEEPSAKES.filter(item=>item.earned(raw)).map(({id,title,icon,caption})=>({id,title,icon,caption}));
+ }
+ function collectionProgress(raw){
+  return{earned:collection(raw).length,total:KEEPSAKES.length};
+ }
  function snapshot(raw,id){
   const clock=raw?.living||{day:1,minute:510},person=clock.people?.[id]||{};
   const seen=Array.isArray(raw?.communitySeen)?raw.communitySeen:[];
@@ -2123,7 +2140,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   const mood=Number(person.fatigue)>75?'sleepy':memory?.[2]||((close||bond>=1)?'warm':'curious');
   return {id,name:NAMES[id],line,short:memory?.[1]||friendly||null,expression:mood,remembered:!!memory,close,kind:memory?.[1]||null};
  }
- return{snapshot};
+ return{snapshot,collection,collectionProgress};
 });
 
 </script>
@@ -2189,6 +2206,27 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       return person?.lastCareKind===kind&&person.lastCareDay>0&&s.day-person.lastCareDay<=1;
     })?.text||null;
   }
+  // Short, illustrated-album-ready diary captions; no new save fields.
+  // They are fictional descriptions of player actions, not real local testimony.
+  const CARE_DIARY={
+    damiao:{
+      cestos:'Na feira, você organizou os cestos com Damião e deixou a passagem mais acolhedora.',
+      historias:'Você parou para ouvir as histórias de Damião, sem pressa de seguir caminho.'
+    },
+    lucia:{
+      mudas:'Perto da Matriz, você cuidou de uma pequena muda com Lúcia.',
+      lembrancas:'Você e Lúcia dividiram uma lembrança tranquila, dessas que cabem no coração.'
+    },
+    bia:{
+      caderno:'Na Rodoviária, você ajudou Bia a colocar suas anotações em ordem.',
+      planos:'Você ouviu os sonhos de Bia e imaginou com ela caminhos para o futuro.'
+    }
+  };
+  const REUNION_DIARY={
+    damiao:'Damião se lembrou de uma gentileza sua. Uma conversa de ontem virou amizade hoje.',
+    lucia:'Lúcia retomou um cuidado compartilhado. Pequenas coisas continuam crescendo entre amigos.',
+    bia:'Bia lembrou de algo que vocês fizeram juntos. Até os planos guardam memórias.'
+  };
   const CARE_TODAY={
     damiao:'Obrigado pela companhia de hoje! Depois a gente continua a conversa perto da banca.',
     lucia:'Gostei de cuidar dessas pequenas coisas com você hoje. Vamos ver como ficam amanhã?',
@@ -2289,6 +2327,10 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     const text=firstToday
       ?(yesterday||neighbor||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
       :(today?CARE_TODAY[id]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.');
+    if(firstToday&&(yesterday||neighbor)){
+      s.notes[0].text=yesterday?REUNION_DIARY[id]:
+        'Um gesto seu chegou a outra pessoa: '+p.name+' comentou uma gentileza feita a um amigo.';
+    }
     return{friendship:n.bond,newMemory:firstToday,text};
   }
   function care(s,id,kind){
@@ -2301,7 +2343,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     person.lastCareDay=s.day;person.lastCareKind=kind;person.careCount=clamp(person.careCount+1,0,9999);
     person.fatigue=clamp(person.fatigue+choice.fatigue,0,100);
     person.company=clamp(person.company+choice.company,0,100);
-    s.notes.unshift({day:s.day,text:'Um gesto com '+RESIDENTS.find(p=>p.id===id).name+': '+choice.label.replace(/^[^\p{L}]+/u,'')+'.'});
+    s.notes.unshift({day:s.day,text:CARE_DIARY[id]?.[kind]||'Um gesto de cuidado com um amigo.'});
     s.notes=s.notes.slice(0,12);
     return{ok:true,text:choice.effect,progress:careProgress(s)};
   }
@@ -3743,25 +3785,26 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    if(!Number.isFinite(target.x)||!Number.isFinite(target.y))return person;
    let s=states.get(person.id);
    if(!s||day!==s.day||now<s.last-.001||now-s.last>18){
-    s={x:target.x,y:target.y,day,last:now,heading:0,stride:0,pace:0,bridge:null,bridgeIndex:1};states.set(person.id,s);
+    s={x:target.x,y:target.y,day,last:now,heading:0,stride:0,pace:0,bridge:null,bridgeIndex:1,blockedUntil:0};states.set(person.id,s);
     return{...person,heading:0,stridePhase:0,arriving:false};
    }
    if(now===s.last&&s.result)return{...person,...s.result};
    const dt=Math.min(.09,Math.max(0,now-s.last));s.last=now;
    const held=holds.has(person.id)&&!person.meeting&&!person.travel;
    const from={x:s.x,y:s.y},gap=distance(from,target);
-   if(!held&&!person.pause&&!s.bridge&&gap>11&&graph?.route){
+   if(!held&&!person.pause&&!s.bridge&&gap>11&&graph?.route&&now>=s.blockedUntil){
     const route=graph.route([s.x,s.y],[target.x,target.y]);
     // In disconnected OSM components there is no verified pedestrian route;
     // never draw a fictional connector through a house or private parcel.
     if(route?.points?.length&&route.distance<1600){
      s.bridge=[{x:s.x,y:s.y},...route.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))];
-     s.bridgeIndex=1;
-    }else{s.x=target.x;s.y=target.y;}
+     s.bridgeIndex=1;s.blockedUntil=0;
+    }else{s.blockedUntil=now+1.5;}
    }
    // A short, optional roadside gesture holds the *same* mapped location.
    // Never interrupt a resident already following a bridging road route.
-   const resting=(!!person.pause||held)&&!s.bridge;
+   const waitingForPath=gap>11&&!s.bridge&&(!graph?.route||s.blockedUntil>now);
+   const resting=(!!person.pause||held||waitingForPath)&&!s.bridge;
    const intent=!resting&&(!!s.bridge||gap>.035);
    s.pace+=(Number(intent)-s.pace)*(1-Math.exp(-dt*(intent?5.5:7)));
    let remaining=resting?0:dt*(person.meeting?37:person.travel?82:43)*(.38+.62*s.pace);
@@ -3791,6 +3834,15 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    return{...person,...s.result};
   }
   function present(person,now,reduce){
+   // A subtle reach uses the existing gesture renderer and carried props:
+   // Damião's basket, Lúcia's flower and Bia's notebook. Never move their feet.
+   const gestures={damiao:{kind:'rest',pose:'offer',facing:1},
+    lucia:{kind:'flower',pose:'receive',facing:1},
+    bia:{kind:'read',pose:'receive',facing:-1}};
+   const cue=gestures[person.id],moment=person.moment;
+   if(cue&&moment?.kind===cue.kind&&!person.social&&!person.walking&&!person.arriving&&!person.meeting&&!person.travel){
+    person.social={pose:cue.pose,facing:cue.facing,intensity:Math.min(.55,Math.max(0,moment.strength)*.55),react:false,stage:'routine'};
+   }
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
    let v=visuals.get(person.id);
    if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now};visuals.set(person.id,v);}

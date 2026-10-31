@@ -65,7 +65,8 @@
     const outward=Number.isFinite(person.heading)?(Math.cos(person.heading)>=0?1:-1):facing;
     const intensity=stage==='wave'
       ?smooth(Math.min((age-3.15)/.18,(3.85-age)/.18))
-      :stage==='chat'?smooth(Math.min((age-.65)/.35,(2.75-age)/.35)):1;
+      :stage==='chat'?smooth(Math.min((age-.65)/.35,(2.75-age)/.35))
+      :stage==='turn'?1-smooth((age-3.85)/.55):1;
     person.social={pose:stage==='wave'?'wave':stage==='chat'?'listen':'smile',
       facing:stage==='turn'?outward:facing,intensity,
       stage:stage==='look'||stage==='wave'||stage==='turn'?'farewell':stage,
