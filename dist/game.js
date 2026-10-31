@@ -131,6 +131,67 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b40';c.lineWidth=width+3;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.displayTags?.surface||r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
  if(major&&!simple){c.strokeStyle='#f2edcfb0';c.lineWidth=.8;c.setLineDash([7,7]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c';c.lineWidth=1;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
+// Local landmarks from Matheus's Gemini study, confirmed through his own
+// familiarity with Belém/PB and photographs. These are user-verified positions,
+// NOT new OpenStreetMap points or surveyed building footprints.
+const GEMINI_LOCAL_PLACES=[
+ {id:'escola_anita',name:'Escola Anita Barbosa',p:[227.84,286.1],kind:'school'},
+ {id:'xaviezao',name:'Ginásio O Xaviezão',p:[-101.59,533.98],kind:'gym'},
+ {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[157.54,-107.72],kind:'bakery'},
+ {id:'bar_prosa',name:'Bar da Prosa',p:[29.35,-249.25],kind:'bar',fictionalName:true},
+ {id:'prefeitura',name:'Prefeitura de Belém',p:[-109.85,49.24],kind:'civic'},
+ {id:'capela_luz',name:'Capela N. Sra. da Luz',p:[129.83,-755.82],kind:'chapel'},
+ {id:'sagrada_familia',name:'Igreja Sagrada Família',p:[262.96,196.98],kind:'church'}
+];
+function drawGeminiLocalPlaces(c,viewport){
+ if(zoom<1.25)return;
+ for(const place of GEMINI_LOCAL_PLACES){
+  const [x,y]=place.p;
+  if(x<viewport.left-32||x>viewport.right+32||y<viewport.top-35||y>viewport.bottom+35)continue;
+  c.save();c.translate(x,y);
+  // A small symbolic postcard, intentionally NOT a cadastral footprint.
+  c.fillStyle='#fff6e5';c.strokeStyle='#8d826c';c.lineWidth=.8;
+  c.beginPath();c.roundRect(-11,-18,22,25,4);c.fill();c.stroke();
+  if(place.kind==='gym'){
+   c.strokeStyle='#809eab';c.lineWidth=2.1;c.beginPath();c.arc(0,-8,8,Math.PI,0);c.stroke();
+   c.fillStyle='#c2d8d4';c.fillRect(-8,-8,16,10);
+   c.strokeStyle='#73958c';c.lineWidth=.7;c.strokeRect(-6,-6,12,6);
+  }else if(place.kind==='school'){
+   c.fillStyle='#a4bfcd';c.fillRect(-8,-12,16,14);
+   c.fillStyle='#f2e7c9';c.fillRect(-2,-4,4,6);
+   c.fillStyle='#e6f2ee';c.fillRect(-6,-9,4,4);c.fillRect(2,-9,4,4);
+   c.fillStyle='#617e94';c.fillRect(-9,-14,18,2);
+  }else if(place.kind==='bakery'||place.kind==='bar'){
+   c.fillStyle=place.kind==='bakery'?'#d99ca8':'#ba8a60';c.fillRect(-9,-12,18,4);
+   c.fillStyle='#fff0d4';for(let i=-7;i<8;i+=5)c.fillRect(i,-12,2,4);
+   c.fillStyle='#96b4ab';c.fillRect(-7,-7,14,9);
+   if(place.kind==='bakery'){
+    c.fillStyle='#f7e0b4';c.beginPath();c.arc(0,-2,3,Math.PI,0);c.fill();
+    c.fillStyle='#e9a8a3';c.fillRect(-3,-2,6,2);
+   }else{
+    c.fillStyle='#eec780';c.fillRect(-5,-2,10,1.5);
+    c.fillStyle='#705f50';c.fillRect(-4,-.5,1.2,3);c.fillRect(3,-.5,1.2,3);
+   }
+  }else if(place.kind==='civic'){
+   c.fillStyle='#e0cfab';c.fillRect(-8,-10,16,13);
+   c.fillStyle='#7f9b9b';for(const q of [-5,0,5])c.fillRect(q-1,-7,2,9);
+   c.fillStyle='#af9677';c.fillRect(-10,-13,20,3);
+  }else{
+   c.fillStyle=place.kind==='chapel'?'#e9d9ba':'#f0dfc9';c.fillRect(-8,-10,16,13);
+   c.fillStyle='#93a6a0';c.beginPath();c.moveTo(-10,-10);c.lineTo(0,-17);c.lineTo(10,-10);c.fill();
+   c.fillStyle='#78958d';c.fillRect(-2,-4,4,7);
+   c.strokeStyle='#9c7a6b';c.lineWidth=1;c.beginPath();
+   c.moveTo(0,-20);c.lineTo(0,-15);c.moveTo(-2,-18);c.lineTo(2,-18);c.stroke();
+  }
+  c.fillStyle='#6a796f';c.fillRect(-4,5,8,1);
+  if(zoom>1.55){
+   c.textAlign='center';c.textBaseline='middle';c.font='600 7px system-ui';
+   c.lineWidth=2.5;c.strokeStyle='#fff8e9';c.strokeText(place.name,0,-28);
+   c.fillStyle='#536c61';c.fillText(place.name,0,-28);
+  }
+  c.restore();
+ }
+}
 function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();const isHospital=place.tags.name==='Hospital Santa Lúcia';c.fillStyle=isHospital?'#b66d72':'#587960';if(isHospital){c.fillRect(x-3,y-.8,6,1.6);c.fillRect(x-.8,y-3,1.6,6);}else{c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();}if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
 function drawPin(c,m,i,time,miniMode=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
  c.save();c.translate(p[0],p[1]);const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
@@ -704,6 +765,7 @@ function render(time){
  drawPuddles(ctx,time,{left,right,top,bottom});
  drawMappedPlaces(ctx,{left,right,top,bottom});
  const visibleHouses=houses.filter(b=>b.x>left&&b.x<right&&b.y>top&&b.y<bottom);for(const b of visibleHouses)house(ctx,b);
+ drawGeminiLocalPlaces(ctx,{left,right,top,bottom});
  drawGroundedFlora(ctx,{left,right,top,bottom},time);
  // Trees are illustrative scenery. Keep roads, the field and homes clear.
  for(let gx=Math.floor(left/45);gx<right/45;gx++)for(let gy=Math.floor(top/45);gy<bottom/45;gy++){
