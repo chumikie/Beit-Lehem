@@ -1,5 +1,5 @@
 
-/* Three fictional neighbors: daily presence, small gestures and persistent memories.
+/* Fictional neighbors: daily presence, small gestures and persistent memories.
    No placement claims a verified business, home or workplace in Belém/PB. */
 (function(root){
  'use strict';
@@ -22,6 +22,18 @@
    greeting:'Eu gosto de uma conversa sem pressa. Sempre tem uma história bonita nas ruas.',
    options:[{id:'prosa',label:'☕ Fazer uma pausa para conversar',reply:'Rosa escuta com atenção e diz: “Às vezes a melhor descoberta é ter tempo para alguém.”'},
     {id:'caderno',label:'📒 Anotar uma lembrança do passeio',reply:'Rosa abre o caderno e guarda uma frase sobre o dia: “Essa eu não quero esquecer.”'}]},
+  {id:'zeca',name:'Zeca',hub:'escola_anita',variant:11,tone:'#88a386',icon:'🪴',role:'Vizinho que gosta de plantas',
+   morning:'observa vasos e folhas perto do caminho',afternoon:'descansa à sombra e conversa sobre o quintal',
+   greeting:'Planta e amizade têm uma coisa parecida: as duas melhoram com cuidado.',
+   options:[{id:'vasos',label:'🪴 Conversar sobre os vasos',reply:'Zeca ajeita uma folhinha e sorri: “Cada vaso guarda um pouquinho de paciência.”'},
+    {id:'sementes',label:'🌱 Trocar uma dica de plantio',reply:'Zeca conta uma dica imaginada de jardim e agradece a companhia.'},
+    {id:'muda-lucia',label:'🌷 Contar da muda cuidada com Lúcia',reply:'“Lúcia vai gostar de saber que você voltou para olhar a planta”, diz Zeca, contente.'}]},
+  {id:'mila',name:'Mila',hub:'bar_prosa',variant:12,tone:'#c394a6',icon:'🎨',role:'Criadora de cores e pequenos desenhos',
+   morning:'reúne ideias e combina cores no caderno',afternoon:'observa detalhes de fachadas e tecidos',
+   greeting:'Uma cor muda o jeito da gente lembrar de um dia. Qual foi a sua preferida hoje?',
+   options:[{id:'cores',label:'🎨 Escolher uma cor para o caderno',reply:'Mila desenha uma pequena faixa colorida: “Essa combina com o nosso passeio.”'},
+    {id:'tecidos',label:'🧵 Conversar sobre estampas',reply:'Mila mistura duas estampas imaginárias e ri: “Cada uma conta uma história!”'},
+    {id:'amigas',label:'♡ Juntar uma ideia de Ciça e Nara',reply:'Mila imagina uma fita desenhada como uma janela: “Ciça e Nara iam adorar essa mistura!”'}]},
   {id:'teo',name:'Téo',hub:'rodoviaria',variant:8,tone:'#85a0c5',icon:'✉️',role:'O colecionador de recados',
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
@@ -43,7 +55,9 @@
   if(community)return community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
-  const open=minute>=8*60&&minute<12*60 || minute>=14*60&&minute<18*60;
+  const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
+   def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
+   (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
   return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
@@ -52,13 +66,15 @@
   return def?.options?.filter(choice=>{
    if(choice.id==='banca')return def.id==='cica'&&context.marketMorning?.claimed===true;
    if(choice.id==='janela-bia'||choice.id==='paisagem-bia')return def.id==='nara'&&context.biaLetters?.claimed===true;
+   if(choice.id==='muda-lucia')return def.id==='zeca'&&context.luciaGarden?.claimed===true;
+   if(choice.id==='amigas')return def.id==='mila'&&Boolean(context.sideNeighbors?.choices?.cica)&&Boolean(context.sideNeighbors?.choices?.nara);
    return true;
   })||[];
  }
  function interact(state,clock,id,choiceId,context={}){
   const def=RESIDENTS.find(r=>r.id===id),choice=def?.options.find(o=>o.id===choiceId);
   if(!def||!choice)return{ok:false,reason:'Escolha indisponível.'};
-  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
+  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':id==='zeca'?'Conclua primeiro o cuidado da muda com Lúcia.':id==='mila'?'Conheça primeiro as atividades de Ciça e Nara.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
