@@ -855,7 +855,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function create(graph){
   let active=null,last=-1,day=null,nextCheck=0;
-  let porches=[];
+  let porches=[],junctions=[];
   const cooldown=new Map(),personal=new Map();
   function setHouses(houses){
    // Match the same sparse, illustrated residential doorsteps as central-blocks.
@@ -864,6 +864,11 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    ).map(h=>({x:h.x,y:h.y})):[];
    return porches.length;
   }
+  function setJunctions(points){
+   junctions=Array.isArray(points)?points.filter(p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y)):[];
+   return junctions.length;
+  }
+  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<22);}
   function nearbyPorch(a,b){
    const x=(a.x+b.x)/2,y=(a.y+b.y)/2;
    return porches.some(h=>Math.hypot(h.x-x,h.y-y)<34&&
@@ -884,7 +889,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     const sorted=people.filter(eligible).slice().sort((a,b)=>a.id.localeCompare(b.id));
     outer:for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){
      const a=sorted[i],b=sorted[j],k=key(a.id,b.id),d=Math.hypot(a.x-b.x,a.y-b.y);
-     if(!known.has(k)||d<23||d>64||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
+     if(!known.has(k)||d<23||d>64||nearJunction(a)||nearJunction(b)||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
      // Friends on separate streets or opposite sides of a block cannot greet
      // through buildings. No new connector or destination is invented.
      const road=graph?.route?.([a.x,a.y],[b.x,b.y]);
@@ -915,7 +920,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    }
    return active.ids.slice();
   }
-  return{apply,setHouses,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch}:null};
+  return{apply,setHouses,setJunctions,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch}:null};
  }
  return{LINKS,create};
 });
@@ -2897,15 +2902,15 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   return {block:home.centralBlock,kind:group[seed%group.length],shade:seed%4,detail:seed%3,roof:seed%3,returnWall:seed%4===1,shop:home.centralBlock==='feira'&&seed%3!==2,seed};
  }
  function statistics(houses){
-  const result={total:0,matriz:0,feira:0,joao:0,kinds:{}};
+  const result={total:0,matriz:0,feira:0,joao:0,clovis:0,feliciano:0,vicente:0,kinds:{}};
   for(const home of houses){const style=variant(home);if(!style)continue;result.total++;result[style.block]++;result.kinds[style.kind]=(result.kinds[style.kind]||0)+1;}
   return result;
  }
  const SKETCH_IDS=Object.freeze(['matriz','feira','joao','clovis','feliciano','vicente']);
  function restoreSketches(raw){return Array.isArray(raw)?SKETCH_IDS.filter(id=>raw.includes(id)):[];}
  function recordSketch(state,id,nearby){
-  if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===3};
-  state.push(id);return{recorded:true,unlocked:state.length===3,progress:state.length};
+  if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===SKETCH_IDS.length};
+  state.push(id);return{recorded:true,unlocked:state.length===SKETCH_IDS.length,progress:state.length};
  }
  function draw(c,home,phase='manha',minute=8*60){
   const style=variant(home);if(!style)return false;
@@ -2918,8 +2923,13 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   c.beginPath();c.moveTo(left+1,top+height*.15);c.lineTo(left+width-1,top+height*.15);c.stroke();
   for(let i=2+(seed%3);i<width-2;i+=4.2){c.beginPath();c.moveTo(left+i,top+height*.17);c.lineTo(left+i+1,top+height*.29);c.stroke();}
   // The roof casts a soft, narrow contact shadow across the wall.
-  c.fillStyle='#584e462e';c.fillRect(left+.8,front-.25,width-1.6,1.3);
+  c.fillStyle=style.block==='matriz'?'#574c3f3c':'#584e462e';c.fillRect(left+.8,front-.25,width-1.6,style.block==='matriz'?1.65:1.3);
   c.fillStyle=[palette.wall,'#ead7c7','#d4ded1','#dfd6c5'][style.shade];c.fillRect(left+1,front+1,width-2,Math.max(1,faceH-2));
+  if(style.block==='matriz'){
+   // Illustrated plaster plinth and a soft side edge; no footprint change.
+   c.fillStyle='#a995802c';c.fillRect(left+1,front+faceH-1.35,width-2,.8);
+   c.fillStyle='#fff6e35c';c.fillRect(left+1.05,front+1,.55,Math.max(.5,faceH-2.6));
+  }
   c.fillStyle=palette.trim;c.fillRect(left+.75,front+1,1,faceH-1.5);
   c.fillRect(left+width-1.75,front+1,1,faceH-1.5);
   const windowY=front+2.05,windowH=Math.max(2.1,faceH-3.8),windowX=left+2.4;
@@ -2955,6 +2965,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    c.fillStyle=palette.wall;c.fillRect(left+.5,front-3.5,width-1,3.6);
    c.fillStyle=palette.trim;c.fillRect(left+.5,front-3.7,width-1,.85);
    c.fillStyle='#fff4db';c.fillRect(left+1.2,front-2.5,width-2.4,.55);
+   if(style.block==='matriz'){
+    c.fillStyle='#68584930';c.fillRect(left+.8,front-.15,width-1.6,.65);
+   }
   }else if(style.roof===2){
    c.fillStyle='#b47b61';c.fillRect(left+.4,front-1.7,width-.8,1.6);
    c.fillStyle='#e3b18a';for(let i=1.5;i<width-1;i+=2.4)c.fillRect(left+i,front-1.7,.8,1.1);
@@ -4089,6 +4102,7 @@ function preprocess(){
  streetGreetings.setHouses(houses);
  window.RoncadorStreetMoments.setHouses(houses);
  roadDetails=window.RoncadorRoadDetails.prepare(roads,pathfinder);
+ streetGreetings.setJunctions(roadDetails?.junctions||[]);
  terrainLayer=window.RoncadorTerrainRelief.prepare(data,terrainData);
  streetPaths.clear();
  wildlife=prepareWildlife();

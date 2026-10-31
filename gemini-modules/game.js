@@ -86,6 +86,7 @@ function preprocess(){
  streetGreetings.setHouses(houses);
  window.RoncadorStreetMoments.setHouses(houses);
  roadDetails=window.RoncadorRoadDetails.prepare(roads,pathfinder);
+ streetGreetings.setJunctions(roadDetails?.junctions||[]);
  terrainLayer=window.RoncadorTerrainRelief.prepare(data,terrainData);
  streetPaths.clear();
  wildlife=prepareWildlife();

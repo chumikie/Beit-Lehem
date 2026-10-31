@@ -9,7 +9,7 @@
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function create(graph){
   let active=null,last=-1,day=null,nextCheck=0;
-  let porches=[];
+  let porches=[],junctions=[];
   const cooldown=new Map(),personal=new Map();
   function setHouses(houses){
    // Match the same sparse, illustrated residential doorsteps as central-blocks.
@@ -18,6 +18,11 @@
    ).map(h=>({x:h.x,y:h.y})):[];
    return porches.length;
   }
+  function setJunctions(points){
+   junctions=Array.isArray(points)?points.filter(p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y)):[];
+   return junctions.length;
+  }
+  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<22);}
   function nearbyPorch(a,b){
    const x=(a.x+b.x)/2,y=(a.y+b.y)/2;
    return porches.some(h=>Math.hypot(h.x-x,h.y-y)<34&&
@@ -38,7 +43,7 @@
     const sorted=people.filter(eligible).slice().sort((a,b)=>a.id.localeCompare(b.id));
     outer:for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){
      const a=sorted[i],b=sorted[j],k=key(a.id,b.id),d=Math.hypot(a.x-b.x,a.y-b.y);
-     if(!known.has(k)||d<23||d>64||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
+     if(!known.has(k)||d<23||d>64||nearJunction(a)||nearJunction(b)||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
      // Friends on separate streets or opposite sides of a block cannot greet
      // through buildings. No new connector or destination is invented.
      const road=graph?.route?.([a.x,a.y],[b.x,b.y]);
@@ -69,7 +74,7 @@
    }
    return active.ids.slice();
   }
-  return{apply,setHouses,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch}:null};
+  return{apply,setHouses,setJunctions,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch}:null};
  }
  return{LINKS,create};
 });
