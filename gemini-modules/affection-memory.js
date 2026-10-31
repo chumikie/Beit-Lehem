@@ -14,6 +14,7 @@
   {id:'carta-caminhos',title:'Uma carta para os caminhos',icon:'✉️',caption:'Você e Bia escreveram sobre saudade, planos e o que fica.',earned:s=>s?.biaLetters?.claimed===true},
   {id:'fitas-feira',title:'Fitas de bom-dia',icon:'🎀',caption:'Ciça e Damião dividiram um pequeno gesto de acolhimento.',earned:s=>s?.communitySeen?.includes('fitas-de-bom-dia')===true},
   {id:'desenho-jardim',title:'Uma folha desenhada',icon:'🎨',caption:'Uma lembrança de Nara e Lúcia encontrou lugar no caderno.',earned:s=>s?.communitySeen?.includes('memorias-do-jardim')===true},
+  {id:'caderno-bia-nara',title:'Desenhos para os caminhos',icon:'📖',caption:'Nara desenhou uma janela ou paisagem inspirada na carta de Bia.',earned:s=>s?.biaLetters?.claimed===true&&['janela-bia','paisagem-bia'].includes(s?.sideNeighbors?.choices?.nara)},
   {id:'bilhete-volta',title:'Um bilhete de volta',icon:'💌',caption:'O recado de Bia e Téo ganhou um caminho de volta.',earned:s=>s?.communitySeen?.includes('bilhete-de-volta')===true}
  ]);
  function collection(raw){
@@ -41,7 +42,8 @@
     else if(raw?.luciaGarden?.claimed)memory=['A mudinha que cuidamos ficou guardada aqui, junto da nossa conversa.','a muda que cuidamos','warm'];
     break;
    case 'bia':
-    if(known('bilhete-de-volta'))memory=['Téo prometeu guardar meu bilhete até a próxima volta.','o bilhete de Téo','joy'];
+    if(raw?.biaLetters?.claimed&&['janela-bia','paisagem-bia'].includes(neighbors.choices?.nara))memory=['Nara desenhou uma página para nossa carta. Agora ela tem um desenho para lembrar.','o desenho de Nara na carta','joy'];
+    else if(known('bilhete-de-volta'))memory=['Téo prometeu guardar meu bilhete até a próxima volta.','o bilhete de Téo','joy'];
     else if(known('caderno-compartilhado'))memory=['Nara desenhou uma janela na página em que escrevi meus planos.','o desenho de Nara','joy'];
     else if(raw?.biaLetters?.claimed)memory=['Voltei a ler a carta que escrevemos. A saudade cabe inteira numa página.','a carta que escrevemos','warm'];
     break;
@@ -53,7 +55,9 @@
     else if(neighbors.choices?.cica==='cores')memory=['Ainda guardo a dupla de cores que escolhemos.','as cores que escolhemos','warm'];
     break;
    case 'nara':
-    if(known('memorias-do-jardim'))memory=['Meu desenho da folhinha de Lúcia ficou na página mais bonita.','o desenho das folhas','joy'];
+    if(raw?.biaLetters?.claimed&&neighbors.choices?.nara==='janela-bia')memory=['A janela que desenhamos para Bia ainda está aberta naquela página.','a janela da carta de Bia','joy'];
+    else if(raw?.biaLetters?.claimed&&neighbors.choices?.nara==='paisagem-bia')memory=['Guardei o horizonte que pintamos para os planos de Bia.','a paisagem da carta de Bia','joy'];
+    else if(known('memorias-do-jardim'))memory=['Meu desenho da folhinha de Lúcia ficou na página mais bonita.','o desenho das folhas','joy'];
     else if(known('caderno-compartilhado'))memory=['Bia escreveu uma frase ao lado da janela que desenhei.','o caderno compartilhado','joy'];
     else if(neighbors.choices?.nara)memory=['Abri o caderno bem na página que desenhamos juntos.','nosso primeiro desenho','warm'];
     break;
