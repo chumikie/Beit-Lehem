@@ -49,6 +49,7 @@ function preprocess(){
  pathfinder=window.RoncadorPathfinding.buildGraph(roads);
  residentMotion=window.RoncadorResidentMotion.create(pathfinder);
  streetGreetings=window.RoncadorStreetGreetings.create(pathfinder);
+ streetGreetings.setHouses(houses);
  roadDetails=window.RoncadorRoadDetails.prepare(roads,pathfinder);
  terrainLayer=window.RoncadorTerrainRelief.prepare(data,terrainData);
  streetPaths.clear();
