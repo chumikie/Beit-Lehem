@@ -3433,19 +3433,20 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
  function openSlot(sample,people=[],junctions=[],clearance=23){
-  const offsets=[0,14,-14,29,-29,45,-45,61,-61];
-  let atJunction=null;
+  // Try nearby points first, then a few farther points along the same
+  // mapped walking path. Never draw a decorative walker on a busy corner.
+  const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
+  const cornerRadius=20;
+  const separation=Math.max(23,Number.isFinite(clearance)?clearance:23);
   for(const offset of offsets){
    const p=sample(offset);
    if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
-   if(people.some(other=>Math.hypot(p.x-other.x,p.y-other.y)<clearance))continue;
-   if(junctions.some(j=>Math.hypot(p.x-j.x,p.y-j.y)<11)){
-    if(!atJunction)atJunction=p;
-    continue;
-   }
+   if(people.some(other=>Number.isFinite(other?.x)&&Number.isFinite(other?.y)&&Math.hypot(p.x-other.x,p.y-other.y)<separation))continue;
+   if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
    return p;
   }
-  return atJunction;
+  // Omitting an ambient passer is preferable to a pile-up at a junction.
+  return null;
  }
  return{plan,openSlot};
 });
