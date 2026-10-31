@@ -1,0 +1,8 @@
+# Keep hand-written modules reviewable; collapse bulky generated HTML diffs.
+# These files remain available for download and are never deleted by this rule.
+previews/beit-lehem-development.html linguist-generated=true
+previews/beit-lehem-development-mobile.html linguist-generated=true
+previews/gemini-preview.html linguist-generated=true
+baseline/*.html linguist-generated=true
+dist/Trilhas-do-Roncador-Cozy-*.html linguist-generated=true
+references/gemini-2026-10-31/*.html.txt linguist-generated=true
