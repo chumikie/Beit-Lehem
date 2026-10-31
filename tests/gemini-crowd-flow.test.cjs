@@ -23,9 +23,10 @@ test('ignora amostras inválidas sem afetar os demais moradores',()=>{
 test('distribui mais gente por horários e por marcos existentes do mapa',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const raw=fs.readFileSync(path.join(__dirname,'../references/gemini-2026-10-31/experimento-anonimizado.html.txt'),'utf8');
- const match=/<script type="application\\/json" id="embedded-map-data">([\\s\\S]*?)<\\/script>/.exec(raw);
- assert.ok(match,'mapa original disponível');
- const map=JSON.parse(match[1]);
+ const open='<script type="application/json" id="embedded-map-data">';
+ const begin=raw.indexOf(open),end=raw.indexOf('</script>',begin+open.length);
+ assert.ok(begin>=0&&end>begin,'mapa original disponível');
+ const map=JSON.parse(raw.slice(begin+open.length,end));
  const valid=new Set([...map.landmarks.map(p=>p.id),...map.missions.map((_,i)=>'missao:'+i)]);
  const {plan}=require('../gemini-modules/crowd-flow.js');
  for(const hour of [6,9,13,18,21]){
