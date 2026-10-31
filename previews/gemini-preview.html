@@ -2008,21 +2008,35 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   return{grid:g,values,min,max,sample,contours,source:terrain.source};
  }
  function draw(c,layer,view,zoom=1.85){
-  if(!layer||zoom<1.2)return;
+  // Altitude samples and contour geometry remain unchanged. Only visual detail varies.
+  if(!layer||zoom<.75)return;
   const g=layer.grid,cross=(x,y)=>x>=view.left-g.step&&x<=view.right+g.step&&y>=view.top-g.step&&y<=view.bottom+g.step;
+  const distant=zoom<1.2,step=distant?3:2;
   c.save();
-  // Gentle highlights complement the existing sage ground without changing
-  // the road network or creating a false 3-D street surface.
-  for(let row=0;row<g.height;row+=2)for(let col=0;col<g.width;col+=2){
+  // Diffuse earth-toned slopes, with a slight cool offset shadow to convey
+  // volume without inventing a new hill or changing the navigable surface.
+  for(let row=0;row<g.height;row+=step)for(let col=0;col<g.width;col+=step){
    const x=g.x0+col*g.step,y=g.y0+row*g.step;
    if(!cross(x,y))continue;
    const z=layer.values[row*g.width+col],high=(z-layer.min)/Math.max(1,layer.max-layer.min);
-   if(high>.52){const gradient=c.createRadialGradient(x,y,10,x,y,g.step*1.8);gradient.addColorStop(0,`rgba(193,157,107,${(.07+high*.07).toFixed(3)})`);gradient.addColorStop(1,'rgba(193,157,107,0)');c.fillStyle=gradient;c.fillRect(x-g.step*1.8,y-g.step*1.8,g.step*3.6,g.step*3.6);}
+   if(high<=.52)continue;
+   const radius=g.step*(distant?2.15:1.8),strength=(.045+high*.065)*(distant?.7:1);
+   const shadow=c.createRadialGradient(x+g.step*.26,y+g.step*.22,0,x+g.step*.26,y+g.step*.22,radius);
+   shadow.addColorStop(0,`rgba(84,105,90,${strength.toFixed(3)})`);
+   shadow.addColorStop(1,'rgba(84,105,90,0)');
+   c.fillStyle=shadow;c.fillRect(x-radius+g.step*.26,y-radius+g.step*.22,radius*2,radius*2);
+   const light=c.createRadialGradient(x-g.step*.18,y-g.step*.18,0,x-g.step*.18,y-g.step*.18,radius);
+   light.addColorStop(0,`rgba(193,157,107,${(strength*1.25).toFixed(3)})`);
+   light.addColorStop(1,'rgba(193,157,107,0)');
+   c.fillStyle=light;c.fillRect(x-radius-g.step*.18,y-radius-g.step*.18,radius*2,radius*2);
   }
-  c.lineCap='round';c.strokeStyle='#6480647c';c.lineWidth=1.05;
-  c.beginPath();for(const seg of layer.contours){if(!cross(seg.from.x,seg.from.y)&&!cross(seg.to.x,seg.to.y))continue;c.moveTo(seg.from.x,seg.from.y);c.lineTo(seg.to.x,seg.to.y);}c.stroke();
-  if(zoom>1.6){
-   // Sparse contour elevation numbers, not the elevation of individual roads.
+  // Contour lines stay readable close up and disappear at landscape zoom.
+  if(!distant){
+   c.lineCap='round';c.strokeStyle=zoom<1.6?'#64806456':'#6480647c';c.lineWidth=zoom<1.6?.85:1.05;
+   c.beginPath();for(const seg of layer.contours){if(!cross(seg.from.x,seg.from.y)&&!cross(seg.to.x,seg.to.y))continue;c.moveTo(seg.from.x,seg.from.y);c.lineTo(seg.to.x,seg.to.y);}c.stroke();
+  }
+  if(zoom>1.8){
+   // Elevation labels refer only to the sampled macro-terrain, not roads.
    c.textAlign='center';c.textBaseline='middle';c.font='6px system-ui';
    let printed=0;for(let i=0;i<layer.contours.length&&printed<5;i+=19){const seg=layer.contours[i];const x=(seg.from.x+seg.to.x)/2,y=(seg.from.y+seg.to.y)/2;if(!cross(x,y))continue;c.fillStyle='#f1e9d1ca';c.fillRect(x-8,y-3,16,6);c.fillStyle='#71896a';c.fillText(`${seg.level}m`,x,y);printed++;}
   }
