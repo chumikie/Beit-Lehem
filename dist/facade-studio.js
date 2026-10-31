@@ -120,6 +120,26 @@
     c.fillStyle='#fff2d4';for(let j=0;j<3;j++)c.fillRect(left+2.2+j*3,fy+1.2,1,1.2);
    }
   }
+  // A little threshold composes each storefront without claiming a surveyed
+  // sidewalk: all strokes remain INSIDE the existing illustrated house bounds.
+  c.fillStyle=style.shop?'#d9c2a0':'#d5c9b0';
+  c.fillRect(left+1.2,front+faceH-1.05,Math.max(1,width-2.4),.62);
+  if(style.shop){
+   // Soft valance, shelf silhouettes and a quiet side planter. No real sign.
+   if(seed%3===0){
+    c.fillStyle='#f5e9d7';
+    for(let i=2;i<width-2;i+=3.4)c.fillRect(left+i,front-1.35,1.3,.6);
+   }
+   if(seed%5===2){
+    c.fillStyle='#bc8b72';c.fillRect(left+width-3.7,front+faceH-3.5,2.4,2.4);
+    c.fillStyle=palette.plant;c.beginPath();c.arc(left+width-2.5,front+faceH-3.7,1.7,0,Math.PI*2);c.fill();
+   }
+  }else if(seed%7===3&&width>=13&&faceH>=4){
+   // A porch chair for a fictional home, inset from the roadway.
+   const cx=left+width-4.2,cy=front+faceH-1.8;
+   c.fillStyle='#987d66';c.fillRect(cx,cy-2.3,2.7,.55);
+   c.fillRect(cx+.3,cy-2,2.1,1.6);c.fillRect(cx+.3,cy-.4,.45,.75);c.fillRect(cx+2,cy-.4,.45,.75);
+  }
   // Porch/potted plants stay INSIDE each illustrative building's tiny bounds.
   if(style.kind==='vasos'||style.kind==='arcos'&&seed%2===0){
    const px=left+width-3.1,py=front+faceH-2;
