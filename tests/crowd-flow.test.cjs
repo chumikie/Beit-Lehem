@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const {plan}=require('../dist/crowd-flow.js');
+assert.equal(plan({day:1,minute:6*60},false).length,0,'the streets must rest at dawn');
+const morning=plan({day:1,minute:9*60},false);
+assert.equal(morning.length,4,'ordinary mornings remain lightly populated');
+assert.deepEqual(morning.map(p=>p.hub),['mercado','igreja','rodoviaria','missao:0']);
+assert.equal(plan({day:1,minute:13*60},false).length,3,'midday must be calmer');
+assert.equal(plan({day:1,minute:9*60},true).length,5,'fair day includes two market-side passers');
+assert.equal(plan({day:1,minute:19*60},false).length,4,'late-day streets retain life');
+assert.equal(plan({day:1,minute:21*60},true).length,0,'no passers after evening');
+assert.equal(plan({day:2,minute:9*60},false)[3].hub,'missao:1');
+assert.equal(plan({day:3,minute:9*60},false)[3].hub,'missao:2');
+assert.deepEqual(plan({day:1,minute:9*60},false),plan({day:1,minute:9*60},false),'routes must be deterministic');
+console.log('V2.23 crowd: distinct existing street anchors, cycles and fair-day rhythm OK');

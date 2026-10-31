@@ -1,0 +1,15 @@
+{
+  "name": "beit-lehem",
+  "version": "2.27.0",
+  "private": true,
+  "description": "Beit Lehem — jogo local e offline de Belém/PB, Rua Nova e entorno serrano. Base V2.27.",
+  "scripts": {
+    "test": "node scripts/project.cjs test",
+    "build": "node scripts/project.cjs build",
+    "play": "node scripts/project.cjs play",
+    "verify:baseline": "node scripts/project.cjs verify-baseline"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

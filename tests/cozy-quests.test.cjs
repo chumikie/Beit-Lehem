@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict');
+const quest=require('../dist/cozy-quests.js');
+
+const s=quest.fresh();
+assert.equal(quest.progress(s),0);
+assert.equal(quest.next(s),'damiao');
+assert.equal(quest.claim(s),false,'no premature reward');
+assert.equal(quest.record(s,'unknown'),false,'only game activities may count');
+assert.equal(quest.record(s,'damiao'),true);
+assert.equal(quest.record(s,'damiao'),false,'duplicate conversations must not double count');
+assert.equal(quest.progress(s),1);
+assert.equal(quest.next(s),'mercado');
+assert.equal(quest.record(s,'mercado'),true);
+assert.equal(quest.next(s),'colheita');
+assert.equal(quest.record(s,'colheita'),true);
+assert.equal(quest.ready(s),true);
+assert.equal(quest.claim(s),true);
+assert.equal(quest.claim(s),false,'one basket per save');
+assert.deepEqual(quest.restore(JSON.parse(JSON.stringify(s))),s,'persist quest reward');
+assert.equal(quest.restore({damiao:true,claimed:true}).claimed,false,'corrupted saves cannot claim unearned rewards');
+assert.deepEqual(quest.restore(undefined),quest.fresh(),'old V2 saves remain compatible');
+console.log('Capítulo 02: talk, market memory, harvest, one-time basket reward and backwards-compatible saves verified.');
