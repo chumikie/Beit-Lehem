@@ -234,7 +234,7 @@ function drawGeminiLocalPlaces(c,viewport){
 function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();const isHospital=place.tags.name==='Hospital Santa Lúcia';c.fillStyle=isHospital?'#b66d72':'#587960';if(isHospital){c.fillRect(x-3,y-.8,6,1.6);c.fillRect(x-.8,y-3,1.6,6);}else{c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();}if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
 function drawPin(c,m,i,time,miniMode=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
  c.save();c.translate(p[0],p[1]);const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
-function drawPlayer(c,time){c.save();c.translate(player.x,player.y);const desktopScale=matchMedia('(min-width:801px)').matches?.97:1.1;c.scale(desktopScale,desktopScale);const bob=player.moving&&!reduce?Math.sin(time*17)*1.3:0,leg=player.moving?Math.sin(time*17)*2:0;const face=player.dir;
+function drawPlayer(c,time){c.save();c.translate(player.x,player.y);const desktopScale=matchMedia('(min-width:801px)').matches?.72:1.1;c.scale(desktopScale,desktopScale);const bob=player.moving&&!reduce?Math.sin(time*17)*1.3:0,leg=player.moving?Math.sin(time*17)*2:0;const face=player.dir;
  c.fillStyle='#264a3630';c.beginPath();c.ellipse(0,7,9,4,0,0,Math.PI*2);c.fill();c.translate(0,bob);roundRect(c,-7,0,5,7+leg,1.5,'#5c6554');roundRect(c,2,0,5,7-leg,1.5,'#5c6554');roundRect(c,-8,-12,16,16,5,'#f0cf7e','#c4a75e');roundRect(c,face<0?5:-10,-10,6,13,2,'#a26748');roundRect(c,-6,-25,12,14,5,'#e9c6a0');c.fillStyle='#554a34';c.fillRect(face<0?-5:2,-19,1.5,2.2);c.fillStyle='#d9b96c';c.beginPath();c.ellipse(0,-24,12,4,0,0,Math.PI*2);c.fill();roundRect(c,-7,-33,14,10,4,'#e8ce8c');c.fillStyle='#8c9c62';c.fillRect(-7,-26,14,2.4);c.fillStyle='#f5e3af';c.fillRect(-4,-10,3,5);c.restore();}
 function drawFlowers(c,left,right,top,bottom){
  for(let gx=Math.floor(left/65);gx<right/65;gx++)for(let gy=Math.floor(top/65);gy<bottom/65;gy++){
@@ -662,6 +662,9 @@ function drawStreetLife(c,time,view){
   }
   residentMotion.present(person,elapsed,reduce);
   if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
+  // Keep body, props, gestures and conversation markers in one coherent desktop scale.
+  c.save();
+  if(matchMedia('(min-width:801px)').matches){c.translate(person.x,person.y);c.scale(.72,.72);c.translate(-person.x,-person.y);}
   if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
   if(person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
@@ -713,6 +716,7 @@ function drawStreetLife(c,time,view){
    roundRect(c,person.x-width/2,person.y-(person.secondary?54:58),width,13,5,'#fffcf1ee','#b4c2a1');
    c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(person.def.name,person.x,person.y-(person.secondary?47.5:51.5));
   }
+  c.restore();
  }
 }
 function drawStreetPets(c,time,view){
@@ -776,7 +780,7 @@ function drawGeology(c,view){
  }
 }
 function drawGuide(c,time){
- c.save();c.translate(guide.x,guide.y);c.scale(.91,.91);
+ c.save();c.translate(guide.x,guide.y);c.scale(matchMedia('(min-width:801px)').matches?.68:.91,matchMedia('(min-width:801px)').matches?.68:.91);
  const bob=reduce?0:Math.sin(time*2.1)*1.2;
  c.fillStyle='#2947372d';c.beginPath();c.ellipse(0,8,11,5,0,0,7);c.fill();
  c.translate(0,bob);roundRect(c,-7,1,5,7,2,'#5b6474');roundRect(c,2,1,5,7,2,'#5b6474');
