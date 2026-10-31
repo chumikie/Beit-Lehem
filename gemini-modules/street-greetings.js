@@ -9,7 +9,20 @@
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function create(graph){
   let active=null,last=-1,day=null,nextCheck=0;
+  let porches=[];
   const cooldown=new Map(),personal=new Map();
+  function setHouses(houses){
+   // Match the same sparse, illustrated residential doorsteps as central-blocks.
+   porches=Array.isArray(houses)?houses.filter(h=>
+    h&&['matriz','joao','clovis'].includes(h.centralBlock)&&h.w>=18&&h.seed%7===2&&Number.isFinite(h.x)&&Number.isFinite(h.y)
+   ).map(h=>({x:h.x,y:h.y})):[];
+   return porches.length;
+  }
+  function nearbyPorch(a,b){
+   const x=(a.x+b.x)/2,y=(a.y+b.y)/2;
+   return porches.some(h=>Math.hypot(h.x-x,h.y-y)<34&&
+     Math.hypot(h.x-a.x,h.y-a.y)<57&&Math.hypot(h.x-b.x,h.y-b.y)<57);
+  }
   function apply(people,now,clock){
    if(!Number.isFinite(now)||!Number.isFinite(clock?.minute))return[];
    if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();day=clock.day;}
@@ -18,7 +31,7 @@
    if(clock.minute<7*60||clock.minute>=20*60)active=null;
    if(active){
     const pair=active.ids.map(id=>people.find(p=>p.id===id));
-    if(pair.some(p=>!eligible(p))||now-active.start>=4.4){active=null;}
+    if(pair.some(p=>!eligible(p))||now-active.start>=(active.porch?5.2:4.4)){active=null;}
    }
    if(!active&&now>=nextCheck&&clock.minute>=7*60&&clock.minute<20*60){
     nextCheck=now+.4;
@@ -30,13 +43,13 @@
      // through buildings. No new connector or destination is invented.
      const road=graph?.route?.([a.x,a.y],[b.x,b.y]);
      if(!road||!Number.isFinite(road.distance)||road.distance>d*1.3+3)continue;
-     active={ids:[a.id,b.id],start:now};cooldown.set(k,now+55);
+     active={ids:[a.id,b.id],start:now,porch:nearbyPorch(a,b)};cooldown.set(k,now+55);
      for(const id of active.ids)personal.set(id,now+18);
      break outer;
     }
    }
    if(!active)return[];
-   const age=now-active.start,pair=active.ids.map(id=>people.find(p=>p.id===id));
+   const age=(now-active.start)*(active.porch?4.4/5.2:1),pair=active.ids.map(id=>people.find(p=>p.id===id));
    for(let i=0;i<2;i++){
     const person=pair[i],friend=pair[1-i];
     person.moment=null;person.walking=false;
@@ -52,11 +65,11 @@
       facing:stage==='turn'?outward:facing,intensity,
       stage:stage==='look'||stage==='wave'||stage==='turn'?'farewell':stage,
       react:stage==='chat'&&age>1.1&&age<2.5,spontaneous:true};
-    person.greeting={friend:friend.def?.name||friend.id,age,stage};
+    person.greeting={friend:friend.def?.name||friend.id,age,stage,nearPorch:active.porch};
    }
    return active.ids.slice();
   }
-  return{apply,snapshot:()=>active?{ids:active.ids.slice(),start:active.start}:null};
+  return{apply,setHouses,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch}:null};
  }
  return{LINKS,create};
 });
