@@ -416,16 +416,64 @@ function drawWildlife(c,time,viewport){
  }
 }
 function drawPedraLandscape(c,x,y){
- // Wide illustrated rock silhouette; NOT a surveyed outcrop polygon or walkable trail.
+ // Illustrated mass of Pedra do Cordeiro, not an outcrop polygon or a walkable route.
+ // Keep the separate landmark overlay responsible for the cruzeiro and its label.
+ const distant=zoom<1.15;
  c.save();c.translate(x,y);
- c.fillStyle='#786c5b2b';c.beginPath();c.ellipse(0,24,98,22,0,0,Math.PI*2);c.fill();
- c.beginPath();c.moveTo(-94,19);c.lineTo(-77,-9);c.lineTo(-57,-19);c.lineTo(-37,-43);c.lineTo(-10,-54);c.lineTo(17,-39);c.lineTo(42,-37);c.lineTo(72,-13);c.lineTo(98,20);c.closePath();
- c.fillStyle='#a49b8b';c.fill();c.strokeStyle='#716b61';c.lineWidth=1.8;c.stroke();
- c.beginPath();c.moveTo(-77,10);c.lineTo(-53,-15);c.lineTo(-33,-21);c.lineTo(-12,-46);c.lineTo(9,-32);c.lineTo(-3,-5);c.lineTo(-30,18);c.closePath();c.fillStyle='#c6bdac';c.fill();
- c.beginPath();c.moveTo(15,-35);c.lineTo(45,-28);c.lineTo(70,-6);c.lineTo(87,18);c.lineTo(39,14);c.closePath();c.fillStyle='#8c887b';c.fill();
- c.strokeStyle='#786e61';c.lineWidth=1;c.beginPath();c.moveTo(-48,-12);c.lineTo(-35,1);c.lineTo(-29,18);c.moveTo(39,-18);c.lineTo(31,-3);c.stroke();
- for(const [px,py] of [[-87,15],[-69,16],[72,14],[91,20]]){
-  c.fillStyle='#69835b';c.beginPath();c.ellipse(px,py,9,4,0,0,Math.PI*2);c.fill();
+ // Ground contact and broad, irregular outline, kept legible at distant zoom.
+ c.fillStyle='#514b4226';c.beginPath();c.ellipse(1,23,106,20,-.03,0,Math.PI*2);c.fill();
+ const rock=c.createLinearGradient(-45,-56,58,26);
+ rock.addColorStop(0,'#c6bdab');rock.addColorStop(.49,'#a49a89');rock.addColorStop(1,'#756f64');
+ c.beginPath();
+ c.moveTo(-103,21);c.lineTo(-91,4);c.lineTo(-84,-14);c.lineTo(-67,-20);
+ c.lineTo(-55,-36);c.lineTo(-35,-42);c.lineTo(-19,-57);c.lineTo(-4,-64);
+ c.lineTo(17,-51);c.lineTo(35,-48);c.lineTo(51,-35);c.lineTo(69,-31);
+ c.lineTo(85,-11);c.lineTo(104,19);c.quadraticCurveTo(10,28,-103,21);
+ c.closePath();c.fillStyle=rock;c.fill();
+ c.strokeStyle='#716a5e';c.lineWidth=1.8;c.stroke();
+ // Sunlit left face, cool recessed central fracture and shaded right escarpment.
+ c.beginPath();c.moveTo(-91,9);c.lineTo(-68,-17);c.lineTo(-53,-28);
+ c.lineTo(-35,-34);c.lineTo(-16,-54);c.lineTo(-4,-58);
+ c.lineTo(-17,-29);c.lineTo(-31,-10);c.lineTo(-44,18);
+ c.lineTo(-87,19);c.closePath();c.fillStyle='#d8cdb8';c.fill();
+ c.beginPath();c.moveTo(-13,-50);c.lineTo(3,-57);c.lineTo(20,-43);
+ c.lineTo(11,-21);c.lineTo(24,-7);c.lineTo(4,22);
+ c.lineTo(-29,22);c.lineTo(-16,-6);c.lineTo(-21,-25);
+ c.closePath();c.fillStyle='#847b70';c.fill();
+ c.beginPath();c.moveTo(34,-42);c.lineTo(52,-30);c.lineTo(70,-24);
+ c.lineTo(91,-2);c.lineTo(102,19);c.lineTo(45,21);
+ c.lineTo(36,5);c.lineTo(42,-18);c.closePath();c.fillStyle='#77736b';c.fill();
+ c.beginPath();c.moveTo(19,-42);c.lineTo(31,-38);c.lineTo(24,-14);
+ c.lineTo(38,3);c.lineTo(31,21);c.lineTo(5,22);c.lineTo(17,-7);
+ c.lineTo(10,-25);c.closePath();c.fillStyle='#b7ac9c';c.fill();
+ // A few large seams survive a distant zoom; hairline cracks only appear nearby.
+ c.strokeStyle='#695f55';c.lineWidth=distant?1.5:1.1;c.lineCap='round';
+ c.beginPath();c.moveTo(-53,-24);c.lineTo(-47,-8);c.lineTo(-55,7);
+ c.moveTo(-10,-46);c.lineTo(-4,-33);c.lineTo(-13,-18);c.lineTo(-8,-5);
+ c.moveTo(51,-26);c.lineTo(44,-11);c.lineTo(54,5);c.stroke();
+ if(!distant){
+  c.strokeStyle='#e4d9c5';c.lineWidth=.85;c.beginPath();
+  c.moveTo(-76,-5);c.lineTo(-63,-19);c.moveTo(-29,-40);c.lineTo(-17,-49);
+  c.moveTo(20,-31);c.lineTo(26,-36);c.moveTo(58,-19);c.lineTo(72,-8);c.stroke();
+  c.fillStyle='#655e5360';
+  for(const [px,py,r] of [[-75,9,1.5],[-61,-6,1],[-36,8,1.6],[6,-16,1.2],[28,12,1.5],[64,6,1.7],[77,13,1]]){
+   c.beginPath();c.ellipse(px,py,r*2,r,0,0,Math.PI*2);c.fill();
+  }
+ }
+ // Caatinga vegetation: low scrub plus silhouettes of mandacaru and xique-xique.
+ for(const [px,py,w] of [[-98,20,9],[-79,19,7],[-65,20,6],[67,21,8],[88,22,10]]){
+  c.fillStyle='#627b55';c.beginPath();c.ellipse(px,py,w,4,0,0,Math.PI*2);c.fill();
+ }
+ c.strokeStyle='#4e7954';c.lineWidth=distant?2:2.3;c.lineCap='round';
+ for(const [px,py,h] of [[-83,15,14],[84,17,17]]){
+  c.beginPath();c.moveTo(px,py);c.lineTo(px,py-h);
+  c.moveTo(px,py-5);c.quadraticCurveTo(px-7,py-5,px-7,py-12);
+  c.moveTo(px,py-7);c.quadraticCurveTo(px+7,py-7,px+7,py-15);c.stroke();
+ }
+ if(!distant){
+  c.strokeStyle='#5a865a';c.lineWidth=1.7;c.beginPath();
+  c.moveTo(-64,20);c.lineTo(-64,11);c.moveTo(-64,16);c.lineTo(-69,13);
+  c.moveTo(70,21);c.lineTo(70,12);c.moveTo(70,17);c.lineTo(75,13);c.stroke();
  }
  c.restore();
 }
