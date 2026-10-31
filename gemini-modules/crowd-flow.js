@@ -5,12 +5,20 @@
  'use strict';
  function plan(world,isFair){
   const hour=(Number(world?.minute)||0)/60,day=Math.max(1,Math.floor(Number(world?.day)||1));
-  if(hour<7||hour>=20)return[];
-  const busy=hour<11||hour>=16,number=isFair?9:busy?8:7;
-  // The centre retains a passer-by, but other neighbours visit the Matriz,
-  // Rodoviária and different streets. Only existing mission/POI anchors used.
-  const hubs=['casa_varanda','escola_anita','xaviezao','bar_prosa','mercado','igreja','rodoviaria','missao:'+((day-1)%3),isFair?'mercado':'sonho_doce'];
-  return hubs.slice(0,number).map((hub,i)=>({id:'passeio-'+(i+1),variant:i+1,hub,def:null}));
+  if(hour<6||hour>=22)return[];
+  const busy=hour>=8&&hour<12||hour>=16&&hour<20;
+  const number=isFair?16:busy?14:hour>=20?7:hour<8?6:11;
+  // Rotate locations across the real, already verified Gemini POI anchors:
+  // neighbourhoods, schools, shops and quieter outer streets. Fixed IDs and
+  // anchor assignment within a day prevent flicker or mid-walk teleportation.
+  const hubs=['escola_anita','bar_prosa','rodoviaria','capela_luz',
+   'mercado','parque_sao_luis','hospital_santa_lucia','xaviezao',
+   'sagrada_familia','sonho_doce','igreja','prefeitura',
+   'pedra_cordeiro','missao:5','missao:2','missao:1'];
+  const rotation=(day-1)%hubs.length;
+  return Array.from({length:number},(_,i)=>({
+   id:'passeio-'+(i+1),variant:i+1,hub:hubs[(i+rotation)%hubs.length],def:null
+  }));
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
