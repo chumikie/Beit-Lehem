@@ -5630,6 +5630,12 @@ function blockedByHouse(x,y){
  }
  return false;
 }
+// Houses are artistic footprints, while road centerlines come from the mapped
+// network. A route may stay on its road when a decorative house overlaps it;
+// ordinary off-road movement still respects every house collision.
+function mayAdvanceOnMappedRoute(houseBlocked,routeActive,fromRoadDistance,toRoadDistance){
+ return !houseBlocked||(routeActive&&fromRoadDistance<=9&&toRoadDistance<=9);
+}
 function chapterUI(){
  const tasks=[
   'Encontre Lia perto do início da expedição e converse com ela.',
@@ -6861,8 +6867,12 @@ function move(dt,time){
    const vx=dx/length*speed*factor*dt,vy=dy/length*speed*factor*dt;
    const nx=Math.max(data.bounds[0],Math.min(data.bounds[2],player.x+vx));
    const ny=Math.max(data.bounds[1],Math.min(data.bounds[3],player.y+vy));
-   if(!blockedByHouse(nx,player.y))player.x=nx;
-   if(!blockedByHouse(player.x,ny))player.y=ny;
+   const onMappedRoute=!!waypoint;
+   const fromRoadDistance=road.d;
+   const xBlocked=blockedByHouse(nx,player.y);
+   if(mayAdvanceOnMappedRoute(xBlocked,onMappedRoute,fromRoadDistance,xBlocked?nearestRoad(nx,player.y).d:0))player.x=nx;
+   const yBlocked=blockedByHouse(player.x,ny);
+   if(mayAdvanceOnMappedRoute(yBlocked,onMappedRoute,fromRoadDistance,yBlocked?nearestRoad(player.x,ny).d:0))player.y=ny;
    if(dx)player.dir=dx>0?1:-1;
    step+=dt;
    if(step>(kawaiiState?.riding?.16:.34)){
