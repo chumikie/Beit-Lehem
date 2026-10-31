@@ -235,8 +235,17 @@ function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,tr
 function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoin='round';for(const r of roads){if(viewport&&r.bounds&&(r.bounds[2]<viewport.left||r.bounds[0]>viewport.right||r.bounds[3]<viewport.top||r.bounds[1]>viewport.bottom))continue;let major=/^(primary|secondary|trunk)/.test(r.tags.highway),trail=['path','footway','track','steps'].includes(r.tags.highway);
  const widths={primary:15,secondary:14,tertiary:11.7,primary_link:10.7,residential:9.6,unclassified:10,service:6.5,path:4.5,footway:4.5,track:5.5,steps:4};
  const width=widths[r.tags.highway]||10,materials={asphalt:'#cecfc1',paved:'#e2d9be',unpaved:'#d0c39a',paving_stones:'#e8d8ba',sett:'#deccaf'};
- path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b28';c.lineWidth=width+2;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
- if(major&&!simple){c.strokeStyle='#f2edcf88';c.lineWidth=.65;c.setLineDash([7,8]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c99';c.lineWidth=.85;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
+ path(c,r.p);
+ if(simple){c.strokeStyle='#91a079';c.lineWidth=width+2;c.stroke();c.strokeStyle='#e6ddbc';c.lineWidth=width;c.stroke();continue;}
+ // A narrow, translucent verge blends the paved surface into the grass.
+ // These strokes are decorative only: the mapped path and collision width stay intact.
+ c.strokeStyle=trail?'#9d9c7950':'#8a937452';c.lineWidth=width+2.5;c.stroke();
+ c.strokeStyle=trail?'#c8ba96a8':'#c5b99c8a';c.lineWidth=width+1.15;c.stroke();
+ c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
+ // Fine worn edges appear up close; never draw a heavy outline around a street.
+ if(z>=1.35&&!trail){c.strokeStyle='#fff4d526';c.lineWidth=Math.max(1,width-1.25);c.stroke();}
+ if(major){c.strokeStyle='#f2edcf88';c.lineWidth=.65;c.setLineDash([7,8]);c.stroke();c.setLineDash([]);}
+ if(trail){c.strokeStyle='#b5a87c99';c.lineWidth=.85;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
 function drawMappedPlaces(c,viewport){
  if(zoom<1.1)return;
