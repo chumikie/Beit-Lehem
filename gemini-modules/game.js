@@ -181,13 +181,24 @@ function house(c,b){
  c.save();c.translate(b.x,b.y);c.rotate(b.angle);
  const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
+ // A soft ground-contact shadow gives the house weight without inventing a
+ // surveyed footprint or adding another object to the mapped street.
+ c.fillStyle='#3b514321';c.beginPath();c.ellipse(1.5,b.h*.4,b.w*.57,b.h*.24,0,0,Math.PI*2);c.fill();
  roundRect(c,x+2,y+3,b.w+1,b.h+1,2,'#32503b20');
- roundRect(c,x,y,b.w,b.h,1.6,'#f2e6cb','#ad9e8560');
+ const walls=['#f2e6cb','#e9dfc7','#e7d8bd','#f3e7d3'];
+ roundRect(c,x,y,b.w,b.h,1.6,walls[b.seed%walls.length],'#ad9e8560');
  const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
  roundRect(c,x-1,y-(roofType===1?2:1),b.w+2,b.h*(roofType===2?.56:.62),roofType===1?2.5:1.5,roofs[b.color]);
  // Tiny overlapping tile rhythm and warm edge highlight: stylized, not surveyed facades.
  c.strokeStyle='#fff4d244';c.lineWidth=.65;
  if(!far)for(let row=2;row<b.h*.54;row+=roofType===2?4.2:3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
+ if(!far){
+  // A slight ridge, a shaded overhang and varied gable treatment separate
+  // individual roofs without changing their shape or size.
+  c.strokeStyle='#fff7db80';c.lineWidth=.85;c.beginPath();c.moveTo(x+1,y+.7);c.lineTo(x+b.w-1,y+.7);c.stroke();
+  c.strokeStyle='#704b4650';c.lineWidth=1.5;c.beginPath();c.moveTo(x-.7,y+b.h*.59);c.lineTo(x+b.w+.7,y+b.h*.59);c.stroke();
+  if(roofType===2){c.fillStyle='#fff1d075';c.beginPath();c.moveTo(x+b.w*.5,y+1.5);c.lineTo(x+b.w*.5,y+b.h*.48);c.lineTo(x+b.w*.55,y+b.h*.48);c.closePath();c.fill();}
+ }
  c.fillStyle='#fff4d9a8';c.fillRect(x,y+b.h*.57,b.w,1.2);
  if(flat){roundRect(c,x-1,y+b.h*.48,b.w+2,2.7,.5,'#f8e1bc','#ad9882');}
  if(shop){
@@ -196,9 +207,19 @@ function house(c,b){
   c.fillStyle='#f4d5a1';for(let k=0;k<3;k++)c.fillRect(x+2+k*(b.w-4)/3,y+b.h*.59,(b.w-4)/5,1.6);
  }else{
   const windowX=x+b.w*(doorLeft?.58:.2),doorX=x+b.w*(doorLeft?.17:.61);
-  c.fillStyle='#779d9a';c.fillRect(windowX,y+b.h*.7,3.2,2.7);
-  if(!far){c.strokeStyle='#f8f2df';c.lineWidth=.6;c.beginPath();c.moveTo(windowX+1.6,y+b.h*.7);c.lineTo(windowX+1.6,y+b.h*.7+2.7);c.stroke();}
+  const glass=['#779d9a','#83a8a4','#9eaca0'][b.seed%3];
+  c.fillStyle=glass;c.fillRect(windowX,y+b.h*.7,3.2,2.7);
+  if(!far){
+   c.strokeStyle='#f8f2df';c.lineWidth=.6;c.beginPath();c.moveTo(windowX+1.6,y+b.h*.7);c.lineTo(windowX+1.6,y+b.h*.7+2.7);c.stroke();
+   if(b.seed%3===0){c.fillStyle='#a1847188';c.fillRect(windowX-1,y+b.h*.7,1,3.2);c.fillRect(windowX+3.4,y+b.h*.7,1,3.2);}
+   if(b.w>19&&b.seed%5===0){const second=windowX+(doorLeft?-5.1:5.1);c.fillStyle=glass;c.fillRect(second,y+b.h*.7,2.5,2.7);}
+  }
   roundRect(c,doorX,y+b.h*.7,b.w*.19,b.h*.28,1,roofType===2?'#967e6c':'#8a7b67');
+  if(!far){
+   c.fillStyle='#f9edcfbd';c.fillRect(doorX+.7,y+b.h*.77,.7,1.3);
+   c.fillStyle='#a59b8066';c.fillRect(doorX-1,y+b.h*.96,b.w*.19+2,1.2);
+   if(b.seed%7===0){c.fillStyle='#e8c59b';c.fillRect(doorX-.6,y+b.h*.64,b.w*.19+1.2,1.2);}
+  }
  }
  c.fillStyle='#eabbb0';c.beginPath();c.arc(x+b.w+2,y+b.h*.78,1.8,0,7);c.fill();
  c.fillStyle='#67977b';c.beginPath();c.ellipse(x+b.w+2,y+b.h*.66,2.6,1.4,-.5,0,7);c.fill();
