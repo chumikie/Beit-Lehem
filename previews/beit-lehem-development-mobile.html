@@ -3529,19 +3529,25 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
    const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
-   const phase=((Number(world?.minute)||0)+i*11)%43;
-   const resting=phase<3&&(role==='senhora'||role==='vizinho'||role==='vitrine');
+   // Time-driven short routines: different villagers linger at different moments.
+   // Seconds provide a gentle rhythm without persistent schedules or timers.
+   const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
+   const phase=((cycle*.62+i*13)%59+59)%59;
+   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira');
+   const neighborWave=(role==='vizinho'||role==='senhora')&&phase>=11&&phase<14;
+   const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
    const waveAge=waving?3.8-(wavedUntil-now):0;
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
-    role==='feira'?(hour<12?'indo à feira':'voltando do passeio'):
-    role==='vitrine'?'olhando as vitrines':
-    role==='vizinho'?'descansando um instante':'caminhando pelo bairro';
-   const kind=role==='vitrine'?'read':role==='senhora'?'flower':'rest';
+    role==='feira'?(hour<12?'indo à feira':'voltando da feira'):
+    role==='vitrine'?'observando a vitrine':
+    role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
+   const kind=role==='vitrine'?'look':role==='senhora'?'rest':role==='feira'?'rest':'rest';
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
-    pause:resting||waving,moment:resting?{kind,strength:1}:null,
-    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:null,
+    pause:resting||waving||neighborWave,moment:resting?{kind,strength:Math.min(1,phase/.8,(5-phase)/.8)}:null,
+    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
+     neighborWave?{pose:'wave',facing:i%2?1:-1,intensity:waveStrength}:null,
     greeting:waving?{age:waveAge}:null};
   });
  }
@@ -4403,6 +4409,9 @@ function drawDailyGesture(c,person,time){
   c.moveTo(7,-9);c.quadraticCurveTo(10,-3,6,-2);
  }else if(moment.kind==='flower'){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-13,10,-16+sway*.35);
+ }else if(moment.kind==='look'){
+  // A quiet glance toward a storefront, without adding world geometry.
+  c.moveTo(7,-10);c.quadraticCurveTo(10,-14,9,-19+sway*.3);
  }else if(moment.kind==='read'||moment.kind==='sketch'){
   c.moveTo(-7,-9);c.quadraticCurveTo(-12,-13,-8,-16+sway);
  }else if(moment.kind==='ribbon'){
@@ -4671,7 +4680,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x+11,person.y-7);c.scale(.82,.82);
+   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
@@ -4684,7 +4693,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
    // Attached to the fictional character, not an invented vendor coordinate.
    const wiggle=reduce?0:Math.sin(time*2.5)*1.6;
-   c.save();c.translate(person.x+11,person.y-8);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
    c.fillStyle='#947458';c.beginPath();c.ellipse(3,8,10,3,0,0,7);c.fill();
    roundRect(c,-4,-5,15,11,2,'#b18b61','#806c4c');
    for(let k=0;k<3;k++){c.fillStyle=['#e7b85e','#c98c52','#97a66c'][k];c.beginPath();c.arc(-1+k*4,-7+wiggle*(k===1?1:0),2.5,0,7);c.fill();}

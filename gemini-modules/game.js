@@ -494,6 +494,9 @@ function drawDailyGesture(c,person,time){
   c.moveTo(7,-9);c.quadraticCurveTo(10,-3,6,-2);
  }else if(moment.kind==='flower'){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-13,10,-16+sway*.35);
+ }else if(moment.kind==='look'){
+  // A quiet glance toward a storefront, without adding world geometry.
+  c.moveTo(7,-10);c.quadraticCurveTo(10,-14,9,-19+sway*.3);
  }else if(moment.kind==='read'||moment.kind==='sketch'){
   c.moveTo(-7,-9);c.quadraticCurveTo(-12,-13,-8,-16+sway);
  }else if(moment.kind==='ribbon'){
@@ -762,7 +765,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x+11,person.y-7);c.scale(.82,.82);
+   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
@@ -775,7 +778,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
    // Attached to the fictional character, not an invented vendor coordinate.
    const wiggle=reduce?0:Math.sin(time*2.5)*1.6;
-   c.save();c.translate(person.x+11,person.y-8);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
    c.fillStyle='#947458';c.beginPath();c.ellipse(3,8,10,3,0,0,7);c.fill();
    roundRect(c,-4,-5,15,11,2,'#b18b61','#806c4c');
    for(let k=0;k<3;k++){c.fillStyle=['#e7b85e','#c98c52','#97a66c'][k];c.beginPath();c.arc(-1+k*4,-7+wiggle*(k===1?1:0),2.5,0,7);c.fill();}

@@ -111,19 +111,25 @@
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
    const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
-   const phase=((Number(world?.minute)||0)+i*11)%43;
-   const resting=phase<3&&(role==='senhora'||role==='vizinho'||role==='vitrine');
+   // Time-driven short routines: different villagers linger at different moments.
+   // Seconds provide a gentle rhythm without persistent schedules or timers.
+   const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
+   const phase=((cycle*.62+i*13)%59+59)%59;
+   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira');
+   const neighborWave=(role==='vizinho'||role==='senhora')&&phase>=11&&phase<14;
+   const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
    const waveAge=waving?3.8-(wavedUntil-now):0;
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
-    role==='feira'?(hour<12?'indo à feira':'voltando do passeio'):
-    role==='vitrine'?'olhando as vitrines':
-    role==='vizinho'?'descansando um instante':'caminhando pelo bairro';
-   const kind=role==='vitrine'?'read':role==='senhora'?'flower':'rest';
+    role==='feira'?(hour<12?'indo à feira':'voltando da feira'):
+    role==='vitrine'?'observando a vitrine':
+    role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
+   const kind=role==='vitrine'?'look':role==='senhora'?'rest':role==='feira'?'rest':'rest';
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
-    pause:resting||waving,moment:resting?{kind,strength:1}:null,
-    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:null,
+    pause:resting||waving||neighborWave,moment:resting?{kind,strength:Math.min(1,phase/.8,(5-phase)/.8)}:null,
+    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
+     neighborWave?{pose:'wave',facing:i%2?1:-1,intensity:waveStrength}:null,
     greeting:waving?{age:waveAge}:null};
   });
  }
