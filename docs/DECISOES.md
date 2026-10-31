@@ -18,3 +18,11 @@
 ## Crescimento a partir das referências Gemini
 
 A V2.27 permanece preservada como recuperação. A linha principal de desenvolvimento agora deriva do Gemini; seus bugs, compatibilidade de save e apresentação móvel precisam ser corrigidos gradualmente sem encolher o mundo. A malha OSM de 462 trechos permanece inalterada. As 17 propostas de nomes e superfícies locais permanecem desativadas até validação; nenhum rótulo pendente é exibido como dado confirmado. O estudo de fachadas cresce para seis zonas, mas as três novas zonas são estudos preliminares, sem confirmar nomes ou limites viários. O progresso já salvo nas três áreas antigas permanece válido. O snapshot do jogo em desenvolvimento é gerado por `scripts/build-development-preview.cjs` a partir do Gemini. Os módulos de `dist/` continuam disponíveis para portar correções.
+
+## Prévia pública de testes — autorização de 31/10/2026
+
+O autor autorizou disponibilizar Beit Lehem na internet para poder jogar e realizar inspeções visuais, sem exigir que o repositório de desenvolvimento se torne público. A branch `gh-pages` foi preparada apenas com `index.html` (cópia do HTML autônomo atual) e `.nojekyll`; nenhuma fonte, histórico de PR ou documentação privada é incluída nessa árvore de publicação.
+
+A ativação do GitHub Pages em **Settings → Pages → Deploy from a branch → gh-pages → /(root)** ainda depende da configuração administrativa pelo proprietário. Não considerar o site publicado até o URL abrir e o jogo carregar. Se o plano do GitHub não permitir Pages para repositório privado, consultar o autor antes de mudar a visibilidade do repositório inteiro.
+
+A PR #1 continua como ambiente de desenvolvimento sem merge. Atualizar `gh-pages` somente depois de reconstruir e testar a prévia e obter confirmação de que é a versão desejada para testes públicos. Não publicar dados pessoais, domicílios ou anexos privados.
