@@ -3992,7 +3992,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    if(person.social){
     person.social={...person.social,intensity:reduce?requested:v.socialStrength};
     v.lastSocial={...person.social};
-   }else if(!reduce&&v.socialStrength>.045&&v.lastSocial&&(person.walkBlend||0)<.3){
+   }else if(!reduce&&!person.walking&&v.socialStrength>.045&&v.lastSocial&&(person.walkBlend||0)<.3){
     person.social={...v.lastSocial,pose:'wave',stage:'farewell',react:false,intensity:v.socialStrength};
    }
 
@@ -4846,19 +4846,31 @@ function residentsInStreets(){
  });
 }
 function secondaryInStreets(primary=residentsInStreets()){
- return window.RoncadorSecondaryNeighbors.RESIDENTS.flatMap(def=>{
+ const placed=[];
+ for(const def of window.RoncadorSecondaryNeighbors.RESIDENTS){
   const duty=window.RoncadorSecondaryNeighbors.agenda(living,def);
-  if(!duty.present)return[];
+  if(!duty.present)continue;
   let at=duty.community&&duty.meeting?communityMeetingPoint(def.id,duty.hub):duty.travel?encounterRoadPoint(duty.encounter):walkingPoint(def.id,def.hub,def.variant);
-  // Separate neighbors from the established cast on the same mapped sidewalks.
-  if(at&&!duty.meeting&&primary.some(p=>Math.hypot(p.x-at.x,p.y-at.y)<30)){
+  // Reserve space against protagonists AND already placed neighbors.
+  // All alternatives are sampled from the same mapped road itinerary.
+  const occupied=primary.concat(placed);
+  if(at&&!duty.meeting&&occupied.some(p=>Math.hypot(p.x-at.x,p.y-at.y)<30)){
    const roadPath=streetPaths.get(def.id+':'+def.hub);
-   const next=roadPath?.length?window.RoncadorStreetLife.sample(roadPath,elapsed*(.72+def.variant*.07)+def.variant*12+63):null;
-   if(next&&primary.every(p=>Math.hypot(p.x-next.x,p.y-next.y)>21))at=next;
+   const base=elapsed*(.72+def.variant*.07)+def.variant*12;
+   const offsets=[63,90,117,145];
+   const next=roadPath?.length?offsets.map(delta=>window.RoncadorStreetLife.sample(roadPath,base+delta))
+    .find(candidate=>candidate&&occupied.every(p=>Math.hypot(p.x-candidate.x,p.y-candidate.y)>23)):null;
+   if(next)at=next;
   }
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at?.x,y:at?.y},elapsed,living);
-  return at?[residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day)]:[];
- });
+  if(!at)continue;
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
+  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day);
+  // A narrow junction may lack a free roadside spot; omit this frame
+  // rather than stacking two illustrated bodies over the same sidewalk.
+  if(!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19))continue;
+  placed.push(person);
+ }
+ return placed;
 }
 function drawSocialGesture(c,pose,time){
  if(!pose)return;
