@@ -4382,16 +4382,64 @@ function drawWildlife(c,time,viewport){
  }
 }
 function drawPedraLandscape(c,x,y){
- // Wide illustrated rock silhouette; NOT a surveyed outcrop polygon or walkable trail.
+ // Illustrated mass of Pedra do Cordeiro, not an outcrop polygon or a walkable route.
+ // Keep the separate landmark overlay responsible for the cruzeiro and its label.
+ const distant=zoom<1.15;
  c.save();c.translate(x,y);
- c.fillStyle='#786c5b2b';c.beginPath();c.ellipse(0,24,98,22,0,0,Math.PI*2);c.fill();
- c.beginPath();c.moveTo(-94,19);c.lineTo(-77,-9);c.lineTo(-57,-19);c.lineTo(-37,-43);c.lineTo(-10,-54);c.lineTo(17,-39);c.lineTo(42,-37);c.lineTo(72,-13);c.lineTo(98,20);c.closePath();
- c.fillStyle='#a49b8b';c.fill();c.strokeStyle='#716b61';c.lineWidth=1.8;c.stroke();
- c.beginPath();c.moveTo(-77,10);c.lineTo(-53,-15);c.lineTo(-33,-21);c.lineTo(-12,-46);c.lineTo(9,-32);c.lineTo(-3,-5);c.lineTo(-30,18);c.closePath();c.fillStyle='#c6bdac';c.fill();
- c.beginPath();c.moveTo(15,-35);c.lineTo(45,-28);c.lineTo(70,-6);c.lineTo(87,18);c.lineTo(39,14);c.closePath();c.fillStyle='#8c887b';c.fill();
- c.strokeStyle='#786e61';c.lineWidth=1;c.beginPath();c.moveTo(-48,-12);c.lineTo(-35,1);c.lineTo(-29,18);c.moveTo(39,-18);c.lineTo(31,-3);c.stroke();
- for(const [px,py] of [[-87,15],[-69,16],[72,14],[91,20]]){
-  c.fillStyle='#69835b';c.beginPath();c.ellipse(px,py,9,4,0,0,Math.PI*2);c.fill();
+ // Ground contact and broad, irregular outline, kept legible at distant zoom.
+ c.fillStyle='#514b4226';c.beginPath();c.ellipse(1,23,106,20,-.03,0,Math.PI*2);c.fill();
+ const rock=c.createLinearGradient(-45,-56,58,26);
+ rock.addColorStop(0,'#c6bdab');rock.addColorStop(.49,'#a49a89');rock.addColorStop(1,'#756f64');
+ c.beginPath();
+ c.moveTo(-103,21);c.lineTo(-91,4);c.lineTo(-84,-14);c.lineTo(-67,-20);
+ c.lineTo(-55,-36);c.lineTo(-35,-42);c.lineTo(-19,-57);c.lineTo(-4,-64);
+ c.lineTo(17,-51);c.lineTo(35,-48);c.lineTo(51,-35);c.lineTo(69,-31);
+ c.lineTo(85,-11);c.lineTo(104,19);c.quadraticCurveTo(10,28,-103,21);
+ c.closePath();c.fillStyle=rock;c.fill();
+ c.strokeStyle='#716a5e';c.lineWidth=1.8;c.stroke();
+ // Sunlit left face, cool recessed central fracture and shaded right escarpment.
+ c.beginPath();c.moveTo(-91,9);c.lineTo(-68,-17);c.lineTo(-53,-28);
+ c.lineTo(-35,-34);c.lineTo(-16,-54);c.lineTo(-4,-58);
+ c.lineTo(-17,-29);c.lineTo(-31,-10);c.lineTo(-44,18);
+ c.lineTo(-87,19);c.closePath();c.fillStyle='#d8cdb8';c.fill();
+ c.beginPath();c.moveTo(-13,-50);c.lineTo(3,-57);c.lineTo(20,-43);
+ c.lineTo(11,-21);c.lineTo(24,-7);c.lineTo(4,22);
+ c.lineTo(-29,22);c.lineTo(-16,-6);c.lineTo(-21,-25);
+ c.closePath();c.fillStyle='#847b70';c.fill();
+ c.beginPath();c.moveTo(34,-42);c.lineTo(52,-30);c.lineTo(70,-24);
+ c.lineTo(91,-2);c.lineTo(102,19);c.lineTo(45,21);
+ c.lineTo(36,5);c.lineTo(42,-18);c.closePath();c.fillStyle='#77736b';c.fill();
+ c.beginPath();c.moveTo(19,-42);c.lineTo(31,-38);c.lineTo(24,-14);
+ c.lineTo(38,3);c.lineTo(31,21);c.lineTo(5,22);c.lineTo(17,-7);
+ c.lineTo(10,-25);c.closePath();c.fillStyle='#b7ac9c';c.fill();
+ // A few large seams survive a distant zoom; hairline cracks only appear nearby.
+ c.strokeStyle='#695f55';c.lineWidth=distant?1.5:1.1;c.lineCap='round';
+ c.beginPath();c.moveTo(-53,-24);c.lineTo(-47,-8);c.lineTo(-55,7);
+ c.moveTo(-10,-46);c.lineTo(-4,-33);c.lineTo(-13,-18);c.lineTo(-8,-5);
+ c.moveTo(51,-26);c.lineTo(44,-11);c.lineTo(54,5);c.stroke();
+ if(!distant){
+  c.strokeStyle='#e4d9c5';c.lineWidth=.85;c.beginPath();
+  c.moveTo(-76,-5);c.lineTo(-63,-19);c.moveTo(-29,-40);c.lineTo(-17,-49);
+  c.moveTo(20,-31);c.lineTo(26,-36);c.moveTo(58,-19);c.lineTo(72,-8);c.stroke();
+  c.fillStyle='#655e5360';
+  for(const [px,py,r] of [[-75,9,1.5],[-61,-6,1],[-36,8,1.6],[6,-16,1.2],[28,12,1.5],[64,6,1.7],[77,13,1]]){
+   c.beginPath();c.ellipse(px,py,r*2,r,0,0,Math.PI*2);c.fill();
+  }
+ }
+ // Caatinga vegetation: low scrub plus silhouettes of mandacaru and xique-xique.
+ for(const [px,py,w] of [[-98,20,9],[-79,19,7],[-65,20,6],[67,21,8],[88,22,10]]){
+  c.fillStyle='#627b55';c.beginPath();c.ellipse(px,py,w,4,0,0,Math.PI*2);c.fill();
+ }
+ c.strokeStyle='#4e7954';c.lineWidth=distant?2:2.3;c.lineCap='round';
+ for(const [px,py,h] of [[-83,15,14],[84,17,17]]){
+  c.beginPath();c.moveTo(px,py);c.lineTo(px,py-h);
+  c.moveTo(px,py-5);c.quadraticCurveTo(px-7,py-5,px-7,py-12);
+  c.moveTo(px,py-7);c.quadraticCurveTo(px+7,py-7,px+7,py-15);c.stroke();
+ }
+ if(!distant){
+  c.strokeStyle='#5a865a';c.lineWidth=1.7;c.beginPath();
+  c.moveTo(-64,20);c.lineTo(-64,11);c.moveTo(-64,16);c.lineTo(-69,13);
+  c.moveTo(70,21);c.lineTo(70,12);c.moveTo(70,17);c.lineTo(75,13);c.stroke();
  }
  c.restore();
 }
@@ -5736,22 +5784,22 @@ const CULTURE={
  sagrada_familia:{title:'Igreja Matriz Sagrada Família · R. Florânea com Clóvis Bezerra',kind:'chapel',description:'Situada no encontro da Rua Florânea com a Rua Clóvis Bezerra, a Igreja Matriz Sagrada Família marca a chegada da rua residencial ao miolo central de Belém.',lead:'Registre uma lembrança da esquina da Rua Florânea com a Clóvis Bezerra:',choices:['O encontro da Rua Clóvis Bezerra com a Rua Florânea','A fachada acolhedora da Matriz Sagrada Família','O caminho entre a escola, a igreja e os Correios'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
  hospital_santa_lucia:{title:'Hospital Santa Lúcia & Vizinhança Sul',kind:'hall',description:'Ponto mapeado no OpenStreetMap logo atrás da Rua Clóvis Bezerra e da Rua Antônio Alfredo Guedes, compondo a paisagem cotidiana de quem mora perto do sem número residencial.',lead:'Guarde um registro desta quadra da vizinhança:',choices:['A tranquilidade das ruas ao redor do Hospital Santa Lúcia','O cruzamento da Antônio Alfredo Guedes com a Rua Nunes','A caminhada de volta para a calçada da Casa da Varanda'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
   parque_sao_luis:{title:'Parque Artesanal São Luís · Roda-Gigante & Criatividade Popular',kind:'amusement',description:'Inspirado no famoso Parque de Diversões São Luís (Lagoa de Serra, Belém/PB), construído pelo Sr. José Luís com materiais reciclados e sucata. A roda-gigante colorida e o carrossel giram trazendo alegria para toda a cidade!',lead:'Escolha o que viver no Parque Artesanal São Luís:',choices:['Dar uma volta na Roda-Gigante artesanal 🎡','Admirar a engenhosidade dos brinquedos reciclados ✨','Tirar uma foto kawaii com os amigos no parque 📸'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
- pedra_cordeiro:{title:'Mirante da Pedra do Cordeiro · Fronteira Agreste–Brejo',kind:'rockview',description:'A pouco mais de 1 km a oeste do centro de Belém, a formação granítica da Pedra do Cordeiro reúne um cruzeiro no topo, vegetação de transição com mandacarus e xique-xiques e vista panorâmica da Serra da Copaoba.',lead:'Qual detalhe do Mirante da Pedra do Cordeiro você quer guardar?',choices:['Subir até o Cruzeiro e sentir a brisa da Serra ⛰','Observar os mandacarus e xique-xiques floridos 🌵','Contemplar o pôr do sol dourado sobre Belém ☀'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
+ pedra_cordeiro:{title:'Mirante da Pedra do Cordeiro · Fronteira Agreste–Brejo',kind:'rockview',description:'A oeste do centro de Belém, a Pedra do Cordeiro reúne um cruzeiro no alto, mandacarus, xique-xiques e vista panorâmica da cidade e das serras do Brejo. A trilha existe na documentação municipal, mas seu percurso ainda não foi mapeado no jogo.',lead:'Escolha um detalhe para registrar no caderno de referências (sem simular uma visita):',choices:['Conhecer a história do cruzeiro no alto ⛰','Reconhecer mandacarus e xique-xiques na encosta 🌵','Imaginar a vista de Belém e das serras ☀'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
  capela_luz:{title:'Capela Nossa Senhora da Luz & Bairro da Luz',kind:'chapel',description:'No alto da Rua Mário Barbosa (acessada pela Rua Vicente Cado e Rua Abdias Machado), a Capela da Luz guarda a devoção histórica do bairro e a tradição festiva do Bloco da Paz Risca Faca na segunda de Carnaval.',lead:'Qual memória do Bairro da Luz você quer guardar?',choices:['A subida pelas ruas Vicente Cado e Abdias Machado','A arquitetura acolhedora da Capela na Rua Mário Barbosa','A alegria tradicional do Bloco da Paz Risca Faca'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'}
 };
 function culturePlace(id){return data.landmarks.find(l=>l.id===id)||data.cultureReferences?.find(l=>l.id===id);}
 function cultureWithinReach(place){return !!(active&&place?.p&&Math.hypot(player.x-place.p[0],player.y-place.p[1])<43);}
 function syncMarketToggle(){const toggle=$('marketAtmosphere'),automatic=isMarketMorning();toggle.hidden=cultureActiveId!=='mercado';toggle.disabled=automatic;toggle.setAttribute('aria-pressed',String(fairAtmosphere()));toggle.textContent=automatic?'☀ A feira aparece automaticamente na segunda do jogo':marketDay?'✿ Encerrar feira ilustrativa adicional':'✿ Imaginar um dia de feira agora';}
-function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const reachable=cultureWithinReach(place);
+function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const documentary=id==='pedra_cordeiro';const reachable=documentary||cultureWithinReach(place);
  $('cultureTitle').textContent=story.title;$('cultureDescription').textContent=story.description;
- $('cultureReliability').textContent=place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados': 'Apenas referência documental · sem posição no mapa';
+ $('cultureReliability').textContent=documentary?'Pino público de referência · contorno e entrada da trilha não verificados':place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados':'Apenas referência documental · sem posição no mapa';
  $('cultureActionLead').textContent=reachable?story.lead:story.choices.length?'Caminhe até o marcador para realizar esta atividade. Você pode marcar a rota abaixo.':story.lead;
  const options=$('cultureOptions');options.replaceChildren();for(const choice of story.choices){const button=document.createElement('button');button.type='button';button.textContent=choice;button.disabled=!reachable;button.setAttribute('aria-pressed',String(cultureNotes[id]===choice));button.onclick=()=>{cultureNotes[id]=choice;chapterUI();if(id==='mercado')recordFairQuest('mercado');
  const contactMatch=window.RoncadorBelemContacts?.CONTACTS.find(c=>c.hub===id);
  if(contactMatch)window.RoncadorBelemContacts.completeHangout(belemContacts,contactMatch.id);
  syncContactsUI();save();showCulture(id);notify('Uma nova memória de Belém foi guardada no caderno!');};options.append(button);}
- $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':'As escolhas são do jogador, não depoimentos de moradores.';
- $('cultureRoute').hidden=!place?.p||!active||reachable;
+ $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':documentary?'Registro documental: nenhuma caminhada ou chegada ao cruzeiro é simulada.':'As escolhas são do jogador, não depoimentos de moradores.';
+ $('cultureRoute').hidden=documentary||!place?.p||!active||reachable;
  const evidence=id==='igreja'?{archive:'archiveChurch',title:'Igreja da Conceição · 2007',caption:'Foto histórica: torre, relógio, três arcos e acabamento escuro. A ilustração se inspira nesses traços, mas não é uma planta fiel.',url:'https://commons.wikimedia.org/wiki/File:Igreja_N%C2%AA_Sr%C2%AA_da_Concei%C3%A7%C3%A3o_Bel%C3%A9m-PB.jpg'}:
   id==='mercado'?{archive:'archiveMarket',title:'Feira Livre de Belém · 2007',caption:'Foto histórica de toldos, cestos e comércio de rua; não documenta a fachada ou as barracas atuais do Mercado.',url:'https://commons.wikimedia.org/wiki/File:Feira_Livre_de_Bel%C3%A9m-PB.jpg'}:null;
  $('cultureEvidence').hidden=!evidence;
@@ -6376,7 +6424,7 @@ function clickWorld(e){
  }
  if(showGeology&&geologyPoints.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<9)){showGeologicalAtlas();return;}
  const scene=showScenery?scenicScenes.find(s=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(s,3),x,y)):null;
- if(scene){const place=culturePlace(scene.id);if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
+ if(scene){const place=culturePlace(scene.id);if(scene.id==='pedra_cordeiro')showCulture(scene.id);else if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
  const landmark=data.landmarks.find(l=>Math.hypot(x-l.p[0],y-l.p[1])<10);
  if(landmark){if(cultureWithinReach(landmark))showCulture(landmark.id);else setRoute(...landmark.p);return;}
  if(data.points.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<8)){showRealCity();return;}
@@ -6387,7 +6435,7 @@ $('blockFacadesToggle').onclick=()=>{detailedFacades=!detailedFacades;$('blockFa
 $('natureAction').onclick=()=>{if(gardenStep===3){gardenStep=0;rainCare=0;gardenHarvests++;living.notes.unshift({day:living.day,text:'Você concluiu uma colheita no canteiro imaginário.'});living.notes=living.notes.slice(0,12);recordFairQuest('colheita');notify('🌾 Uma colheita guardada! A terra já pode receber novo plantio.');}else{gardenStep++;rainCare=0;}showNature();save();note(587,0,.15);};
 $('wildlifeToggle').onclick=()=>{showWildlife=!showWildlife;showNature();save();};
 $('groundedFloraToggle').onclick=()=>{showGroundedFlora=!showGroundedFlora;showNature();save();};
-$('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};
+$('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p&&cultureActiveId!=='pedra_cordeiro'){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};
 $('goHomeVaranda').onclick=()=>{
  const home=data?{p:data.start}:null;
  if(!home)return;

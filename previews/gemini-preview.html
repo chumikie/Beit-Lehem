@@ -1275,7 +1275,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     for (const cx of [-20, -14]) {
       rounded(c, cx, 14, 4.2, 4.2, 1, '#d98a5f', '#8f5738');
     }
-    // Pingo the dog wagging tail on the sidewalk
+    // Bolt the dog wagging tail on the sidewalk
     const wag = Math.sin(time * 6) * 1.8;
     ellipse(c, 21, 19, 5.5, 2.1, '#3b4f3d33');
     rounded(c, 17, 13, 8.5, 5.5, 2.5, '#d49b6a', '#8c623e');
@@ -3257,7 +3257,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       <button class="dialog-close" data-close="kawaiiStyleDialog" aria-label="Fechar estúdio kawaii">×</button>
       <span class="eyebrow">✨ (o˘◡˘o) ✨ ESTÚDIO KAWAII DE BELÉM · VIBE TSULIPA⭐WORLD</span>
       <h2 id="kawaiiStyleTitle">Motinha Cozy, Sorda Quentinha & Estilo</h2>
-      <div class="tsulipa-banner"><span>🌸 <strong>Toque no seu personagem, no Pingo ou buzine (G)</strong> para soltar emojis e corações pelas ruas!</span><strong id="kawaiiStatsBadge">★ 0</strong></div>
+      <div class="tsulipa-banner"><span>🌸 <strong>Toque no seu personagem, no Bolt ou buzine (G)</strong> para soltar emojis e corações pelas ruas!</span><strong id="kawaiiStatsBadge">★ 0</strong></div>
       <h3>🛵 Escolha a pintura da sua Motinha Kawaii (Tecla X)</h3>
       <div id="motoSkinGrid" class="kawaii-style-grid"></div>
       <h3>👑 Escolha seu Acessório Kawaii (Inspirado no TsuLiPa⭐World)</h3>
@@ -3580,19 +3580,25 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
    const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
-   const phase=((Number(world?.minute)||0)+i*11)%43;
-   const resting=phase<3&&(role==='senhora'||role==='vizinho'||role==='vitrine');
+   // Time-driven short routines: different villagers linger at different moments.
+   // Seconds provide a gentle rhythm without persistent schedules or timers.
+   const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
+   const phase=((cycle*.62+i*13)%59+59)%59;
+   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira');
+   const neighborWave=(role==='vizinho'||role==='senhora')&&phase>=11&&phase<14;
+   const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
    const waveAge=waving?3.8-(wavedUntil-now):0;
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
-    role==='feira'?(hour<12?'indo à feira':'voltando do passeio'):
-    role==='vitrine'?'olhando as vitrines':
-    role==='vizinho'?'descansando um instante':'caminhando pelo bairro';
-   const kind=role==='vitrine'?'read':role==='senhora'?'flower':'rest';
+    role==='feira'?(hour<12?'indo à feira':'voltando da feira'):
+    role==='vitrine'?'observando a vitrine':
+    role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
+   const kind=role==='vitrine'?'look':role==='senhora'?'rest':role==='feira'?'rest':'rest';
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
-    pause:resting||waving,moment:resting?{kind,strength:1}:null,
-    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:null,
+    pause:resting||waving||neighborWave,moment:resting?{kind,strength:Math.min(1,phase/.8,(5-phase)/.8)}:null,
+    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
+     neighborWave?{pose:'wave',facing:i%2?1:-1,intensity:waveStrength}:null,
     greeting:waving?{age:waveAge}:null};
   });
  }
@@ -3683,11 +3689,14 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   function present(person,now,reduce){
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
    let v=visuals.get(person.id);
-   if(!v||now<v.last||now-v.last>10){v={gaze:desired,last:now};visuals.set(person.id,v);}
+   if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now};visuals.set(person.id,v);}
    const dt=Math.max(0,Math.min(.09,now-v.last));v.last=now;
    v.gaze=reduce?desired:v.gaze+(desired-v.gaze)*(1-Math.exp(-dt*10));
    person.gaze=v.gaze;
-   person.lean=reduce?0:Math.cos(person.heading||0)*.025*(person.walkBlend??Number(!!person.walking));
+   // Ease the body's slight lean as the walker slows, turns, or greets someone.
+   const targetLean=reduce?0:Math.cos(person.heading||0)*.025*(person.walkBlend??Number(!!person.walking));
+   v.lean=reduce?0:(v.lean||0)+(targetLean-(v.lean||0))*(1-Math.exp(-dt*7));
+   person.lean=v.lean;
    return person;
   }
   return{resolve,present,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
@@ -3993,6 +4002,40 @@ function note(freq=440,delay=0,length=.12){if(!sound)return;try{audio=audio||new
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
+function applyUserPublicPlaceCorrections(){
+ // Positions supplied by the author, checked against existing road/park geometry.
+ // Keep OSM source and private residential anchors untouched.
+ const positions=[
+  {id:'sagrada_familia',name:'Igreja Matriz Sagrada Família',p:[145,125]},
+  {id:'prefeitura',name:'Prefeitura Municipal',p:[-241.8,392]},
+  {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[106.5,95]},
+  {id:'pedra_cordeiro',name:'Mirante da Pedra do Cordeiro',geo:[-6.6984919,-35.5472188]},
+  {id:'parque_sao_luis',name:'Parque Artesanal São Luís',geo:[-6.7129197,-35.5237656]}
+ ];
+ for(const place of positions){
+  const landmark=data.landmarks.find(p=>p.id===place.id);
+  if(!landmark)continue;
+  const prior=landmark.p;
+  const projection=data.projection;
+  const corrected=place.geo?[(place.geo[1]-projection.originLon)*projection.metersPerDegreeLon,
+   (place.geo[0]-projection.originLat)*projection.metersPerDegreeLat]:place.p;
+  landmark.p=corrected.slice();
+  landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
+  for(const point of data.points){
+   if(point.tags?.name===landmark.name&&
+    Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
+    point.p=corrected.slice();
+   }
+  }
+ }
+ const plaza=data.cultureReferences?.find(p=>p.id==='praca_6_setembro');
+ if(plaza){
+  plaza.p=[139.7,145.5];
+  plaza.visualReference=plaza.p.slice();
+  plaza.positionStatus='user_reference_proposed';
+  plaza.artStatus='posição proposta no polígono de parque existente; desenho ainda conceitual';
+ }
+}
 function preprocess(){
  areas=data.areas;roads=data.roads;missions=data.missions;
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
@@ -4171,7 +4214,7 @@ function drawParkedMotosAndSorda(c,time,view){
  }
 }
 function drawPlayer(c,time){
- c.save();c.translate(player.x,player.y);c.scale(1.12,1.12);
+ c.save();c.translate(player.x,player.y);const spriteScale=characterDrawScale(.80);c.scale(spriteScale,spriteScale);
  const riding=!!kawaiiState?.riding;
  const skin=window.RoncadorKawaiiMoto.currentSkin(kawaiiState);
  const acc=window.RoncadorKawaiiMoto.currentAccessory(kawaiiState);
@@ -4338,6 +4381,68 @@ function drawWildlife(c,time,viewport){
   c.restore();
  }
 }
+function drawPedraLandscape(c,x,y){
+ // Illustrated mass of Pedra do Cordeiro, not an outcrop polygon or a walkable route.
+ // Keep the separate landmark overlay responsible for the cruzeiro and its label.
+ const distant=zoom<1.15;
+ c.save();c.translate(x,y);
+ // Ground contact and broad, irregular outline, kept legible at distant zoom.
+ c.fillStyle='#514b4226';c.beginPath();c.ellipse(1,23,106,20,-.03,0,Math.PI*2);c.fill();
+ const rock=c.createLinearGradient(-45,-56,58,26);
+ rock.addColorStop(0,'#c6bdab');rock.addColorStop(.49,'#a49a89');rock.addColorStop(1,'#756f64');
+ c.beginPath();
+ c.moveTo(-103,21);c.lineTo(-91,4);c.lineTo(-84,-14);c.lineTo(-67,-20);
+ c.lineTo(-55,-36);c.lineTo(-35,-42);c.lineTo(-19,-57);c.lineTo(-4,-64);
+ c.lineTo(17,-51);c.lineTo(35,-48);c.lineTo(51,-35);c.lineTo(69,-31);
+ c.lineTo(85,-11);c.lineTo(104,19);c.quadraticCurveTo(10,28,-103,21);
+ c.closePath();c.fillStyle=rock;c.fill();
+ c.strokeStyle='#716a5e';c.lineWidth=1.8;c.stroke();
+ // Sunlit left face, cool recessed central fracture and shaded right escarpment.
+ c.beginPath();c.moveTo(-91,9);c.lineTo(-68,-17);c.lineTo(-53,-28);
+ c.lineTo(-35,-34);c.lineTo(-16,-54);c.lineTo(-4,-58);
+ c.lineTo(-17,-29);c.lineTo(-31,-10);c.lineTo(-44,18);
+ c.lineTo(-87,19);c.closePath();c.fillStyle='#d8cdb8';c.fill();
+ c.beginPath();c.moveTo(-13,-50);c.lineTo(3,-57);c.lineTo(20,-43);
+ c.lineTo(11,-21);c.lineTo(24,-7);c.lineTo(4,22);
+ c.lineTo(-29,22);c.lineTo(-16,-6);c.lineTo(-21,-25);
+ c.closePath();c.fillStyle='#847b70';c.fill();
+ c.beginPath();c.moveTo(34,-42);c.lineTo(52,-30);c.lineTo(70,-24);
+ c.lineTo(91,-2);c.lineTo(102,19);c.lineTo(45,21);
+ c.lineTo(36,5);c.lineTo(42,-18);c.closePath();c.fillStyle='#77736b';c.fill();
+ c.beginPath();c.moveTo(19,-42);c.lineTo(31,-38);c.lineTo(24,-14);
+ c.lineTo(38,3);c.lineTo(31,21);c.lineTo(5,22);c.lineTo(17,-7);
+ c.lineTo(10,-25);c.closePath();c.fillStyle='#b7ac9c';c.fill();
+ // A few large seams survive a distant zoom; hairline cracks only appear nearby.
+ c.strokeStyle='#695f55';c.lineWidth=distant?1.5:1.1;c.lineCap='round';
+ c.beginPath();c.moveTo(-53,-24);c.lineTo(-47,-8);c.lineTo(-55,7);
+ c.moveTo(-10,-46);c.lineTo(-4,-33);c.lineTo(-13,-18);c.lineTo(-8,-5);
+ c.moveTo(51,-26);c.lineTo(44,-11);c.lineTo(54,5);c.stroke();
+ if(!distant){
+  c.strokeStyle='#e4d9c5';c.lineWidth=.85;c.beginPath();
+  c.moveTo(-76,-5);c.lineTo(-63,-19);c.moveTo(-29,-40);c.lineTo(-17,-49);
+  c.moveTo(20,-31);c.lineTo(26,-36);c.moveTo(58,-19);c.lineTo(72,-8);c.stroke();
+  c.fillStyle='#655e5360';
+  for(const [px,py,r] of [[-75,9,1.5],[-61,-6,1],[-36,8,1.6],[6,-16,1.2],[28,12,1.5],[64,6,1.7],[77,13,1]]){
+   c.beginPath();c.ellipse(px,py,r*2,r,0,0,Math.PI*2);c.fill();
+  }
+ }
+ // Caatinga vegetation: low scrub plus silhouettes of mandacaru and xique-xique.
+ for(const [px,py,w] of [[-98,20,9],[-79,19,7],[-65,20,6],[67,21,8],[88,22,10]]){
+  c.fillStyle='#627b55';c.beginPath();c.ellipse(px,py,w,4,0,0,Math.PI*2);c.fill();
+ }
+ c.strokeStyle='#4e7954';c.lineWidth=distant?2:2.3;c.lineCap='round';
+ for(const [px,py,h] of [[-83,15,14],[84,17,17]]){
+  c.beginPath();c.moveTo(px,py);c.lineTo(px,py-h);
+  c.moveTo(px,py-5);c.quadraticCurveTo(px-7,py-5,px-7,py-12);
+  c.moveTo(px,py-7);c.quadraticCurveTo(px+7,py-7,px+7,py-15);c.stroke();
+ }
+ if(!distant){
+  c.strokeStyle='#5a865a';c.lineWidth=1.7;c.beginPath();
+  c.moveTo(-64,20);c.lineTo(-64,11);c.moveTo(-64,16);c.lineTo(-69,13);
+  c.moveTo(70,21);c.lineTo(70,12);c.moveTo(70,17);c.lineTo(75,13);c.stroke();
+ }
+ c.restore();
+}
 function drawScenicLayer(c,viewport,details=false){
  if(!showScenery)return;
  for(const scene of scenicScenes){const [x,y]=scene.at;
@@ -4346,6 +4451,7 @@ function drawScenicLayer(c,viewport,details=false){
    // Thin tether connects the artistic position to the exact OSM reference dot.
    c.save();c.strokeStyle='#5b7b6680';c.lineWidth=.85;c.setLineDash([2.2,3.4]);c.beginPath();c.moveTo(x,y+15*scene.scale);c.lineTo(...scene.anchor);c.stroke();c.setLineDash([]);c.restore();
   }
+  if(scene.id==='pedra_cordeiro'&&details)drawPedraLandscape(c,x,y);
   c.save();c.translate(x,y);c.scale(scene.scale,scene.scale);
   const prop={p:[0,0],kind:scene.kind,name:scene.name};
   if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60);
@@ -4457,6 +4563,9 @@ function drawDailyGesture(c,person,time){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-8,12,-5+sway*.3);
  }else if(moment.kind==='flower'){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-13,10,-16+sway*.35);
+ }else if(moment.kind==='look'){
+  // A quiet glance toward a storefront, without adding world geometry.
+  c.moveTo(7,-10);c.quadraticCurveTo(10,-14,9,-19+sway*.3);
  }else if(moment.kind==='read'||moment.kind==='sketch'){
   c.moveTo(-7,-9);c.quadraticCurveTo(-12,-13,-8,-16+sway);
  }else if(moment.kind==='ribbon'){
@@ -4479,6 +4588,22 @@ function drawDailyGesture(c,person,time){
  }
  c.restore();
 }
+// Keep characters in proportion to the tiny mapped houses even at maximum zoom.
+// The same local transform holds faces, limbs and carried props together.
+function characterDrawScale(base){return base*(zoom<=2?1:1-.12*Math.min(1,(zoom-2)/1.5));}
+// NPCs share a smaller visual scale; the player and their vehicle remain unchanged.
+function residentDrawScale(base){return characterDrawScale(base)*.88;}
+function drawDistantResident(c,person){
+ // A tiny connected silhouette for the town-wide view, keeping the street legible.
+ c.save();c.translate(person.x,person.y);
+ const outfit=person.def?.tone||['#85a88f','#d6a16e','#b98c9d'][person.variant%3];
+ c.fillStyle='#465c4538';c.beginPath();c.ellipse(0,2,4.3,1.6,0,0,Math.PI*2);c.fill();
+ roundRect(c,-2.8,-7,5.6,8,2,outfit);
+ c.fillStyle=person.id==='teo'?'#c18f73':'#e6b797';
+ c.beginPath();c.arc(0,-9.3,3.25,0,Math.PI*2);c.fill();
+ c.fillStyle='#665449';c.beginPath();c.arc(0,-10.9,3.2,Math.PI,Math.PI*2);c.fill();
+ c.restore();
+}
 function drawKawaiiWalker(c,person,time){
  const phase=Number.isFinite(person.stridePhase)?person.stridePhase+person.variant:time*9+person.variant;
  const blend=person.walkBlend??Number(!!person.walking);
@@ -4488,7 +4613,7 @@ function drawKawaiiWalker(c,person,time){
  const feelings=named?living.people[person.id]:null,affection=named?affectionSnapshot(person.id):null;
  const gaze=Number.isFinite(person.gaze)?person.gaze:person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
  // Common human scale: leads remain expressive without dwarfing facades.
- c.save();c.translate(person.x,person.y);c.scale(named?1.20:.85,named?1.20:.85);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(named?.82:.67);c.scale(spriteScale,spriteScale);
  c.fillStyle='#3853442b';c.beginPath();c.ellipse(0,6.9,person.walking?8.1:8.5,person.walking?2.25:2.7,0,0,7);c.fill();c.translate(0,bob);
  if(!reduce)c.rotate(person.lean??0);
  const outfit=person.def?.tone||['#85a88f','#d6a16e','#b98c9d'][person.variant%3];
@@ -4562,7 +4687,7 @@ function drawSecondaryWalker(c,person,time){
  const blend=person.walkBlend??Number(!!person.walking);
  const anim=reduce?0:Math.sin(phase)*blend+Math.sin(time*2+person.variant)*(1-blend),step=reduce?0:Math.sin(phase)*1.85*blend;
  const outfit=person.def.tone;
- c.save();c.translate(person.x,person.y);c.scale(1.02,1.02);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.73);c.scale(spriteScale,spriteScale);
  c.fillStyle='#34544230';c.beginPath();c.ellipse(0,7.5,person.walking?7.8:8.1,person.walking?2.15:2.6,0,0,7);c.fill();
  c.translate(0,reduce?0:anim*.4);
  if(!reduce)c.rotate(person.lean??0);
@@ -4693,7 +4818,9 @@ function drawStreetLife(c,time,view){
   }
   residentMotion.present(person,elapsed,reduce);
   if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
-  if(person.secondary)drawSecondaryWalker(c,person,time);
+  // One representation per frame avoids ghost outlines at intermediate zoom.
+  if(zoom<1.15)drawDistantResident(c,person);
+  else if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
   if(zoom>=1.2&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
@@ -4706,11 +4833,11 @@ function drawStreetLife(c,time,view){
    c.roundRect(person.x-width/2,person.y-55,width,14,6);c.fill();c.stroke();
    c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText(label,person.x,person.y-45);c.restore();
   }
-  if(person.id==='bia'&&person.activity&&(person.activity.includes('lendo')||person.activity.includes('estudando')||person.encounter?.id==='caderno-na-feira')){
+  if(zoom>=1.2&&person.id==='bia'&&person.activity&&(person.activity.includes('lendo')||person.activity.includes('estudando')||person.encounter?.id==='caderno-na-feira')){
    // A page-turning pocket notebook follows Bia's fictional routine along the
    // mapped streets; no reading spot or bench is added at invented coordinates.
    const turn=!reduce&&Math.sin(time*1.75)>.83;
-   c.save();c.translate(person.x+9,person.y-10);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
    c.fillStyle='#547d91';c.beginPath();c.moveTo(-9,-6);c.quadraticCurveTo(-4,-9,0,-5);c.quadraticCurveTo(5,-9,9,-6);c.lineTo(9,4);c.quadraticCurveTo(4,1,0,4);c.quadraticCurveTo(-4,1,-9,4);c.closePath();c.fill();
    c.fillStyle='#fcf8e8';c.beginPath();c.moveTo(-7,-5);c.quadraticCurveTo(-3,-7,0,-3);c.lineTo(0,2);c.quadraticCurveTo(-4,0,-7,2);c.closePath();c.fill();
    c.beginPath();c.moveTo(0,-3);c.quadraticCurveTo(4,-7,7,-5);c.lineTo(7,2);c.quadraticCurveTo(3,0,0,2);c.closePath();c.fill();
@@ -4719,10 +4846,10 @@ function drawStreetLife(c,time,view){
    if(biaLetters.sealed){c.fillStyle='#f9d4d7';c.font='bold 7px system-ui';c.textAlign='center';c.fillText('♥',0,-12);}
    c.restore();
   }
-  if(person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
+  if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x+11,person.y-7);c.scale(.82,.82);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
@@ -4732,17 +4859,17 @@ function drawStreetLife(c,time,view){
    if(luciaGarden.claimed){c.fillStyle='#f5efd5';c.font='bold 8px system-ui';c.fillText('♥',-11,-17);}
    c.restore();
   }
-  if(person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
+  if(zoom>=1.2&&person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
    // Attached to the fictional character, not an invented vendor coordinate.
    const wiggle=reduce?0:Math.sin(time*2.5)*1.6;
-   c.save();c.translate(person.x+11,person.y-8);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
    c.fillStyle='#947458';c.beginPath();c.ellipse(3,8,10,3,0,0,7);c.fill();
    roundRect(c,-4,-5,15,11,2,'#b18b61','#806c4c');
    for(let k=0;k<3;k++){c.fillStyle=['#e7b85e','#c98c52','#97a66c'][k];c.beginPath();c.arc(-1+k*4,-7+wiggle*(k===1?1:0),2.5,0,7);c.fill();}
    c.fillStyle='#fff8e8';c.font='bold 6px system-ui';c.textAlign='center';c.fillText(marketMorning.claimed?'♥':'♪',3,-17);
    c.restore();
   }
-  if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
+  if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Damião!',person.x,person.y-71);
   }
   if(person.def&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<140&&zoom>1.2){
@@ -4752,24 +4879,85 @@ function drawStreetLife(c,time,view){
   }
  }
 }
+let boltMarketRoad=null;
+function boltCityPoint(){
+ if(boltMarketRoad===null){
+  const home=data.landmarks.find(p=>p.id==='casa_varanda');
+  const market=data.landmarks.find(p=>p.id==='mercado');
+  const route=home&&market&&pathfinder?.route(home.p,market.p);
+  // The final point is a POI connector, not necessarily a street: stay on road vertices.
+  const points=route?.points?.slice(0,-1);
+  const valid=points?.length>=2&&points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
+  boltMarketRoad=valid?points:false;
+ }
+ if(!boltMarketRoad)return walkingPoint('bolt','casa_varanda',5);
+ const clock=living.minute;
+ const going=clock>=8*60&&clock<9*60+15;
+ const returning=clock>=10*60&&clock<11*60+15;
+ const progress=going?(clock-8*60)/75:returning?1-(clock-10*60)/75:
+  clock>=9*60+15&&clock<10*60?1:0;
+ const points=boltMarketRoad;
+ let total=0;
+ for(let i=1;i<points.length;i++)total+=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
+ if(total<1)return walkingPoint('bolt','casa_varanda',5);
+ let remaining=Math.max(0,Math.min(1,progress))*total;
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.y-a.y);
+  if(remaining<=length||i===points.length-1){
+   const t=length?Math.min(1,remaining/length):0;
+   return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,walking:going||returning};
+  }
+  remaining-=length;
+ }
+ return {x:points[0].x,y:points[0].y,walking:false};
+}
+function boltRestingByGreen(at){
+ if(!at||at.walking)return false;
+ const nearby=(p,r)=>Math.hypot(p.x-at.x,p.y-at.y)<r;
+ return floraLayer.points.some(p=>['canopy','shade','flowerbed'].includes(p.kind)&&nearby(p,27))||
+  detailedFacades&&houses.some(h=>h.seed%7===2&&['matriz','joao','clovis'].includes(h.centralBlock)&&nearby(h,30));
+}
 function drawStreetPets(c,time,view){
- const candidates=[{id:'pingo',name:'Pingo 🐕',hub:'casa_varanda',variant:5,cat:false},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
+ const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'casa_varanda',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
-  const at=walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
+  const at=pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
+  const greenRest=pet.bolt&&boltRestingByGreen(at);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
-  const bounce=reduce?0:Math.sin(time*(pet.cat?3.7:5.2)+pet.variant)*.65;
+  const bounce=reduce?0:Math.sin(time*(greenRest?1.4:pet.cat?3.7:5.2)+pet.variant)*(greenRest?.2:.65);
   c.save();c.translate(at.x,at.y+bounce);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
-  const fur=pet.cat?'#f0d3ac':'#cd9870';
-  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*2+pet.variant)*2),9,-13);c.stroke();
+  const fur=pet.bolt?'#eee0c3':pet.cat?'#f0d3ac':'#cd9870';
+  if(zoom<1.15){
+   // At wide zoom, avoid subpixel eyes, ears and overlapping fine outlines.
+   c.strokeStyle='#8f765e';c.lineWidth=1.3;c.lineCap='round';
+   c.beginPath();c.moveTo(4,-3);c.quadraticCurveTo(9,-9,7,-11);c.stroke();
+   roundRect(c,-6,-7,12,8,3.5,fur,'#977861');
+   c.fillStyle=fur;c.beginPath();c.arc(-4,-7,3.6,0,Math.PI*2);c.fill();
+   if(pet.bolt){c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();}
+   c.restore();continue;
+  }
+  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*(greenRest?1.5:2)+pet.variant)*(greenRest?1:2)),9,-13);c.stroke();
   roundRect(c,-6,-7,12,9,4,fur,'#9c846b');
-  c.fillStyle=fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
+  c.fillStyle=pet.bolt?'#d7bb91':fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
+  if(pet.bolt){
+   // Bolt's pale coat, darker floppy ears and charcoal muzzle come from the
+   // author's photographs; the source photos stay outside the game/repository.
+   c.fillStyle='#6d5d55';c.beginPath();c.ellipse(-6.5,-8,2.2,4,-.3,0,Math.PI*2);c.fill();
+   c.fillStyle='#8d7868';c.beginPath();c.ellipse(-1,-7,2.6,3.2,.25,0,Math.PI*2);c.fill();
+   c.fillStyle='#aa998b';c.beginPath();c.ellipse(-4.8,-4.1,3.7,2.2,0,0,Math.PI*2);c.fill();
+   c.fillStyle='#393536';c.beginPath();c.arc(-7,-4.2,1.4,0,Math.PI*2);c.fill();
+   c.strokeStyle='#4c4740';c.lineWidth=1.2;c.beginPath();c.moveTo(-5,-1.9);c.lineTo(3,-1.9);c.stroke();
+  }
   if(pet.cat){c.beginPath();c.moveTo(-7,-9);c.lineTo(-7,-15);c.lineTo(-2,-11);c.moveTo(0,-11);c.lineTo(4,-15);c.lineTo(4,-8);c.fill();}
   else{roundRect(c,-8,-10,4,8,2,'#a47359');}
   c.fillStyle='#51483e';c.beginPath();c.arc(-5,-7,0.8,0,7);c.arc(-1,-7,0.8,0,7);c.fill();
   c.strokeStyle='#a77a67';c.lineWidth=.6;c.beginPath();c.moveTo(-3,-5);c.lineTo(-3,-3);c.stroke();
+  if(greenRest&&zoom>=1.15){
+   // Bolt quietly watches the plants during a natural stop on his street route.
+   c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
+  }
   if(pet.name&&zoom>1.2){
    roundRect(c,-18,-22,36,10,4,'#fff9ebee','#b89f7d');
    c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,-17);
@@ -4817,7 +5005,7 @@ function drawGeology(c,view){
  }
 }
 function drawGuide(c,time){
- c.save();c.translate(guide.x,guide.y);c.scale(.91,.91);
+ c.save();c.translate(guide.x,guide.y);const spriteScale=characterDrawScale(.73);c.scale(spriteScale,spriteScale);
  const bob=reduce?0:Math.sin(time*2.1)*1.2;
  c.fillStyle='#2947372d';c.beginPath();c.ellipse(0,8,11,5,0,0,7);c.fill();
  c.translate(0,bob);roundRect(c,-7,1,5,7,2,'#5b6474');roundRect(c,2,1,5,7,2,'#5b6474');
@@ -4879,7 +5067,17 @@ function render(time){
  drawStreetLife(ctx,time,{left,right,top,bottom});
  drawStreetPets(ctx,time,{left,right,top,bottom});
  for(let i=0;i<missions.length;i++)if(!pinsBehind.has(i))drawPin(ctx,missions[i],i,time);
- drawGuide(ctx,time);drawPlayer(ctx,time);for(const p of particles){ctx.globalAlpha=Math.min(1,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}ctx.globalAlpha=1;
+ // The guide and player use the same distant scale as the other residents.
+ const mapDetail=Math.max(0,Math.min(1,(zoom-.95)/.30));
+ if(mapDetail<1){
+  ctx.save();ctx.globalAlpha*=1-mapDetail;
+  drawDistantResident(ctx,{x:guide.x,y:guide.y,def:{tone:'#9fb8a1'},id:'guide'});
+  drawDistantResident(ctx,{x:player.x,y:player.y,def:{tone:'#d97854'},id:'player'});
+  ctx.strokeStyle='#fff9e4';ctx.lineWidth=1.8/zoom;ctx.beginPath();ctx.arc(player.x,player.y-5,8,0,Math.PI*2);ctx.stroke();
+  ctx.restore();
+ }
+ if(mapDetail>0){ctx.save();ctx.globalAlpha*=mapDetail;drawGuide(ctx,time);drawPlayer(ctx,time);ctx.restore();}
+ for(const p of particles){ctx.globalAlpha=Math.min(1,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}ctx.globalAlpha=1;
  for(const ep of emojiParticles){
   ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,ep.life/.45));
   ctx.font=Math.round(ep.size)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
@@ -5568,7 +5766,7 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  else if(nearSecondary)$('interact').innerHTML='✿ Conversar com '+nearSecondary.def.name+' <kbd>E</kbd>';
  else if(near>=0)$('interact').innerHTML='✦ '+missions[near].title+' <kbd>E</kbd>';
  else if(nearCulture)$('interact').innerHTML='✿ Visitar '+nearCulture.name+' <kbd>E</kbd>';
- $('cozyGuideHint').hidden=!active||guideDistance>85||guideDistance<32||anyDialog();
+ $('cozyGuideHint').hidden=!active||zoom<1.15||guideDistance>85||guideDistance<32||Math.abs((guide.x-camera.x)*zoom)>w/2-30||Math.abs((guide.y-camera.y)*zoom)>h/2-30||anyDialog();
  const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();syncContactsUI();syncKawaiiUI();observeMarketChange(secondarySnapshot);drawMini();}
 function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('Chegue perto de um marco dourado para guardar o selo.');return;}const i=near,m=missions[i];collected.add(i);target=missions.findIndex((_,j)=>!collected.has(j));for(let n=0;n<22;n++){const a=n/22*Math.PI*2;particles.push({x:m.p[0],y:m.p[1]-16,vx:Math.cos(a)*18,vy:Math.sin(a)*18-10,life:1.5,r:1.2+hash(n)*2,color:n%2?'#f3d586':'#faf0be'});}note(523,0,.2);note(659,.1,.2);note(784,.2,.35);notify('Selo '+(collected.size)+'/6 · '+m.name+' — '+m.description);renderMissions();updateUI();save();if(collected.size===missions.length)setTimeout(()=>{if(collected.size===6){$('winTime').textContent=formatTime(elapsed);showDialog('winDialog');note(1046,.1,.4);}},950);}
 function gpsFor(p){const proj=data.projection;return{lat:proj.originLat-p[1]/proj.metersPerDegreeLat,lon:proj.originLon+p[0]/proj.metersPerDegreeLon};}
@@ -5586,22 +5784,22 @@ const CULTURE={
  sagrada_familia:{title:'Igreja Matriz Sagrada Família · R. Florânea com Clóvis Bezerra',kind:'chapel',description:'Situada no encontro da Rua Florânea com a Rua Clóvis Bezerra, a Igreja Matriz Sagrada Família marca a chegada da rua residencial ao miolo central de Belém.',lead:'Registre uma lembrança da esquina da Rua Florânea com a Clóvis Bezerra:',choices:['O encontro da Rua Clóvis Bezerra com a Rua Florânea','A fachada acolhedora da Matriz Sagrada Família','O caminho entre a escola, a igreja e os Correios'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
  hospital_santa_lucia:{title:'Hospital Santa Lúcia & Vizinhança Sul',kind:'hall',description:'Ponto mapeado no OpenStreetMap logo atrás da Rua Clóvis Bezerra e da Rua Antônio Alfredo Guedes, compondo a paisagem cotidiana de quem mora perto do sem número residencial.',lead:'Guarde um registro desta quadra da vizinhança:',choices:['A tranquilidade das ruas ao redor do Hospital Santa Lúcia','O cruzamento da Antônio Alfredo Guedes com a Rua Nunes','A caminhada de volta para a calçada da Casa da Varanda'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
   parque_sao_luis:{title:'Parque Artesanal São Luís · Roda-Gigante & Criatividade Popular',kind:'amusement',description:'Inspirado no famoso Parque de Diversões São Luís (Lagoa de Serra, Belém/PB), construído pelo Sr. José Luís com materiais reciclados e sucata. A roda-gigante colorida e o carrossel giram trazendo alegria para toda a cidade!',lead:'Escolha o que viver no Parque Artesanal São Luís:',choices:['Dar uma volta na Roda-Gigante artesanal 🎡','Admirar a engenhosidade dos brinquedos reciclados ✨','Tirar uma foto kawaii com os amigos no parque 📸'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
- pedra_cordeiro:{title:'Mirante da Pedra do Cordeiro · Fronteira Agreste–Brejo',kind:'rockview',description:'A pouco mais de 1 km a oeste do centro de Belém, a formação granítica da Pedra do Cordeiro reúne um cruzeiro no topo, vegetação de transição com mandacarus e xique-xiques e vista panorâmica da Serra da Copaoba.',lead:'Qual detalhe do Mirante da Pedra do Cordeiro você quer guardar?',choices:['Subir até o Cruzeiro e sentir a brisa da Serra ⛰','Observar os mandacarus e xique-xiques floridos 🌵','Contemplar o pôr do sol dourado sobre Belém ☀'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
+ pedra_cordeiro:{title:'Mirante da Pedra do Cordeiro · Fronteira Agreste–Brejo',kind:'rockview',description:'A oeste do centro de Belém, a Pedra do Cordeiro reúne um cruzeiro no alto, mandacarus, xique-xiques e vista panorâmica da cidade e das serras do Brejo. A trilha existe na documentação municipal, mas seu percurso ainda não foi mapeado no jogo.',lead:'Escolha um detalhe para registrar no caderno de referências (sem simular uma visita):',choices:['Conhecer a história do cruzeiro no alto ⛰','Reconhecer mandacarus e xique-xiques na encosta 🌵','Imaginar a vista de Belém e das serras ☀'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
  capela_luz:{title:'Capela Nossa Senhora da Luz & Bairro da Luz',kind:'chapel',description:'No alto da Rua Mário Barbosa (acessada pela Rua Vicente Cado e Rua Abdias Machado), a Capela da Luz guarda a devoção histórica do bairro e a tradição festiva do Bloco da Paz Risca Faca na segunda de Carnaval.',lead:'Qual memória do Bairro da Luz você quer guardar?',choices:['A subida pelas ruas Vicente Cado e Abdias Machado','A arquitetura acolhedora da Capela na Rua Mário Barbosa','A alegria tradicional do Bloco da Paz Risca Faca'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'}
 };
 function culturePlace(id){return data.landmarks.find(l=>l.id===id)||data.cultureReferences?.find(l=>l.id===id);}
 function cultureWithinReach(place){return !!(active&&place?.p&&Math.hypot(player.x-place.p[0],player.y-place.p[1])<43);}
 function syncMarketToggle(){const toggle=$('marketAtmosphere'),automatic=isMarketMorning();toggle.hidden=cultureActiveId!=='mercado';toggle.disabled=automatic;toggle.setAttribute('aria-pressed',String(fairAtmosphere()));toggle.textContent=automatic?'☀ A feira aparece automaticamente na segunda do jogo':marketDay?'✿ Encerrar feira ilustrativa adicional':'✿ Imaginar um dia de feira agora';}
-function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const reachable=cultureWithinReach(place);
+function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const documentary=id==='pedra_cordeiro';const reachable=documentary||cultureWithinReach(place);
  $('cultureTitle').textContent=story.title;$('cultureDescription').textContent=story.description;
- $('cultureReliability').textContent=place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados': 'Apenas referência documental · sem posição no mapa';
+ $('cultureReliability').textContent=documentary?'Pino público de referência · contorno e entrada da trilha não verificados':place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados':'Apenas referência documental · sem posição no mapa';
  $('cultureActionLead').textContent=reachable?story.lead:story.choices.length?'Caminhe até o marcador para realizar esta atividade. Você pode marcar a rota abaixo.':story.lead;
  const options=$('cultureOptions');options.replaceChildren();for(const choice of story.choices){const button=document.createElement('button');button.type='button';button.textContent=choice;button.disabled=!reachable;button.setAttribute('aria-pressed',String(cultureNotes[id]===choice));button.onclick=()=>{cultureNotes[id]=choice;chapterUI();if(id==='mercado')recordFairQuest('mercado');
  const contactMatch=window.RoncadorBelemContacts?.CONTACTS.find(c=>c.hub===id);
  if(contactMatch)window.RoncadorBelemContacts.completeHangout(belemContacts,contactMatch.id);
  syncContactsUI();save();showCulture(id);notify('Uma nova memória de Belém foi guardada no caderno!');};options.append(button);}
- $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':'As escolhas são do jogador, não depoimentos de moradores.';
- $('cultureRoute').hidden=!place?.p||!active||reachable;
+ $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':documentary?'Registro documental: nenhuma caminhada ou chegada ao cruzeiro é simulada.':'As escolhas são do jogador, não depoimentos de moradores.';
+ $('cultureRoute').hidden=documentary||!place?.p||!active||reachable;
  const evidence=id==='igreja'?{archive:'archiveChurch',title:'Igreja da Conceição · 2007',caption:'Foto histórica: torre, relógio, três arcos e acabamento escuro. A ilustração se inspira nesses traços, mas não é uma planta fiel.',url:'https://commons.wikimedia.org/wiki/File:Igreja_N%C2%AA_Sr%C2%AA_da_Concei%C3%A7%C3%A3o_Bel%C3%A9m-PB.jpg'}:
   id==='mercado'?{archive:'archiveMarket',title:'Feira Livre de Belém · 2007',caption:'Foto histórica de toldos, cestos e comércio de rua; não documenta a fachada ou as barracas atuais do Mercado.',url:'https://commons.wikimedia.org/wiki/File:Feira_Livre_de_Bel%C3%A9m-PB.jpg'}:null;
  $('cultureEvidence').hidden=!evidence;
@@ -6191,11 +6389,11 @@ function clickWorld(e){
   notify('✨ (o˘◡˘o) ✨ Prontinho para explorar Belém! Aperte X para a Motinha Kawaii ou G para buzinar!');
   return;
  }
- const pingoAt=walkingPoint('pingo','casa_varanda',5);
- if(pingoAt&&Math.hypot(x-pingoAt.x,y-pingoAt.y)<20){
-  spawnEmojiBurst(pingoAt.x,pingoAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
+ const boltAt=boltCityPoint();
+ if(boltAt&&Math.hypot(x-boltAt.x,y-boltAt.y)<20){
+  spawnEmojiBurst(boltAt.x,boltAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
   note(659,0,.09);note(880,.09,.13);
-  notify('🐕 💕 Pingo abanou o rabo todo feliz na calçada da Rua Clóvis Bezerra!');
+  notify(boltRestingByGreen(boltAt)?'🐕 🌿 Bolt descansou um instante perto das plantas e recebeu seu carinho!':'🐕 💕 Bolt abanou o rabo todo feliz com seu carinho!');
   return;
  }
  if(Math.hypot(x-guide.x,y-guide.y)<22&&Math.hypot(player.x-guide.x,player.y-guide.y)<32){talkGuide();return;}
@@ -6226,7 +6424,7 @@ function clickWorld(e){
  }
  if(showGeology&&geologyPoints.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<9)){showGeologicalAtlas();return;}
  const scene=showScenery?scenicScenes.find(s=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(s,3),x,y)):null;
- if(scene){const place=culturePlace(scene.id);if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
+ if(scene){const place=culturePlace(scene.id);if(scene.id==='pedra_cordeiro')showCulture(scene.id);else if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
  const landmark=data.landmarks.find(l=>Math.hypot(x-l.p[0],y-l.p[1])<10);
  if(landmark){if(cultureWithinReach(landmark))showCulture(landmark.id);else setRoute(...landmark.p);return;}
  if(data.points.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<8)){showRealCity();return;}
@@ -6237,7 +6435,7 @@ $('blockFacadesToggle').onclick=()=>{detailedFacades=!detailedFacades;$('blockFa
 $('natureAction').onclick=()=>{if(gardenStep===3){gardenStep=0;rainCare=0;gardenHarvests++;living.notes.unshift({day:living.day,text:'Você concluiu uma colheita no canteiro imaginário.'});living.notes=living.notes.slice(0,12);recordFairQuest('colheita');notify('🌾 Uma colheita guardada! A terra já pode receber novo plantio.');}else{gardenStep++;rainCare=0;}showNature();save();note(587,0,.15);};
 $('wildlifeToggle').onclick=()=>{showWildlife=!showWildlife;showNature();save();};
 $('groundedFloraToggle').onclick=()=>{showGroundedFlora=!showGroundedFlora;showNature();save();};
-$('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};
+$('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p&&cultureActiveId!=='pedra_cordeiro'){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};
 $('goHomeVaranda').onclick=()=>{
  const home=data?{p:data.start}:null;
  if(!home)return;
@@ -6275,23 +6473,12 @@ $('goParqueSaoLuisBtn').onclick=()=>{
  if(!p)return;
  $('kawaiiStyleDialog').close();
  if(!active)start();
- kawaiiState.ferrisRides++;
- player.x=p.p[0];player.y=p.p[1];camera.x=player.x;camera.y=player.y;waypoint=null;
- spawnEmojiBurst(player.x,player.y-16,['🎡','✨','💖','🎉'],7);
- note(523,0,.12);note(659,.11,.12);note(784,.22,.18);
- updateUI();save();
- notify('🎡 Você chegou ao Parque Artesanal São Luís! Veja a Roda-Gigante girando!');
+ if(setRoute(p.p[0],p.p[1]))notify('🎡 Caminho até a região do Parque São Luís marcado nas vias existentes. O parque é uma memória local, não uma atração confirmada como aberta.');
 };
 $('goPedraCordeiroBtn').onclick=()=>{
- const p=data?.landmarks?.find(l=>l.id==='pedra_cordeiro');
- if(!p)return;
  $('kawaiiStyleDialog').close();
  if(!active)start();
- player.x=p.p[0];player.y=p.p[1];camera.x=player.x;camera.y=player.y;waypoint=null;
- spawnEmojiBurst(player.x,player.y-16,['⛰','🌵','✨','☀️'],6);
- note(587,0,.14);note(784,.12,.18);
- updateUI();save();
- notify('⛰ Você chegou ao Mirante da Pedra do Cordeiro, entre mandacarus e a brisa da Serra!');
+ notify('⛰ Pedra do Cordeiro localizada no mapa. A trilha até o mirante ainda não está mapeada; nenhum atalho foi criado.');
 };
 window.addEventListener('keydown',e=>{
  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||anyDialog()||e.repeat)return;
@@ -6370,7 +6557,7 @@ const embeddedGeology=$('embedded-geology-data');
 const geologyPromise=Promise.resolve().then(()=>embeddedGeology?JSON.parse(embeddedGeology.textContent):{points:[]}).catch(()=>({points:[]}));
 const embeddedTerrain=$('embedded-terrain-data');
 const terrainPromise=Promise.resolve().then(()=>embeddedTerrain?JSON.parse(embeddedTerrain.textContent):null).catch(()=>null);
-Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
+Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;applyUserPublicPlaceCorrections();terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
 // Small read-only inspection surface for diagnostics; does not mutate game state.
 Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
 })();
