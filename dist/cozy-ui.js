@@ -32,7 +32,7 @@
     <li><kbd>♡ Três amizades</kbd><span>Converse em dias diferentes com Damião, Lúcia e Bia para guardar uma lembrança de vizinhança</span></li>
     <li><kbd>☼ Cenas do dia</kbd><span>Visite Mercado, Rodoviária e Igreja em períodos do jogo para guardar um álbum de três momentos fictícios</span></li>
     <li><kbd>♧ Flora OSM</kbd><span>Ative uma camada vegetal decorativa restrita aos polígonos verdes registrados na base cartográfica</span></li>
-    <li><kbd>▦ Quadras</kbd><span>Compare fotos históricas com os acabamentos ilustrados em seis áreas do centro</span></li>
+    <li><kbd>▦ Quadras</kbd><span>Compare fotos históricas com seis estudos visuais de fachadas, três deles preliminares</span></li>
     <li><kbd>♥ Gestos</kbd><span>Converse e escolha uma pequena ajuda diária para Damião, Lúcia ou Bia</span></li>
     <li><kbd>🧺 Mercado</kbd><span>Conheça Damião, arrume três detalhes ilustrativos da banca e guarde uma lembrança de manhã</span></li>
     <li><kbd>🌷 Matriz</kbd><span>Depois da manhã com Damião, ajude Lúcia a preparar uma muda ilustrativa e escolha a memória que ficará no álbum</span></li>
@@ -45,7 +45,7 @@
 
   document.querySelector('.topbar nav').insertAdjacentHTML('beforeend', `
     <button id="realCity" class="real-city-button" type="button" title="Ver ruas e locais reais de Belém no mapa e no Google">◈ <span>Belém real</span></button>
-    <button id="centralBlocks" class="real-city-button block-button" type="button" title="Explorar as seis áreas ilustradas de fachadas, comparar referências e marcar trajetos">▦ <span>Quadras</span></button>
+    <button id="centralBlocks" class="real-city-button block-button" type="button" title="Explorar seis estudos visuais de fachadas e marcar os trechos visitados">▦ <span>Quadras</span></button>
     <button id="sceneryToggle" class="real-city-button scene-toggle" type="button" aria-pressed="true" title="Alternar as ilustrações de igrejas, mercado, praça e rodoviária no mapa">⌂ <span>Cenários</span></button>
     <button id="natureAtlas" class="real-city-button" type="button" title="Abrir o canteiro e as paisagens do Brejo">♧ <span>Vida no Brejo</span></button>
     <button id="observe" class="cozy-observe" type="button" title="Registrar uma paisagem no diário (F)" aria-label="Registrar uma paisagem no diário">✿ <span>Observar</span></button>

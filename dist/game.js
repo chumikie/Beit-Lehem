@@ -1349,7 +1349,7 @@ function renderAlbum(){
   window.RoncadorFacadeStudio.drawPreview(preview,'feira',lightPhase);
   const content=document.createElement('div');content.className='album-card-content';
   const title=document.createElement('strong');title.textContent='Um caderno de portas e janelas';
-  const description=document.createElement('span');description.textContent=facadeSketches.length>=6?'Você registrou seis áreas de estudo: Matriz, Feira, João Pessoa, Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado. As fachadas continuam sendo composições artísticas.':'Seu caderno preserva os três estudos iniciais e agora pode crescer até seis áreas: Matriz, Feira, João Pessoa, Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado.';
+  const description=document.createElement('span');description.textContent=facadeSketches.length>=6?'Você registrou seis estudos visuais: Matriz, Feira, Rua João Pessoa e três setores preliminares. As fachadas continuam sendo composições artísticas.':'Seu caderno preserva os três estudos iniciais e agora pode crescer até seis áreas: três referências centrais e três estudos visuais preliminares de outros setores.';
   content.append(title,description);article.append(preview,content);grid.append(article);
  }
 }

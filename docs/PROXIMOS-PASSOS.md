@@ -9,9 +9,9 @@
 
 ## Integração em andamento
 
-1. A camada local de 17 referências viárias acrescenta nomes de cinco trechos e propostas de piso sem editar as tags ou geometrias OSM. O mapa passa a exibir 91 nomes distintos, mantendo 86 nomes na fonte OSM.
-2. O estudo ilustrativo de fachadas cresce de três para seis áreas, incluindo Rua Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado. Os novos centros são calculados ao longo de geometrias viárias existentes, sem usar pontos residenciais.
-3. O snapshot `previews/beit-lehem-development.html` é gerado a partir de `dist/` e da V2.27, para comparar o jogo que estamos realmente construindo.
+1. As 17 propostas viárias do Gemini continuam pendentes de validação. Nenhum nome ou piso novo é exibido como confirmado; a fonte OSM mantém seus 86 nomes e 462 geometrias sem alteração.
+2. O estudo ilustrativo de fachadas cresce de três para seis áreas: três referências centrais e três setores visuais preliminares ancorados em geometrias existentes. Nomes e limites exatos dos três novos setores continuam pendentes.
+3. O snapshot `previews/beit-lehem-development.html` é gerado a partir dos módulos de `dist/` e da V2.27; ele é a versão de desenvolvimento, não a prévia Gemini.
 
 ## Próxima rodada
 
