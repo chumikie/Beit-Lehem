@@ -528,6 +528,8 @@ function drawDailyGesture(c,person,time){
 // Keep characters in proportion to the tiny mapped houses even at maximum zoom.
 // The same local transform holds faces, limbs and carried props together.
 function characterDrawScale(base){return base*(zoom<=2?1:1-.12*Math.min(1,(zoom-2)/1.5));}
+// NPCs share a smaller visual scale; the player and their vehicle remain unchanged.
+function residentDrawScale(base){return characterDrawScale(base)*.88;}
 function drawDistantResident(c,person){
  // A tiny connected silhouette for the town-wide view, keeping the street legible.
  c.save();c.translate(person.x,person.y);
@@ -548,7 +550,7 @@ function drawKawaiiWalker(c,person,time){
  const feelings=named?living.people[person.id]:null,affection=named?affectionSnapshot(person.id):null;
  const gaze=Number.isFinite(person.gaze)?person.gaze:person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
  // Common human scale: leads remain expressive without dwarfing facades.
- c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(named?.82:.67);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(named?.82:.67);c.scale(spriteScale,spriteScale);
  c.fillStyle='#3853442b';c.beginPath();c.ellipse(0,6.9,person.walking?8.1:8.5,person.walking?2.25:2.7,0,0,7);c.fill();c.translate(0,bob);
  if(!reduce)c.rotate(person.lean??0);
  const outfit=person.def?.tone||['#85a88f','#d6a16e','#b98c9d'][person.variant%3];
@@ -622,7 +624,7 @@ function drawSecondaryWalker(c,person,time){
  const blend=person.walkBlend??Number(!!person.walking);
  const anim=reduce?0:Math.sin(phase)*blend+Math.sin(time*2+person.variant)*(1-blend),step=reduce?0:Math.sin(phase)*1.85*blend;
  const outfit=person.def.tone;
- c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.73);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.73);c.scale(spriteScale,spriteScale);
  c.fillStyle='#34544230';c.beginPath();c.ellipse(0,7.5,person.walking?7.8:8.1,person.walking?2.15:2.6,0,0,7);c.fill();
  c.translate(0,reduce?0:anim*.4);
  if(!reduce)c.rotate(person.lean??0);
@@ -772,7 +774,7 @@ function drawStreetLife(c,time,view){
    // A page-turning pocket notebook follows Bia's fictional routine along the
    // mapped streets; no reading spot or bench is added at invented coordinates.
    const turn=!reduce&&Math.sin(time*1.75)>.83;
-   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
    c.fillStyle='#547d91';c.beginPath();c.moveTo(-9,-6);c.quadraticCurveTo(-4,-9,0,-5);c.quadraticCurveTo(5,-9,9,-6);c.lineTo(9,4);c.quadraticCurveTo(4,1,0,4);c.quadraticCurveTo(-4,1,-9,4);c.closePath();c.fill();
    c.fillStyle='#fcf8e8';c.beginPath();c.moveTo(-7,-5);c.quadraticCurveTo(-3,-7,0,-3);c.lineTo(0,2);c.quadraticCurveTo(-4,0,-7,2);c.closePath();c.fill();
    c.beginPath();c.moveTo(0,-3);c.quadraticCurveTo(4,-7,7,-5);c.lineTo(7,2);c.quadraticCurveTo(3,0,0,2);c.closePath();c.fill();
@@ -784,7 +786,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
@@ -797,7 +799,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
    // Attached to the fictional character, not an invented vendor coordinate.
    const wiggle=reduce?0:Math.sin(time*2.5)*1.6;
-   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
    c.fillStyle='#947458';c.beginPath();c.ellipse(3,8,10,3,0,0,7);c.fill();
    roundRect(c,-4,-5,15,11,2,'#b18b61','#806c4c');
    for(let k=0;k<3;k++){c.fillStyle=['#e7b85e','#c98c52','#97a66c'][k];c.beginPath();c.arc(-1+k*4,-7+wiggle*(k===1?1:0),2.5,0,7);c.fill();}
