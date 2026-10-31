@@ -4696,9 +4696,15 @@ function drawStreetLife(c,time,view){
   if(detail<1){c.save();c.globalAlpha*=1-detail;drawDistantResident(c,person);c.restore();}
   if(detail>0){c.save();c.globalAlpha*=detail;if(person.secondary)drawSecondaryWalker(c,person,time);else drawKawaiiWalker(c,person,time);c.restore();}
   if(zoom>=1.2&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
-   c.save();c.globalAlpha*=Math.min(1,person.greeting.age/.45,(3.8-person.greeting.age)/.45);
-   c.fillStyle='#fff8e8';c.strokeStyle='#bda78e';c.lineWidth=.8;c.beginPath();c.roundRect(person.x-14,person.y-55,28,14,6);c.fill();c.stroke();
-   c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText('Oi! ♡',person.x,person.y-45);c.restore();
+   const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
+   const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
+   const label=parting?'Até já! ♡':afternoon?'Boa tardinha ♡':'Oi! ♡';
+   const width=afternoon&&!parting?72:parting?46:28;
+   const opacity=Math.max(0,Math.min(1,greeting.age/.45,(4.4-greeting.age)/.35));
+   c.save();c.globalAlpha*=opacity;
+   c.fillStyle='#fff8e8';c.strokeStyle='#bda78e';c.lineWidth=.8;c.beginPath();
+   c.roundRect(person.x-width/2,person.y-55,width,14,6);c.fill();c.stroke();
+   c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText(label,person.x,person.y-45);c.restore();
   }
   if(zoom>=1.2&&person.id==='bia'&&person.activity&&(person.activity.includes('lendo')||person.activity.includes('estudando')||person.encounter?.id==='caderno-na-feira')){
    // A page-turning pocket notebook follows Bia's fictional routine along the
