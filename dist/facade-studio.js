@@ -120,6 +120,24 @@
     c.fillStyle='#fff2d4';for(let j=0;j<3;j++)c.fillRect(left+2.2+j*3,fy+1.2,1,1.2);
    }
   }
+  // The fair/commercial sectors gain depth in the glass and a shaded canopy
+  // without extra stalls, signs, buildings or a change to their road anchors.
+  if(style.shop&&faceH>=4){
+   c.fillStyle=night?'#ffe2a42e':'#ffffff48';
+   c.fillRect(left+2.7,front+2.1,Math.max(1,width*.16),Math.max(.8,faceH-3.5));
+   c.fillStyle='#5a524923';c.fillRect(left+1.5,front-.45,Math.max(1,width-3),.8);
+   if(seed%4===3){
+    c.fillStyle='#d5b391';
+    for(let q=0;q<3;q++)c.fillRect(left+width*.58+q*1.2,front+faceH-2.35,.75,.7);
+   }
+  }
+  // A discreet gate rhythm and a two-tone wall make residential fronts feel
+  // inhabited without claiming a specific address or putting props in the road.
+  if(style.block==='clovis'&&seed%3===0&&faceH>=4){
+   c.fillStyle='#839c97';c.fillRect(left+width*.53,front+2,width*.25,faceH-3.3);
+   c.strokeStyle='#f1e7d4';c.lineWidth=.45;
+   for(let q=1;q<4;q++){const px=left+width*.53+q*width*.05;c.beginPath();c.moveTo(px,front+2.4);c.lineTo(px,front+faceH-1.5);c.stroke();}
+  }
   // A little threshold composes each storefront without claiming a surveyed
   // sidewalk: all strokes remain INSIDE the existing illustrated house bounds.
   c.fillStyle=style.shop?'#d9c2a0':'#d5c9b0';
