@@ -859,97 +859,26 @@
 <script type="application/json" id="embedded-geology-data">{"source":"SGB Geoportal Geológico — Afloramentos, consulta por UF=PB e MUNICIPIO=Belém, 31/10/2026","url":"https://geoportal.sgb.gov.br/server/rest/services/geologia/afloramentos/MapServer/0","kind":"GPS point observations, not geological outcrop contours or public visit destinations","points":[{"id":253218,"site":"Lagoa de Curimataú.","type":"Lajedo ou Lajeiro","rock":"Migmatito com paleossoma granodiorítico","method":"GPS Manual pós 24/05/2000","lon":-35.5241666,"lat":-6.66638888,"p":[1414.44,-3380.91]},{"id":253220,"site":"Aprox. 600 m do trevo de Rua Nova em direção a Belém.","type":"Lajedo ou Lajeiro","rock":"Gnaisse granodiorítico, Granito","method":"GPS Manual pós 24/05/2000","lon":-35.5388888,"lat":-6.71055555,"p":[-213.25,1535.72]},{"id":253221,"site":"Entrada para Caiçara.","type":"Lajedo ou Lajeiro","rock":"Ortognaisse","method":"GPS Manual pós 24/05/2000","lon":-35.5288888,"lat":-6.67888888,"p":[892.36,-1989.41]},{"id":253222,"site":"Apróx. 4,3 Km da entrada de Caiçara.","type":"Lajedo ou Lajeiro","rock":"Granito","method":"GPS Manual pós 24/05/2000","lon":-35.5069444,"lat":-6.68111111,"p":[3318.54,-1742.03]},{"id":253223,"site":"Caiçara.","type":"Lajedo ou Lajeiro","rock":"Granodiorito gnáissico","method":"GPS Manual pós 24/05/2000","lon":-35.5,"lat":-6.65416666,"p":[4086.32,-4741.49]},{"id":253224,"site":"Alinorte.","type":"Lajedo ou Lajeiro","rock":"Ortognaisse","method":"GPS Manual pós 24/05/2000","lon":-35.5125,"lat":-6.68361111,"p":[2704.31,-1463.73]},{"id":253227,"site":"Entrada da cidade de Belém.","type":"Lajedo ou Lajeiro","rock":"Granito, Ortognaisse","method":"GPS Manual pós 24/05/2000","lon":-35.5344444,"lat":-6.70333333,"p":[278.13,731.74]},{"id":253228,"site":"Pedreira Serra do Cambucá.","type":"Pedreira","rock":"Ortognaisse granodiorítico, Pegmatito, Sienogranito","method":"GPS Manual pós 24/05/2000","lon":-35.5166666,"lat":-6.69111111,"p":[2243.65,-628.83]},{"id":253383,"site":"Faz. Ladeira de Pedra","type":"Lajedo ou Lajeiro","rock":"Granito","method":"GPS Manual pós 24/05/2000","lon":-35.5206388,"lat":-6.75258333,"p":[1804.48,6214.25]},{"id":253384,"site":"Faixa de Pista","type":"Corte de estrada","rock":"Biotita xisto","method":"GPS Manual pós 24/05/2000","lon":-35.5030555,"lat":-6.7675,"p":[3748.5,7874.78]},{"id":253385,"site":"Faz. Ladeira de Pedra","type":"Lajedo ou Lajeiro","rock":"Milonito granítico","method":"GPS Manual pós 24/05/2000","lon":-35.5215833,"lat":-6.75608333,"p":[1700.06,6603.87]},{"id":253432,"site":"Sul de Bélem","type":"Lajedo ou Lajeiro","rock":"Gnaisse","method":"GPS Manual pós 24/05/2000","lon":-35.5371388,"lat":-6.70447222,"p":[-19.77,858.52]},{"id":253449,"site":"Gamba","type":"Lajedo ou Lajeiro","rock":"Leucogranito, Ortognaisse","method":"GPS Manual pós 24/05/2000","lon":-35.5407777,"lat":-6.72013888,"p":[-422.09,2602.54]},{"id":506193,"site":"Fazenda Boa Ventura: Saindo do trevo em Pirpirituba, segue leste pela PB-085 por 3,6km e pega a esquerda por 350m e a esquerda por 1,3km.","type":"Material disperso na superfície","rock":"Quartzito","method":"GPS Manual pós 24/05/2000","lon":-35.47185,"lat":-6.75039,"p":[7198.59,5970.09]}]}</script>
 <script type="application/json" id="embedded-terrain-data">{"kind":"dem-grid","projection":{"originLon":-35.53696,"originLat":-6.69676,"metersPerDegreeLon":110560.49097187372,"metersPerDegreeLat":111320,"description":"Plano local aproximado para o jogo; não usar para GPS"},"grid":{"x0":-700,"y0":-1120,"step":140,"width":11,"height":15},"values":[130,132,131,131,136,141,145,138,134,136,145,135,137,132,132,141,150,149,137,138,146,142,139,144,136,130,134,151,148,144,140,144,144,147,142,133,135,145,146,146,142,137,139,140,143,145,133,137,147,149,150,139,141,141,145,139,136,136,135,146,148,149,140,139,143,157,143,140,138,134,140,149,152,143,139,147,150,147,140,136,137,146,151,152,149,144,145,148,141,136,135,137,150,154,158,159,153,146,144,157,137,139,146,152,156,160,162,153,149,152,139,136,147,148,150,153,163,162,154,152,157,139,139,141,143,146,151,160,160,151,150,153,136,139,139,147,155,154,166,163,157,155,154,141,144,149,145,150,153,163,175,166,156,171,145,142,145,149,149,159,171,190,170,165,193],"source":{"dataset":"NASA SRTMGL1, grade de aproximadamente 30 m, altitudes EGM96","provider":"OpenTopoData / srtm30m","api":"https://api.opentopodata.org/v1/srtm30m","retrievedAt":"2026-10-31","sourceDoi":"https://doi.org/10.5067/MEaSUREs/SRTM/SRTMGL1.003","interpolation":"bilinear","note":"Grade de 140 m para visualização artística macroscópica. Não permite identificar inclinação de calçadas, degraus ou ruas curtas."}}</script>
 <script>
-/* Road-network routing for the illustrated Roncador game. Coordinates are local metres. */
-(function (root, factory) {
-  'use strict';
-  const api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  if (root) root.RoncadorPathfinding = api;
-})(typeof globalThis !== 'undefined' ? globalThis : null, function () {
-  'use strict';
-  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-
-  function buildGraph(roads) {
-    const nodes = [];
-    const byPosition = new Map();
-    let edgeCount = 0;
-    for (const road of roads) {
-      let previous = null;
-      for (const point of road.p) {
-        // The source OSM ways share intersection vertices. A one-metre cell
-        // absorbs the small rounding differences in the local projection.
-        const key = `${Math.round(point[0])},${Math.round(point[1])}`;
-        let current = byPosition.get(key);
-        if (current === undefined) {
-          current = nodes.length;
-          byPosition.set(key, current);
-          nodes.push({ x: point[0], y: point[1], neighbours: [] });
-        }
-        if (previous !== null && previous !== current) {
-          const a = nodes[previous], b = nodes[current];
-          const metres = Math.hypot(a.x - b.x, a.y - b.y);
-          if (metres > 0) {
-            a.neighbours.push({ id: current, metres });
-            b.neighbours.push({ id: previous, metres });
-            edgeCount++;
-          }
-        }
-        previous = current;
-      }
-    }
-
-    function nearest(point) {
-      let best = -1, closest = Infinity;
-      for (let i = 0; i < nodes.length; i++) {
-        const candidate = nodes[i];
-        const d = Math.hypot(candidate.x - point[0], candidate.y - point[1]);
-        if (d < closest) { closest = d; best = i; }
-      }
-      return { id: best, distance: closest };
-    }
-
-    function route(start, destination) {
-      if (!nodes.length) return null;
-      const first = nearest(start), last = nearest(destination);
-      if (first.id < 0 || last.id < 0) return null;
-      const costs = new Float64Array(nodes.length).fill(Infinity);
-      const previous = new Int32Array(nodes.length).fill(-1);
-      const visited = new Uint8Array(nodes.length);
-      const queue = [{ id: first.id, score: distance(start, destination) }];
-      costs[first.id] = 0;
-      while (queue.length) {
-        queue.sort((a, b) => a.score - b.score);
-        const current = queue.shift().id;
-        if (visited[current]) continue;
-        if (current === last.id) break;
-        visited[current] = 1;
-        for (const edge of nodes[current].neighbours) {
-          const candidate = costs[current] + edge.metres;
-          if (candidate >= costs[edge.id]) continue;
-          costs[edge.id] = candidate;
-          previous[edge.id] = current;
-          const n = nodes[edge.id];
-          queue.push({ id: edge.id, score: candidate + Math.hypot(n.x - nodes[last.id].x, n.y - nodes[last.id].y) });
-        }
-      }
-      if (!Number.isFinite(costs[last.id])) return null;
-      const indices = [];
-      for (let node = last.id; node !== -1; node = previous[node]) indices.push(node);
-      indices.reverse();
-      const points = indices.map(i => ({ x: nodes[i].x, y: nodes[i].y }));
-      points.push({ x: destination[0], y: destination[1] });
-      return {
-        points,
-        roadMetres: costs[last.id],
-        distance: costs[last.id] + first.distance + last.distance,
-        fromRoadMetres: first.distance,
-        toRoadMetres: last.distance,
-      };
-    }
-
-    return { nodes, edgeCount, nearest, route };
-  }
-  return { buildGraph };
+/* Road-network routing for Beit Lehem. All route segments follow mapped road geometry. */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorPathfinding=api;})(typeof globalThis!=='undefined'?globalThis:null,function(){
+'use strict';
+function heap(){const h=[];function push(v){let i=h.length;h.push(v);while(i){const p=(i-1)>>1;if(h[p].score<=v.score)break;h[i]=h[p];i=p;}h[i]=v;}function pop(){if(!h.length)return null;const first=h[0],last=h.pop();if(h.length){let i=0;while(true){const l=i*2+1,r=l+1;if(l>=h.length)break;const c=r<h.length&&h[r].score<h[l].score?r:l;if(h[c].score>=last.score)break;h[i]=h[c];i=c;}h[i]=last;}return first;}return{push,pop,get length(){return h.length;}};}
+function buildGraph(roads){
+ const nodes=[],byPosition=new Map();let edgeCount=0;
+ for(const road of roads){let previous=null;for(const p of road.p||[]){if(!Array.isArray(p)||!p.every(Number.isFinite))continue;const key=`${Math.round(p[0])},${Math.round(p[1])}`;let id=byPosition.get(key);if(id===undefined){id=nodes.length;byPosition.set(key,id);nodes.push({x:p[0],y:p[1],neighbours:[],component:-1});}if(previous!==null&&previous!==id){const a=nodes[previous],b=nodes[id],metres=Math.hypot(a.x-b.x,a.y-b.y);if(metres>0){a.neighbours.push({id,metres});b.neighbours.push({id:previous,metres});edgeCount++;}}previous=id;}}
+ const components=[];for(let i=0;i<nodes.length;i++){if(nodes[i].component!==-1)continue;const id=components.length,stack=[i],members=[];nodes[i].component=id;while(stack.length){const n=stack.pop();members.push(n);for(const e of nodes[n].neighbours)if(nodes[e.id].component===-1){nodes[e.id].component=id;stack.push(e.id);}}components.push({id,size:members.length,nodes:members});}
+ function nearest(p,componentId=null){let best=-1,distance=Infinity;if(componentId===null){for(let i=0;i<nodes.length;i++){const n=nodes[i],d=Math.hypot(n.x-p[0],n.y-p[1]);if(d<distance){distance=d;best=i;}}}else{const c=components[componentId];if(!c)return{id:-1,distance:Infinity,component:null};for(const i of c.nodes){const n=nodes[i],d=Math.hypot(n.x-p[0],n.y-p[1]);if(d<distance){distance=d;best=i;}}}return{id:best,distance,component:best<0?null:nodes[best].component};}
+ function nearestByComponent(p){const best=components.map(c=>({id:-1,distance:Infinity,component:c.id}));for(let i=0;i<nodes.length;i++){const n=nodes[i],d=Math.hypot(n.x-p[0],n.y-p[1]),v=best[n.component];if(d<v.distance)best[n.component]={id:i,distance:d,component:n.component};}return best;}
+ function route(start,destination,options={}){if(!nodes.length||!Array.isArray(start)||!Array.isArray(destination)||![...start,...destination].every(Number.isFinite))return null;let first=nearest(start),last=nearest(destination),usedSharedComponentFallback=false;if(first.id<0||last.id<0)return null;
+  if(first.component!==last.component){const maxSnap=Number.isFinite(options.maxSnapMetres)&&options.maxSnapMetres>=0?options.maxSnapMetres:150,a=nearestByComponent(start),b=nearestByComponent(destination);let best=null;for(const c of components){const from=a[c.id],to=b[c.id];if(from.distance>maxSnap||to.distance>maxSnap)continue;const score=from.distance+to.distance;if(!best||score<best.score)best={first:from,last:to,score};}if(!best)return null;first=best.first;last=best.last;usedSharedComponentFallback=true;}
+  const target=nodes[last.id],costs=new Float64Array(nodes.length).fill(Infinity),previous=new Int32Array(nodes.length).fill(-1),visited=new Uint8Array(nodes.length),queue=heap();costs[first.id]=0;queue.push({id:first.id,cost:0,score:Math.hypot(nodes[first.id].x-target.x,nodes[first.id].y-target.y)});
+  while(queue.length){const item=queue.pop(),current=item.id;if(visited[current]||item.cost>costs[current]+1e-9)continue;if(current===last.id)break;visited[current]=1;for(const e of nodes[current].neighbours){const next=costs[current]+e.metres;if(next>=costs[e.id])continue;costs[e.id]=next;previous[e.id]=current;const n=nodes[e.id];queue.push({id:e.id,cost:next,score:next+Math.hypot(n.x-target.x,n.y-target.y)});}}
+  if(!Number.isFinite(costs[last.id]))return null;const ids=[];for(let id=last.id;id!==-1;id=previous[id])ids.push(id);ids.reverse();const points=ids.map(id=>({x:nodes[id].x,y:nodes[id].y}));if(!points.length||Math.hypot(points.at(-1).x-destination[0],points.at(-1).y-destination[1])>.01)points.push({x:destination[0],y:destination[1]});
+  return{points,roadMetres:costs[last.id],distance:costs[last.id]+first.distance+last.distance,fromRoadMetres:first.distance,toRoadMetres:last.distance,componentId:first.component,usedSharedComponentFallback};
+ }
+ return{nodes,edgeCount,components:components.map(c=>({id:c.id,size:c.size})),nearest,route};
+}
+return{buildGraph};
 });
 
 </script><script>
@@ -1620,9 +1549,9 @@
 });
 
 </script><script>
-/* Local reference overlay. Original OSM tags and geometry remain untouched. */
+/* Gemini street proposals are retained, but inactive until local validation. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorLocalRoadReferences=api;})(typeof globalThis!=='undefined'?globalThis:null,function(){
-'use strict';const KNOWN_SURFACES=Object.freeze(['asphalt','paved','unpaved','paving_stones','sett']);const REFERENCES=Object.freeze([{"wayId":"way/264042917","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264042926","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264042932","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264042957","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264043004","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/489113154","tags":{"surface":"paving_stones","name":"Travessa Vinte e Um de Abril"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/542266717","tags":{"name":"Vila Sul · Clóvis Bezerra","surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/542266718","tags":{"name":"Travessa Sul · Clóvis Bezerra","surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/542266725","tags":{"name":"Rua Clóvis Bezerra (Trecho Sul)","surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/814044852","tags":{"name":"Acesso Leste · Clóvis Bezerra","surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/814055923","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/826372311","tags":{"surface":"asphalt"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/826372315","tags":{"surface":"asphalt"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/826372810","tags":{"surface":"asphalt"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/1087044412","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/1387659863","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/1387659864","tags":{"surface":"paving_stones"},"enabledForDisplay":true,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"}]);
+'use strict';const KNOWN_SURFACES=Object.freeze(['asphalt','paved','unpaved','paving_stones','sett']);const REFERENCES=Object.freeze([{"wayId":"way/264042917","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264042926","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264042932","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264042957","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/264043004","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/489113154","tags":{"surface":"paving_stones","name":"Travessa Vinte e Um de Abril"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/542266717","tags":{"name":"Vila Sul · Clóvis Bezerra","surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/542266718","tags":{"name":"Travessa Sul · Clóvis Bezerra","surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/542266725","tags":{"name":"Rua Clóvis Bezerra (Trecho Sul)","surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/814044852","tags":{"name":"Acesso Leste · Clóvis Bezerra","surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/814055923","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/826372311","tags":{"surface":"asphalt"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/826372315","tags":{"surface":"asphalt"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/826372810","tags":{"surface":"asphalt"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/1087044412","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/1387659863","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"},{"wayId":"way/1387659864","tags":{"surface":"paving_stones"},"enabledForDisplay":false,"source":"referência local informada pelo usuário no material Gemini","status":"camada local de exibição; não altera tags nem geometria OSM"}]);
 function baseWayId(v){const m=/^(way\/\d+)(?:\/\d+)?$/.exec(String(v||''));return m?m[1]:null;}
 function validate(ref){if(!ref||ref.enabledForDisplay!==true)return null;const wayId=baseWayId(ref.wayId);if(!wayId)throw Error('Referência viária com identificador inválido.');const tags={},input=ref.tags||{};if(input.name!==undefined){if(typeof input.name!=='string'||!input.name.trim())throw Error('Nome local inválido em '+wayId);tags.name=input.name.trim();}if(input.surface!==undefined){if(!KNOWN_SURFACES.includes(input.surface))throw Error('Superfície local inválida em '+wayId);tags.surface=input.surface;}if(!Object.keys(tags).length)throw Error('Referência sem nome ou superfície em '+wayId);return{wayId,tags,source:ref.source||'referência local',status:ref.status||'camada local'};}
 function apply(roads,references=REFERENCES){if(!Array.isArray(roads)||!Array.isArray(references))throw TypeError('Vias e referências devem ser listas.');const roadIds=new Set(roads.map(r=>baseWayId(r?.id)).filter(Boolean)),overrides=new Map();for(const raw of references){const ref=validate(raw);if(!ref)continue;if(overrides.has(ref.wayId))throw Error('Referência duplicada: '+ref.wayId);if(!roadIds.has(ref.wayId))throw Error('Trecho não encontrado na malha: '+ref.wayId);overrides.set(ref.wayId,ref);}return roads.map(road=>{const ref=overrides.get(baseWayId(road.id));return{...road,displayTags:{...(road.tags||{}),...(ref?.tags||{})},localReference:ref?{wayId:ref.wayId,source:ref.source,status:ref.status,fields:Object.keys(ref.tags)}:null};});}
@@ -2128,9 +2057,9 @@ const BLOCKS=[
 {id:'matriz',title:'Caminhos da Matriz',kind:'igreja',radius:128,detail:'Arcos, torre e pilastras inspirados no registro histórico da igreja. As casas vizinhas são composições artísticas.',source:'Fotografia histórica de 2007',reliability:'foto histórica do marco; não das casas'},
 {id:'feira',title:'Entorno da Feira',kind:'mercado',radius:122,detail:'Toldos, bancas e vitrines inspirados no registro histórico da feira; as fachadas são propostas artísticas.',source:'Fotografia histórica da feira · 2007',reliability:'foto histórica da atividade; não das fachadas atuais'},
 {id:'joao',title:'Rua João Pessoa',kind:'street',radius:125,detail:'Estudo de portas, telhas, grades e reboco orientado pelo traçado da via.',source:'Geometria viária OpenStreetMap',reliability:'geometria viária; arte ilustrativa'},
-{id:'clovis',title:'Rua Clóvis Bezerra · trecho residencial',kind:'clovis',radius:340,detail:'Portões, vasos, cadeiras e pequenos espaços de convivência formam uma linguagem visual fictícia para o corredor residencial e suas conexões.',source:'Traçado viário + referências locais',reliability:'referências locais; nenhum imóvel individual reproduzido'},
-{id:'feliciano',title:'Eixo da Rua Feliciano Pedrosa',kind:'feliciano',radius:150,detail:'Marquises, vãos comerciais e vitrines entram como acabamento artístico do eixo viário, sem atribuir números ou fachadas a estabelecimentos específicos.',source:'Geometria viária + referências comerciais locais',reliability:'eixo mapeado; fachadas ilustrativas'},
-{id:'vicente',title:'Rua Vicente Cado',kind:'vicente',radius:145,detail:'Toldos, portas de comércio e áreas de convivência inspiram este estudo de rua, sem identificar endereços ou pessoas reais.',source:'Geometria viária + referências locais',reliability:'eixo mapeado; composição artística'}
+{id:'clovis',title:'Setor residencial · estudo preliminar',kind:'clovis',radius:340,detail:'Portões, vasos, cadeiras e pequenos espaços de convivência formam uma linguagem visual fictícia para um corredor residencial. A identificação exata das vias aguarda conferência.',source:'Geometrias viárias candidatas do material Gemini',reliability:'estudo visual preliminar; nomes e limites pendentes'},
+{id:'feliciano',title:'Eixo comercial · estudo preliminar',kind:'feliciano',radius:150,detail:'Marquises, vãos comerciais e vitrines são propostas artísticas para um eixo viário, sem atribuir endereços ou fachadas reais. A rua exata aguarda conferência.',source:'Geometrias viárias candidatas do material Gemini',reliability:'estudo visual preliminar; identificação pendente'},
+{id:'vicente',title:'Rua de convivência · estudo preliminar',kind:'vicente',radius:145,detail:'Toldos, portas de comércio e áreas de convivência inspiram este estudo visual, sem identificar endereços, estabelecimentos ou pessoas reais. A rua exata aguarda conferência.',source:'Geometria viária candidata do material Gemini',reliability:'estudo visual preliminar; identificação pendente'}
 ];
 const WAY_GROUPS={clovis:['way/264042926','way/542266717','way/542266718','way/542266725'],feliciano:['way/826372311','way/826372315','way/826372810'],vicente:['way/264042995']};
 function baseWayId(v){const m=/^(way\/\d+)(?:\/\d+)?$/.exec(String(v||''));return m?m[1]:null;}
@@ -2586,7 +2515,7 @@ return{BLOCKS,WAY_GROUPS,baseWayId,midpointOnWays,streetAnchor,prepare,draw};
     <li><kbd>♡ Três amizades</kbd><span>Converse em dias diferentes com Damião, Lúcia e Bia para guardar uma lembrança de vizinhança</span></li>
     <li><kbd>☼ Cenas do dia</kbd><span>Visite Mercado, Rodoviária e Igreja em períodos do jogo para guardar um álbum de três momentos fictícios</span></li>
     <li><kbd>♧ Flora OSM</kbd><span>Ative uma camada vegetal decorativa restrita aos polígonos verdes registrados na base cartográfica</span></li>
-    <li><kbd>▦ Quadras</kbd><span>Compare fotos históricas com os acabamentos ilustrados em seis áreas do centro</span></li>
+    <li><kbd>▦ Quadras</kbd><span>Compare fotos históricas com seis estudos visuais de fachadas, três deles preliminares</span></li>
     <li><kbd>♥ Gestos</kbd><span>Converse e escolha uma pequena ajuda diária para Damião, Lúcia ou Bia</span></li>
     <li><kbd>🧺 Mercado</kbd><span>Conheça Damião, arrume três detalhes ilustrativos da banca e guarde uma lembrança de manhã</span></li>
     <li><kbd>🌷 Matriz</kbd><span>Depois da manhã com Damião, ajude Lúcia a preparar uma muda ilustrativa e escolha a memória que ficará no álbum</span></li>
@@ -2599,7 +2528,7 @@ return{BLOCKS,WAY_GROUPS,baseWayId,midpointOnWays,streetAnchor,prepare,draw};
 
   document.querySelector('.topbar nav').insertAdjacentHTML('beforeend', `
     <button id="realCity" class="real-city-button" type="button" title="Ver ruas e locais reais de Belém no mapa e no Google">◈ <span>Belém real</span></button>
-    <button id="centralBlocks" class="real-city-button block-button" type="button" title="Explorar as seis áreas ilustradas de fachadas, comparar referências e marcar trajetos">▦ <span>Quadras</span></button>
+    <button id="centralBlocks" class="real-city-button block-button" type="button" title="Explorar seis estudos visuais de fachadas e marcar os trechos visitados">▦ <span>Quadras</span></button>
     <button id="sceneryToggle" class="real-city-button scene-toggle" type="button" aria-pressed="true" title="Alternar as ilustrações de igrejas, mercado, praça e rodoviária no mapa">⌂ <span>Cenários</span></button>
     <button id="natureAtlas" class="real-city-button" type="button" title="Abrir o canteiro e as paisagens do Brejo">♧ <span>Vida no Brejo</span></button>
     <button id="observe" class="cozy-observe" type="button" title="Registrar uma paisagem no diário (F)" aria-label="Registrar uma paisagem no diário">✿ <span>Observar</span></button>
@@ -10928,7 +10857,7 @@ function renderAlbum(){
   window.RoncadorFacadeStudio.drawPreview(preview,'feira',lightPhase);
   const content=document.createElement('div');content.className='album-card-content';
   const title=document.createElement('strong');title.textContent='Um caderno de portas e janelas';
-  const description=document.createElement('span');description.textContent=facadeSketches.length>=6?'Você registrou seis áreas de estudo: Matriz, Feira, João Pessoa, Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado. As fachadas continuam sendo composições artísticas.':'Seu caderno preserva os três estudos iniciais e agora pode crescer até seis áreas: Matriz, Feira, João Pessoa, Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado.';
+  const description=document.createElement('span');description.textContent=facadeSketches.length>=6?'Você registrou seis estudos visuais: Matriz, Feira, Rua João Pessoa e três setores preliminares. As fachadas continuam sendo composições artísticas.':'Seu caderno preserva os três estudos iniciais e agora pode crescer até seis áreas: três referências centrais e três estudos visuais preliminares de outros setores.';
   content.append(title,description);article.append(preview,content);grid.append(article);
  }
 }
