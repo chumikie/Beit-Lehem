@@ -5305,12 +5305,13 @@ function boltRestingByGreen(at){
  return floraLayer.points.some(p=>['canopy','shade','flowerbed'].includes(p.kind)&&nearby(p,27))||
   detailedFacades&&houses.some(h=>h.seed%7===2&&['matriz','joao','clovis'].includes(h.centralBlock)&&nearby(h,30));
 }
-function streetPetBehavior(pet,at,minute,weather){
+function streetPetBehavior(pet,at,minute,weather,playerPoint){
  // Pure, deterministic poses: no new coordinates, timers or saved state.
  const rain=weather==='chuvisco';
  const night=minute<7*60||minute>=20*60;
  const resting=!!pet.bolt&&boltRestingByGreen(at)||!at.walking&&(rain||pet.cat&&night);
- return {resting,tailRate:resting?1.2:pet.cat?2.4:3.2,bounce:resting?.18:at.walking?.78:.45};
+ const curious=!rain&&!at.walking&&playerPoint&&Math.hypot(playerPoint.x-at.x,playerPoint.y-at.y)<34;
+ return {resting,curious:!!curious,tailRate:curious?4:resting?1.2:pet.cat?2.4:3.2,bounce:resting?.18:at.walking?.78:.45};
 }
 function drawStreetPets(c,time,view){
  const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
@@ -5318,7 +5319,7 @@ function drawStreetPets(c,time,view){
  for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
   const at=pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
-  const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode);
+  const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode,player);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)+pet.variant)*behavior.bounce;
   c.save();c.translate(at.x,at.y+bounce);
@@ -5353,7 +5354,7 @@ function drawStreetPets(c,time,view){
   }
   if(pet.cat){c.beginPath();c.moveTo(-7,-9);c.lineTo(-7,-15);c.lineTo(-2,-11);c.moveTo(0,-11);c.lineTo(4,-15);c.lineTo(4,-8);c.fill();}
   else{roundRect(c,-8,-10,4,8,2,'#a47359');}
-  c.fillStyle='#51483e';c.beginPath();c.arc(-5,-7,0.8,0,7);c.arc(-1,-7,0.8,0,7);c.fill();
+  c.fillStyle='#51483e';c.beginPath();c.arc(-5+(behavior.curious?.4:0),-7,0.8,0,7);c.arc(-1+(behavior.curious?.4:0),-7,0.8,0,7);c.fill();
   c.strokeStyle='#a77a67';c.lineWidth=.6;c.beginPath();c.moveTo(-3,-5);c.lineTo(-3,-3);c.stroke();
   if(greenRest&&zoom>=1.15){
    // Bolt quietly watches the plants during a natural stop on his street route.
