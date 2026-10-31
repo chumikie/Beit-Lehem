@@ -2125,6 +2125,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   switch(id){
    case 'damiao':
     if(known('recado-da-feira'))memory=['Guardei o bilhete de Téo junto das anotações da feira.','o recado de Téo','joy'];
+    else if(raw?.marketMorning?.claimed&&neighbors.choices?.cica==='banca')memory=['Ciça me mostrou a fita que vocês prepararam para a banca. Guardei o laço com carinho!','o laço preparado com Ciça','joy'];
     else if(known('fitas-de-bom-dia'))memory=['Olhe a fita de Ciça no meu cesto! Ainda me lembra aquela manhã.','a fita da feira','joy'];
     else if(raw?.marketMorning?.claimed)memory=['Ainda lembro como você me ajudou com os cestos e as frutas.','a manhã de trabalho juntos','warm'];
     break;
@@ -2155,16 +2156,20 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    case 'rosa':
     if(neighbors.choices?.rosa==='prosa')memory=['Nossa conversa tranquila ainda me acompanha pelo caminho.','a pausa para conversar','warm'];
     else if(neighbors.choices?.rosa==='caderno')memory=['Guardei no caderno a frase que escrevemos durante o passeio.','a frase do caderno','joy'];
+    else if(raw?.marketMorning?.claimed)memory=['Soube da ajuda que você deu a Damião na feira. Uma manhã assim rende boa conversa!','a ajuda na feira','warm'];
     break;
    case 'zeca':
     if(raw?.luciaGarden?.claimed&&neighbors.choices?.zeca==='muda-lucia')memory=['Ainda lembro da muda que você cuidou com Lúcia. Uma história boa para compartilhar.','a muda de Lúcia','joy'];
     else if(neighbors.choices?.zeca==='vasos')memory=['Aquele papo sobre vasos me fez olhar melhor para as folhas.','a conversa sobre os vasos','warm'];
     else if(neighbors.choices?.zeca==='sementes')memory=['Ainda lembro da nossa dica de jardim.','o papo sobre sementes','warm'];
+    else if(raw?.luciaGarden?.claimed)memory=['Lúcia me contou da muda que vocês cuidaram. Dá gosto saber que ela tem companhia!','o cuidado com a muda','warm'];
     break;
    case 'mila':
     if(neighbors.choices?.mila==='amigas')memory=['Guardei a ideia de misturar fitas de Ciça e desenhos de Nara.','as cores das amigas','joy'];
     else if(neighbors.choices?.mila==='cores')memory=['A faixa de cor que escolhemos ainda está no meu caderno.','a cor do caderno','warm'];
     else if(neighbors.choices?.mila==='tecidos')memory=['Ainda estou pensando nas estampas que imaginamos.','as estampas do passeio','warm'];
+    else if(neighbors.choices?.cica==='banca')memory=['Ciça mostrou a ideia da fita para Damião. Agora quero desenhar uma igualzinha no meu caderno!','a fita da banca','joy'];
+    else if(['janela-bia','paisagem-bia'].includes(neighbors.choices?.nara))memory=['Nara me contou do desenho que fez para a carta de Bia. Que ideia bonita!','o desenho na carta','warm'];
     break;
    case 'teo':
     if(known('bilhete-de-volta'))memory=['O bilhete de Bia está protegido no meu envelope de capa azul.','a carta de Bia','joy'];
@@ -3030,9 +3035,22 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   return state;
  }
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
+ // Fictional weekly variations; never claims residents' real schedules.
+ const WEEKLY_ROUTINES={
+  rosa:{morning:['observa o movimento e anota uma história','organiza seu caderninho de conversas','cumprimenta quem passa sem pressa'],afternoon:['faz uma pausa e relembra uma visita','procura uma frase bonita para guardar','descansa e troca notícias com conhecidos']},
+  zeca:{morning:['confere as folhas de um vaso ilustrativo','observa a sombra sobre as plantas','separa ideias para cuidar de uma muda'],afternoon:['descansa e conta histórias de jardins','repara nas plantas ao longo do caminho','conversa sobre os cuidados do quintal']},
+  mila:{morning:['experimenta cores no caderno','desenha formas de portas e janelas','separa ideias de fitas e tecidos'],afternoon:['observa padrões nas fachadas','compara cores de pequenos desenhos','imagina uma estampa para as amigas']}
+ };
+ function weeklyActivity(clock,def){
+  const scenes=WEEKLY_ROUTINES[def.id];
+  if(!scenes)return null;
+  const weekday=(((Number(clock?.day)||1)-1)%7+7)%7;
+  const morning=(Number(clock?.minute)||0)<12*60;
+  return scenes[morning?'morning':'afternoon'][weekday%3];
+ }
  function agenda(clock,def){
   const community=root?.RoncadorStreetCommunity?.agenda(clock,def.id);
-  if(community)return community;
+  if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
   const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
@@ -3040,7 +3058,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
-  return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
+  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
  }
  function availableOptions(def,context={}){
   return def?.options?.filter(choice=>{
