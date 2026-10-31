@@ -770,6 +770,22 @@ function drawSecondaryWalker(c,person,time){
  if(cica){roundRect(c,7,-8,8,5,2,'#e6b884');c.strokeStyle='#78b8b0';c.lineWidth=1.3;c.beginPath();c.arc(10,-8+anim*.7,3,0,7);c.arc(13,-8-anim*.7,3,0,7);c.stroke();if(person.meeting){c.lineWidth=1.9;c.beginPath();c.moveTo(15,-7);c.quadraticCurveTo(22+anim*2,-18,18,-25);c.stroke();}}
  if(nara){roundRect(c,-14,-8,9,9,2,'#faefd9','#a28b77');c.strokeStyle='#b6a3b7';c.lineWidth=.8;c.beginPath();c.moveTo(-12,-5);c.lineTo(-9,-7);c.lineTo(-7,-3);c.stroke();c.strokeStyle='#84665c';c.beginPath();c.moveTo(9,-9);c.lineTo(12,-2+anim);c.stroke();if(person.meeting){c.strokeStyle='#bd8f9b';c.lineWidth=1.2;c.beginPath();c.moveTo(-12,-3);c.quadraticCurveTo(-9+anim,-7,-6,-4);c.stroke();}}
  if(teo){roundRect(c,7,-10,9,11,2,'#c99d74','#987958');roundRect(c,8,-6,7,5,1,'#fff1d7');c.strokeStyle='#be8d77';c.beginPath();c.moveTo(8,-6);c.lineTo(11.5,-3);c.lineTo(15,-6);c.stroke();if(person.meeting){c.save();c.translate(0,anim*1.2);roundRect(c,13,-14,8,6,1.2,'#fff8e6','#c29c76');c.restore();}}
+ // The three newer neighbors carry props that echo their current daily routine.
+ // A lowered accessory during rest avoids miming work while the journal says resting.
+ const daily=(person.activity||'').toLowerCase(),resting=/descansa|pausa|repousa/.test(daily);
+ const gesture=reduce?0:Math.sin(time*2.2+person.variant)*(resting?.25:1);
+ if(person.id==='rosa'){
+  roundRect(c,7,-9+(resting?5:gesture),9,10,1.4,'#d8b78f','#80695d');
+  c.strokeStyle='#8d7566';c.lineWidth=.65;c.beginPath();c.moveTo(11,-7+(resting?5:gesture));c.lineTo(11,0+(resting?5:gesture));c.stroke();
+ }else if(person.id==='zeca'){
+  roundRect(c,7,-6+(resting?4:gesture),9,7,2,'#bb8568','#8c6652');
+  c.strokeStyle='#64875c';c.lineWidth=1.2;c.beginPath();c.moveTo(11,-6+(resting?4:gesture));c.lineTo(11,-14+(resting?4:gesture));c.stroke();
+  for(const side of [-1,1]){c.fillStyle='#8db28a';c.beginPath();c.ellipse(11+side*3,-12+(resting?4:gesture),3.3,1.7,side*.4,0,7);c.fill();}
+ }else if(person.id==='mila'){
+  roundRect(c,7,-9+(resting?5:gesture),10,10,1.8,'#f5e2c8','#a6817a');
+  for(const [i,color] of ['#c598aa','#89a9a5','#e7c18a'].entries()){c.fillStyle=color;c.beginPath();c.arc(10+i*2,-5+(resting?5:gesture),1.25,0,7);c.fill();}
+ }
+
  drawSocialGesture(c,person.social,time);
  drawDailyGesture(c,person,time);
  if(!person.walking){c.fillStyle='#fffbec';c.beginPath();c.arc(8,-34,5,0,7);c.fill();c.fillStyle='#9e8764';c.font='8px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(affection?.remembered?'♥':'✧',8,-34);}
@@ -1117,6 +1133,21 @@ function render(time){
  if(showScenery){
   const stalls=fairAtmosphere()?fairStalls:marketStallVisible()?[marketStall]:[];
   window.RoncadorFairStreets.draw(ctx,stalls,{left,right,top,bottom},time,reduce,marketMorning.talked&&marketStall?{stall:marketStall,state:marketMorning,slots:marketFruitSlots,label:zoom>1.2&&Math.hypot(player.x-marketStall.p[0],player.y-marketStall.p[1])<130}:null);
+  // Decorative reward tied to the existing fictional market stall and saved choice.
+  // It is not a mapped building, business sign or newly invented coordinate.
+  if(marketStall&&stalls.includes(marketStall)&&marketMorning.claimed&&sideNeighbors.choices?.cica==='banca'){
+   const [rx,ry]=marketStall.p;
+   if(rx>=left-35&&rx<=right+35&&ry>=top-35&&ry<=bottom+35){
+    ctx.save();ctx.translate(rx,ry-17);
+    ctx.strokeStyle='#658d87';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-5,-4);ctx.quadraticCurveTo(0,-1,5,-4);ctx.stroke();
+    ctx.fillStyle='#79bbb3';ctx.strokeStyle='#477b74';ctx.lineWidth=.7;
+    for(const flip of [-1,1]){ctx.beginPath();ctx.moveTo(0,-4);ctx.quadraticCurveTo(flip*9,-13,flip*10,-4);ctx.quadraticCurveTo(flip*8,3,0,-4);ctx.fill();ctx.stroke();}
+    ctx.fillStyle='#e8ca8c';ctx.beginPath();ctx.arc(0,-4,2.1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#76afa6';ctx.beginPath();ctx.moveTo(-2,-2);ctx.lineTo(-5,7);ctx.lineTo(-1,5);ctx.lineTo(1,-2);ctx.moveTo(1,-2);ctx.lineTo(4,7);ctx.lineTo(6,4);ctx.lineTo(2,-3);ctx.fill();
+    ctx.restore();
+   }
+  }
  }
  drawScenicLayer(ctx,{left,right,top,bottom},true);
  drawClovisNeighborhoodScene(ctx,time,{left,right,top,bottom});drawParkedMotosAndSorda(ctx,time,{left,right,top,bottom});drawDailyActivity(ctx,time,{left,right,top,bottom});
