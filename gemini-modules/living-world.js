@@ -38,6 +38,28 @@
       planos:'Fiquei pensando nos caminhos que imaginamos ontem. Já tenho outra ideia para contar!'
     }
   };
+  // A neighbor may mention a recent kindness shown to someone else.
+  // All accounts are original fictional dialogue, derived from existing save fields.
+  const NEIGHBOR_FOLLOW_UP={
+    damiao:[
+      {friend:'lucia',kind:'mudas',text:'Lúcia me contou que você ajudou com a mudinha. É bom ver esse cuidado correndo pela cidade.'},
+      {friend:'bia',kind:'caderno',text:'Bia disse que vocês organizaram o caderno dela. Esses planos merecem todo apoio.'}
+    ],
+    lucia:[
+      {friend:'damiao',kind:'cestos',text:'Damião comentou que você ajudou com os cestos. A feira fica mais bonita com essa atenção.'},
+      {friend:'bia',kind:'planos',text:'Bia me falou dos planos que vocês imaginaram. É bonito ver alguém sonhar com carinho.'}
+    ],
+    bia:[
+      {friend:'lucia',kind:'mudas',text:'Lúcia me contou da mudinha que vocês cuidaram. Queria desenhar como ela vai ficar.'},
+      {friend:'damiao',kind:'historias',text:'Damião disse que você parou para ouvir suas histórias. Também quero escutar uma delas.'}
+    ]
+  };
+  function neighborFollowUp(s,id){
+    return NEIGHBOR_FOLLOW_UP[id]?.find(({friend,kind})=>{
+      const person=s.people?.[friend];
+      return person?.lastCareKind===kind&&person.lastCareDay>0&&s.day-person.lastCareDay<=1;
+    })?.text||null;
+  }
   const CARE_TODAY={
     damiao:'Obrigado pela companhia de hoje! Depois a gente continua a conversa perto da banca.',
     lucia:'Gostei de cuidar dessas pequenas coisas com você hoje. Vamos ver como ficam amanhã?',
@@ -134,8 +156,9 @@
     const choices=DIALOGUES[id];
     const yesterday=n.lastCareDay===s.day-1&&CARE_FOLLOW_UP[id]?.[n.lastCareKind];
     const today=n.lastCareDay===s.day&&n.lastCareKind;
+    const neighbor=firstToday?neighborFollowUp(s,id):null;
     const text=firstToday
-      ?(yesterday||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
+      ?(yesterday||neighbor||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
       :(today?CARE_TODAY[id]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.');
     return{friendship:n.bond,newMemory:firstToday,text};
   }
