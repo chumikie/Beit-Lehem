@@ -1899,6 +1899,13 @@ function clickWorld(e){
  if(scene){const place=culturePlace(scene.id);if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
  const landmark=data.landmarks.find(l=>Math.hypot(x-l.p[0],y-l.p[1])<10);
  if(landmark){if(cultureWithinReach(landmark))showCulture(landmark.id);else setRoute(...landmark.p);return;}
+ // Gemini landmarks confirmed by the author can be selected without
+ // changing OSM points, missions, diary records or the save format.
+ const localPlace=zoom>=1.25?GEMINI_LOCAL_PLACES.find(p=>Math.hypot(x-p.p[0],y-p.p[1])<20):null;
+ if(localPlace){
+  if(setRoute(...localPlace.p,18))notify('Passeio marcado: '+localPlace.name+(localPlace.fictionalName?' · nome artístico':'')+' · referência local conferida.');
+  canvas.focus({preventScroll:true});return;
+ }
  if(data.points.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<8)){showRealCity();return;}
  setRoute(x,y);canvas.focus({preventScroll:true});
 }
