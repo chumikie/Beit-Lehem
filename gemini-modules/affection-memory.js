@@ -4,8 +4,8 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorAffectionMemory=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
  const PROTAGONISTS=['damiao','lucia','bia'];
- const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo'};
- const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.']};
+ const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo',rosa:'Rosa'};
+ const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.'],rosa:['Gosto de observar quem passa e ouvir novidades.','Uma conversa tranquila muda a cor da tarde.']};
  // Permanent keepsakes are derived from existing quest completion flags.
  // Unlike the 12 recent diary notes, these achievements cannot scroll away.
  const KEEPSAKES=Object.freeze([
@@ -61,6 +61,10 @@
     else if(known('caderno-compartilhado'))memory=['Bia escreveu uma frase ao lado da janela que desenhei.','o caderno compartilhado','joy'];
     else if(neighbors.choices?.nara)memory=['Abri o caderno bem na página que desenhamos juntos.','nosso primeiro desenho','warm'];
     break;
+   case 'rosa':
+    if(neighbors.choices?.rosa==='prosa')memory=['Nossa conversa tranquila ainda me acompanha pelo caminho.','a pausa para conversar','warm'];
+    else if(neighbors.choices?.rosa==='caderno')memory=['Guardei no caderno a frase que escrevemos durante o passeio.','a frase do caderno','joy'];
+    break;
    case 'teo':
     if(known('bilhete-de-volta'))memory=['O bilhete de Bia está protegido no meu envelope de capa azul.','a carta de Bia','joy'];
     else if(known('recado-da-feira'))memory=['Damião pediu que eu levasse outro abraço quando voltasse.','o recado da feira','joy'];
@@ -72,7 +76,7 @@
   const fallback=DEFAULT[id]?.[morning?0:1]||'Que bom encontrar você.';
   const friendly=close?{
    damiao:'Que bom rever você! Já parece gente de casa.',lucia:'Suas visitas sempre dão um respiro ao meu dia.',bia:'Quando você chega, tenho vontade de contar todos os meus planos.',
-   cica:'Olha quem voltou para escolher cores comigo!',nara:'Você já sabe onde guardo meus melhores desenhos.',teo:'Eu sabia que você voltaria para ouvir novidades!'
+   cica:'Olha quem voltou para escolher cores comigo!',nara:'Você já sabe onde guardo meus melhores desenhos.',teo:'Eu sabia que você voltaria para ouvir novidades!',rosa:'Que bom que voltou! Guardei uma boa conversa para hoje.'
   }[id]:null;
   const line=memory?.[0]||friendly||fallback;
   const mood=Number(person.fatigue)>75?'sleepy':memory?.[2]||((close||bond>=1)?'warm':'curious');
