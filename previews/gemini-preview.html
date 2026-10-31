@@ -5186,7 +5186,8 @@ function drawStreetLife(c,time,view){
 let boltMarketRoad=null;
 function boltCityPoint(){
  if(boltMarketRoad===null){
-  const home=data.landmarks.find(p=>p.id==='casa_varanda');
+  // Use the existing game start on the mapped road, never an absent private-house POI.
+  const home={p:data.start};
   const market=data.landmarks.find(p=>p.id==='mercado');
   const route=home&&market&&pathfinder?.route(home.p,market.p);
   // The final point is a POI connector, not necessarily a street: stay on road vertices.
@@ -5194,7 +5195,7 @@ function boltCityPoint(){
   const valid=points?.length>=2&&points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
   boltMarketRoad=valid?points:false;
  }
- if(!boltMarketRoad)return walkingPoint('bolt','casa_varanda',5);
+ if(!boltMarketRoad)return walkingPoint('bolt','inicio',5)||{x:data.start[0],y:data.start[1],walking:false};
  const clock=living.minute;
  const going=clock>=8*60&&clock<9*60+15;
  const returning=clock>=10*60&&clock<11*60+15;
@@ -5203,7 +5204,7 @@ function boltCityPoint(){
  const points=boltMarketRoad;
  let total=0;
  for(let i=1;i<points.length;i++)total+=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
- if(total<1)return walkingPoint('bolt','casa_varanda',5);
+ if(total<1)return walkingPoint('bolt','inicio',5)||{x:data.start[0],y:data.start[1],walking:false};
  let remaining=Math.max(0,Math.min(1,progress))*total;
  for(let i=1;i<points.length;i++){
   const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.y-a.y);
@@ -5222,7 +5223,7 @@ function boltRestingByGreen(at){
   detailedFacades&&houses.some(h=>h.seed%7===2&&['matriz','joao','clovis'].includes(h.centralBlock)&&nearby(h,30));
 }
 function drawStreetPets(c,time,view){
- const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'casa_varanda',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
+ const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
@@ -5239,7 +5240,13 @@ function drawStreetPets(c,time,view){
    c.beginPath();c.moveTo(4,-3);c.quadraticCurveTo(9,-9,7,-11);c.stroke();
    roundRect(c,-6,-7,12,8,3.5,fur,'#977861');
    c.fillStyle=fur;c.beginPath();c.arc(-4,-7,3.6,0,Math.PI*2);c.fill();
-   if(pet.bolt){c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();}
+   if(pet.bolt){
+    c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();
+    // Keep the familiar name readable even in the simplified far-zoom sprite.
+    c.fillStyle='#fff9eb';c.strokeStyle='#9b8068';c.lineWidth=.6;
+    roundRect(c,-12,-20,24,8,3,'#fff9eb','#9b8068');
+    c.fillStyle='#5c4a38';c.font='bold 6px system-ui';c.textAlign='center';c.fillText('Bolt',0,-14);
+   }
    c.restore();continue;
   }
   c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*(greenRest?1.5:2)+pet.variant)*(greenRest?1:2)),9,-13);c.stroke();
