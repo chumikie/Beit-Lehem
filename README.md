@@ -4,9 +4,19 @@ Jogo aberto e offline em Belém/PB, seu distrito Rua Nova e as serras, fauna e f
 
 Repositório privado: https://github.com/chumikie/Beit-Lehem
 
+## Onde estão os HTMLs
+
+- **Base jogável congelada V2.27:** [`baseline/Belem-Viva-V2-27.html`](baseline/Belem-Viva-V2-27.html). É um HTML autônomo, pronto para baixar e abrir. Não editar: é a cópia de segurança imutável.
+- **Jogo em desenvolvimento:** [`dist/index.html`](dist/index.html), junto com CSS, dados e módulos JavaScript da pasta `dist/`. É a fonte de trabalho; não é um HTML autônomo para baixar sozinho.
+- **Prévia experimental Gemini:** [`previews/gemini-preview.html`](previews/gemini-preview.html). É uma comparação isolada, pronta para baixar e abrir; não é a versão oficial e usa uma chave de salvamento própria.
+- **Fonte original do experimento:** [`references/gemini-2026-10-31/experimento-anonimizado.html.txt`](references/gemini-2026-10-31/experimento-anonimizado.html.txt). Está arquivada como texto de referência, propositalmente não executável.
+- **HTMLs oficiais gerados localmente:** `build/jogo.html` e `build/jogo-celular.html`. São saídas de build ignoradas pelo Git; gere-as com `npm run build`.
+
+A página do GitHub mostra o código dos HTMLs, mas não hospeda nem executa o jogo. Para jogar, baixe o arquivo autônomo e abra no navegador, ou use os comandos locais abaixo.
+
 ## Base preservada
 
-A versão estável é a **V2.27**. Abra `baseline/Belem-Viva-V2-27.html` diretamente no navegador para jogar a versão congelada. O HTML se adapta à tela. A V2.28 foi rejeitada e não é base deste repositório.
+A versão estável é a **V2.27**. A V2.28 foi rejeitada e não é base deste repositório.
 
 O território e o visual da V2.27 permanecem. Priorizar mapa, navegação, personagens e acabamento com alterações pontuais e comparáveis. Belém e Rua Nova devem se conectar ao entorno natural no mesmo mundo. O recorte futuro termina antes de desenvolver outros núcleos urbanos. A extensão de dados disponível não significa cenário integralmente desenvolvido.
 
@@ -21,7 +31,16 @@ npm run build
 npm run play
 ```
 
-`build` gera `build/jogo.html` e `build/jogo-celular.html`, ambos autônomos. Você também pode abrir esses arquivos manualmente. `play` apenas gera e abre o HTML local, sem servidor. Os comandos diretos equivalentes são `node scripts/project.cjs test`, `build`, `play` e `verify-baseline`.
+`build` gera `build/jogo.html` e `build/jogo-celular.html`, ambos autônomos. Você também pode abrir esses arquivos manualmente. `play` apenas gera e abre o HTML local, sem servidor.
+
+### Prévia experimental Gemini
+
+```sh
+npm run build:gemini
+npm run play:gemini
+```
+
+O primeiro comando atualiza o snapshot versionado `previews/gemini-preview.html`; o segundo também o abre no navegador. A versão experimental não altera o jogo oficial nem o diário V2.27.
 
 ## Onde trabalhar
 
@@ -39,4 +58,4 @@ Dados geográficos, imagens e créditos existentes permanecem nos arquivos. Cons
 
 ## Testes e limites
 
-Os testes usam Node e simulação de DOM para algumas interfaces. Eles não comprovam aparência, foco nativo, toque ou desempenho em navegador real. Esta preparação preserva o conteúdo da V2.27 e atualiza apenas o nome na apresentação para Beit Lehem. A cópia congelada mantém os nomes históricos e seu hash original. A configuração administrativa de Actions ainda deve ser conferida pelo proprietário; nenhum workflow é incluído.
+Os testes usam Node e simulação de DOM para algumas interfaces. Eles não comprovam aparência, foco nativo, toque ou desempenho em navegador real. A cópia congelada mantém os nomes históricos e seu hash original. Nenhum workflow é incluído.

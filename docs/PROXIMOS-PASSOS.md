@@ -9,12 +9,12 @@
 
 ## Etapa imediata — comparar a prévia experimental
 
-1. Gerar a cópia com `npm run build:gemini` ou gerar e abrir com `npm run play:gemini`.
-2. Comparar o experimento com a V2.27, usando a mesma situação de mapa/câmera sempre que possível.
-3. Registrar o que realmente melhora em escala, legibilidade, fachadas, navegação e personagens; não aceitar automaticamente posições aproximadas ou mudanças amplas.
-4. Se a prévia falhar, registrar o erro do navegador e corrigir a cópia isolada, sem importar o HTML para `dist/`.
+1. Encontrar o snapshot em `previews/gemini-preview.html` e baixar pelo GitHub para abrir localmente.
+2. Também é possível regenerá-lo com `npm run build:gemini` ou gerar e abrir com `npm run play:gemini`.
+3. Comparar o experimento com a V2.27, usando a mesma situação de mapa/câmera sempre que possível.
+4. Registrar o que realmente melhora em escala, legibilidade, fachadas, navegação e personagens; não aceitar automaticamente posições aproximadas ou mudanças amplas.
 
-A prévia corrige somente o bloqueio de inicialização conhecido e mantém uma chave de diário própria. Ainda não foi validada em navegador ou aparelho físico; não é uma versão oficial nem prova que os demais sistemas estão prontos.
+A prévia corrige somente o bloqueio de inicialização conhecido e mantém uma chave de diário própria. Ainda não foi validada em navegador ou aparelho físico; não é uma versão oficial nem prova que os demais sistemas estejam prontos.
 
 ## Próximas etapas de mundo
 

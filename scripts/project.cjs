@@ -6,6 +6,6 @@ function openPage(relativePath){const url=pathToFileURL(path.join(root,relativeP
 if(task==='test'){const files=fs.readdirSync(path.join(root,'tests')).filter(f=>f.endsWith('.test.cjs')).sort().map(f=>'tests/'+f);run(['--test',...files]);}
 else if(task==='build')build();
 else if(task==='play'){build();openPage('build/jogo.html');}
-else if(task==='play:gemini'){run(['scripts/build-gemini-preview.cjs']);openPage('build/gemini-preview.html');}
+else if(task==='play:gemini'){run(['scripts/build-gemini-preview.cjs']);openPage('previews/gemini-preview.html');}
 else if(task==='verify-baseline'){const expected=fs.readFileSync(path.join(root,'baseline','SHA256.txt'),'utf8').split(/\s+/)[0],actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'baseline','Belem-Viva-V2-27.html'))).digest('hex');if(actual!==expected)throw Error('A cópia congelada V2.27 foi modificada.');console.log('V2.27 congelada: SHA-256 confere.');}
 else{console.log('Uso: node scripts/project.cjs test | build | play | play:gemini | verify-baseline');process.exitCode=1;}

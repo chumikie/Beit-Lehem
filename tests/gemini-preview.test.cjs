@@ -9,7 +9,7 @@ const test = require('node:test');
 const { buildGeminiPreview } = require('../scripts/build-gemini-preview.cjs');
 
 const SOURCE_RELATIVE = path.join('references', 'gemini-2026-10-31', 'experimento-anonimizado.html.txt');
-const OUTPUT_RELATIVE = path.join('build', 'gemini-preview.html');
+const OUTPUT_RELATIVE = path.join('previews', 'gemini-preview.html');
 const BROKEN_INITIALIZATION =
   'let belemContacts=window.RoncadorBelemContacts.fresh();kawaiiState=window.RoncadorKawaiiMoto.fresh();';
 

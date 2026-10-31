@@ -2,7 +2,11 @@
 
 Esta etapa cria uma cópia executável e isolada do HTML arquivado para comparação. **Não é uma nova versão oficial do jogo**, não substitui a V2.27 e não integra os sistemas do experimento em `dist/`.
 
-## Abrir a prévia
+## Onde encontrar no GitHub
+
+O snapshot gerado e versionado fica em [`previews/gemini-preview.html`](../../previews/gemini-preview.html). Faça o download desse arquivo e abra-o no navegador local. A página do GitHub exibe o código-fonte; ela não hospeda nem executa o jogo.
+
+## Regenerar a prévia
 
 Na pasta do projeto, com Node.js 18 ou superior:
 
@@ -10,20 +14,20 @@ Na pasta do projeto, com Node.js 18 ou superior:
 npm run build:gemini
 ```
 
-Gera `build/gemini-preview.html`. Para gerar e abrir no navegador padrão:
+Esse comando atualiza `previews/gemini-preview.html`, que está versionado e visível no repositório. Para gerar e abrir no navegador padrão:
 
 ```bash
 npm run play:gemini
 ```
 
-O comando habitual `npm run play` continua abrindo `build/jogo.html`, isto é, a versão oficial construída a partir de `dist/`.
+O comando habitual `npm run play` continua abrindo `build/jogo.html`, isto é, o jogo oficial construído a partir de `dist/`. Os arquivos oficiais gerados em `build/` são locais e ignorados pelo Git.
 
 ## Proteções desta etapa
 
 - A fonte `references/gemini-2026-10-31/experimento-anonimizado.html.txt` é somente lida; o processo não a altera.
 - A cópia gerada recebe apenas duas alterações: a remoção da atribuição duplicada que acessava `kawaiiState` antes da declaração `let`, e o título da aba para identificar a prévia experimental.
 - A chave `roncador-expedition-v2-referencias-gemini` é mantida e validada como distinta da chave oficial `roncador-expedition-v2`. O diário local oficial não é migrado nem sobrescrito.
-- A saída vai para `build/`, não para `dist/`. A baseline congelada e a V2.27 não são editadas.
+- A saída experimental vai para `previews/`, não para `dist/`. A baseline congelada e a V2.27 não são editadas.
 - Se a fonte ou a chave não corresponderem ao esperado, a geração falha em vez de tentar uma correção ampla.
 
 ## O que ainda não está resolvido

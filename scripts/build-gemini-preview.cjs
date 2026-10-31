@@ -5,7 +5,7 @@ const path = require('node:path');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const SOURCE_RELATIVE = path.join('references', 'gemini-2026-10-31', 'experimento-anonimizado.html.txt');
-const OUTPUT_RELATIVE = path.join('build', 'gemini-preview.html');
+const OUTPUT_RELATIVE = path.join('previews', 'gemini-preview.html');
 const OFFICIAL_SAVE_KEY = 'roncador-expedition-v2';
 
 function replaceExactlyOnce(source, search, replacement, label) {
