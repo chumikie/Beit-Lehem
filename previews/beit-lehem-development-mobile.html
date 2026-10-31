@@ -3628,10 +3628,10 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    const waving=Number.isFinite(now)&&now<wavedUntil;
    const waveAge=waving?3.8-(wavedUntil-now):0;
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
-    role==='feira'?(hour<12?'indo à feira':'voltando da feira'):
+    role==='feira'?(resting?'observando as bancas':hour<12?'indo à feira':'voltando da feira'):
     role==='vitrine'?'observando a vitrine':
     role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
-   const kind=role==='vitrine'?'look':role==='senhora'?'rest':role==='feira'?'rest':'rest';
+   const kind=(role==='vitrine'||role==='feira')?'look':'rest';
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
     pause:resting||waving||neighborWave,moment:resting?{kind,strength:Math.min(1,phase/.8,(5-phase)/.8)}:null,
     social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
