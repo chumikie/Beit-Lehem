@@ -64,6 +64,30 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     'Identificação da aba da prévia'
   );
 
+  // Brand only: the municipality remains Belém/PB in geographic data,
+  // cultural descriptions and addresses. Do not rewrite those as game branding.
+  const branding = [
+    ['aria-label="Trilhas de Roncador"', 'aria-label="Beit Lehem"'],
+    ['<span>TRILHAS<span class="brand-sub">de Roncador</span></span>',
+     '<span>BEIT<span class="brand-sub">LEHEM</span></span>'],
+    ["document.title = 'Trilhas do Roncador — Belém Viva · V2.27 Cozy';",
+     "document.title = 'Beit Lehem — Belém/PB · Jogo cozy';"],
+    ["document.querySelector('.brand-sub').textContent = 'do Roncador';",
+     "document.querySelector('.brand-sub').textContent = 'LEHEM';"],
+    ["document.querySelector('.edition').textContent = '☼ BELÉM VIVA · V2.27';",
+     "document.querySelector('.edition').textContent = '☼ BEIT LEHEM · PRÉVIA';"],
+    ["document.querySelector('.welcome h1').innerHTML = 'Belém tem histórias<br>para viver.';",
+     "document.querySelector('.welcome h1').innerHTML = 'Beit Lehem tem histórias<br>para viver.';"],
+    ["document.querySelector('.welcome-eyebrow').textContent = '☼ UM NOVO DIA EM BELÉM';",
+     "document.querySelector('.welcome-eyebrow').textContent = '☼ UM NOVO DIA EM BEIT LEHEM';"],
+    ['Explore os caminhos de Roncador e complete seu passaporte de aventura.',
+     'Explore os caminhos de Beit Lehem e complete seu passaporte de aventura.'],
+    ['<li><kbd>Vida em Belém</kbd>', '<li><kbd>Vida em Beit Lehem</kbd>']
+  ];
+  for (const [before, after] of branding) {
+    html = replaceExactlyOnce(html, before, after, 'Identidade visual Beit Lehem');
+  }
+
   if (html.includes(brokenInitialization)) {
     throw new Error('A inicialização incorreta de kawaiiState permaneceu na cópia gerada.');
   }
