@@ -210,7 +210,11 @@
     rounded(c, -28, -11, 56, 23, 2, '#c9cfc0');
   }
   function drawTerminalDetails(c) {
+    // Small light-and-shadow study on the existing illustrated terminal symbol.
+    // Not a claim about the present-day facade or bus timetable.
     rounded(c, -29, -16, 58, 16, 2.5, '#77999b', '#547578');
+    rounded(c, -27, -14.5, 54, 1.4, .7, '#e5eee17a');
+    rounded(c, -27, -1.8, 54, 1.4, .7, '#405f6260');
     c.strokeStyle = '#e9f0dd'; c.lineWidth = 1.2;
     for (let i = -20; i < 24; i += 10) { c.beginPath(); c.moveTo(i, -15); c.lineTo(i, 0); c.stroke(); }
     rounded(c, -18, 3, 36, 13, 5, '#e3d4ae', '#9a9b85');

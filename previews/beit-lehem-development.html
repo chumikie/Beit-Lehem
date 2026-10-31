@@ -1252,7 +1252,11 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     rounded(c, -28, -11, 56, 23, 2, '#c9cfc0');
   }
   function drawTerminalDetails(c) {
+    // Small light-and-shadow study on the existing illustrated terminal symbol.
+    // Not a claim about the present-day facade or bus timetable.
     rounded(c, -29, -16, 58, 16, 2.5, '#77999b', '#547578');
+    rounded(c, -27, -14.5, 54, 1.4, .7, '#e5eee17a');
+    rounded(c, -27, -1.8, 54, 1.4, .7, '#405f6260');
     c.strokeStyle = '#e9f0dd'; c.lineWidth = 1.2;
     for (let i = -20; i < 24; i += 10) { c.beginPath(); c.moveTo(i, -15); c.lineTo(i, 0); c.stroke(); }
     rounded(c, -18, 3, 36, 13, 5, '#e3d4ae', '#9a9b85');
@@ -2147,6 +2151,49 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     lucia:['Tem planta que pede sombra, tem conversa que pede tempo. As duas merecem cuidado.','Meu caderno está cheio de memórias pequenas: um passeio, uma flor, um sorriso.','Uma vizinhança fica mais bonita quando alguém se lembra de perguntar como a gente está.'],
     bia:['Fiz uma lista de lugares que sonho conhecer. Também escrevi tudo o que gosto daqui.','O melhor de estudar é descobrir perguntas novas e depois dividir com alguém.','Ficar um pouco na rua ajuda a organizar as ideias antes de voltar aos livros.']
   };
+  // Follow-ups depend only on already-saved care activity and day.
+  // These are fictional neighbors, not quotations or accounts of real residents.
+  const CARE_FOLLOW_UP={
+    damiao:{
+      cestos:'Os cestos que arrumamos ontem deixaram a banca pronta bem mais cedo. Obrigado pela força!',
+      historias:'Ainda pensei naquela conversa de ontem. É bom ter quem escute com calma.'
+    },
+    lucia:{
+      mudas:'Olhe, a mudinha que cuidamos ontem parece mais viçosa. Cuidar junto faz diferença.',
+      lembrancas:'Guardei com carinho o que conversamos ontem. Tem lembrança que floresce devagar.'
+    },
+    bia:{
+      caderno:'Revisei as anotações que organizamos ontem. Agora meus planos estão mais claros.',
+      planos:'Fiquei pensando nos caminhos que imaginamos ontem. Já tenho outra ideia para contar!'
+    }
+  };
+  // A neighbor may mention a recent kindness shown to someone else.
+  // All accounts are original fictional dialogue, derived from existing save fields.
+  const NEIGHBOR_FOLLOW_UP={
+    damiao:[
+      {friend:'lucia',kind:'mudas',text:'Lúcia me contou que você ajudou com a mudinha. É bom ver esse cuidado correndo pela cidade.'},
+      {friend:'bia',kind:'caderno',text:'Bia disse que vocês organizaram o caderno dela. Esses planos merecem todo apoio.'}
+    ],
+    lucia:[
+      {friend:'damiao',kind:'cestos',text:'Damião comentou que você ajudou com os cestos. A feira fica mais bonita com essa atenção.'},
+      {friend:'bia',kind:'planos',text:'Bia me falou dos planos que vocês imaginaram. É bonito ver alguém sonhar com carinho.'}
+    ],
+    bia:[
+      {friend:'lucia',kind:'mudas',text:'Lúcia me contou da mudinha que vocês cuidaram. Queria desenhar como ela vai ficar.'},
+      {friend:'damiao',kind:'historias',text:'Damião disse que você parou para ouvir suas histórias. Também quero escutar uma delas.'}
+    ]
+  };
+  function neighborFollowUp(s,id){
+    return NEIGHBOR_FOLLOW_UP[id]?.find(({friend,kind})=>{
+      const person=s.people?.[friend];
+      return person?.lastCareKind===kind&&person.lastCareDay>0&&s.day-person.lastCareDay<=1;
+    })?.text||null;
+  }
+  const CARE_TODAY={
+    damiao:'Obrigado pela companhia de hoje! Depois a gente continua a conversa perto da banca.',
+    lucia:'Gostei de cuidar dessas pequenas coisas com você hoje. Vamos ver como ficam amanhã?',
+    bia:'Essa conversa me ajudou a colocar as ideias no papel. Depois te conto o que descobri!'
+  };
   const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
   function fresh() {
     return {day:1,minute:8*60+30,people:Object.fromEntries(RESIDENTS.map(p=>[p.id,{bond:0,hunger:24,fatigue:18,company:32,lastConversationDay:0,lastMealSlot:'',lastCareDay:0,careCount:0,lastCareKind:''}])),notes:[]};
@@ -2236,7 +2283,13 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     const n=s.people[id],firstToday=n.lastConversationDay!==s.day;
     if(firstToday){n.lastConversationDay=s.day;n.bond=clamp(n.bond+1,0,4);n.company=clamp(n.company-25,0,100);s.notes.unshift({day:s.day,text:'Você conversou com '+p.name+' sobre '+p.likes+'.'});s.notes=s.notes.slice(0,12);}
     const choices=DIALOGUES[id];
-    return{friendship:n.bond,newMemory:firstToday,text:firstToday?choices[(s.day+Math.max(0,n.bond)-2)%choices.length]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.'};
+    const yesterday=n.lastCareDay===s.day-1&&CARE_FOLLOW_UP[id]?.[n.lastCareKind];
+    const today=n.lastCareDay===s.day&&n.lastCareKind;
+    const neighbor=firstToday?neighborFollowUp(s,id):null;
+    const text=firstToday
+      ?(yesterday||neighbor||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
+      :(today?CARE_TODAY[id]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.');
+    return{friendship:n.bond,newMemory:firstToday,text};
   }
   function care(s,id,kind){
     if(!s?.people?.[id]||!CARE[id])return{ok:false,text:'Encontro não encontrado.'};
@@ -3628,14 +3681,14 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];
    // Small fictional routines without simulation ticks or persistent saves.
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
-   const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
+   const role=hub==='mercado'?'feira':hub==='rodoviaria'?'espera':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
    // Time-driven short routines: different villagers linger at different moments.
    // Seconds provide a gentle rhythm without persistent schedules or timers.
    const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
    const phase=((cycle*.62+i*13)%59+59)%59;
-   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira');
-   const neighborWave=(role==='vizinho'||role==='senhora')&&phase>=11&&phase<14;
+   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira'||role==='espera');
+   const neighborWave=(role==='vizinho'||role==='senhora'||role==='espera')&&phase>=11&&phase<14;
    const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
@@ -3643,6 +3696,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
     role==='feira'?(resting?'observando as bancas':hour<12?'indo à feira':'voltando da feira'):
     role==='vitrine'?'observando a vitrine':
+    role==='espera'?(resting?'aguardando com calma':neighborWave?'acenando numa despedida':'seguindo seu caminho'):
     role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
    const kind=(role==='vitrine'||role==='feira')?'look':'rest';
    return {id,variant:i+1,hub,def:null,localRole:role,activity,

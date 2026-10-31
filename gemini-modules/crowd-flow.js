@@ -109,14 +109,14 @@
    const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];
    // Small fictional routines without simulation ticks or persistent saves.
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
-   const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
+   const role=hub==='mercado'?'feira':hub==='rodoviaria'?'espera':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
    // Time-driven short routines: different villagers linger at different moments.
    // Seconds provide a gentle rhythm without persistent schedules or timers.
    const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
    const phase=((cycle*.62+i*13)%59+59)%59;
-   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira');
-   const neighborWave=(role==='vizinho'||role==='senhora')&&phase>=11&&phase<14;
+   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira'||role==='espera');
+   const neighborWave=(role==='vizinho'||role==='senhora'||role==='espera')&&phase>=11&&phase<14;
    const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
@@ -124,6 +124,7 @@
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
     role==='feira'?(resting?'observando as bancas':hour<12?'indo à feira':'voltando da feira'):
     role==='vitrine'?'observando a vitrine':
+    role==='espera'?(resting?'aguardando com calma':neighborWave?'acenando numa despedida':'seguindo seu caminho'):
     role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
    const kind=(role==='vitrine'||role==='feira')?'look':'rest';
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
