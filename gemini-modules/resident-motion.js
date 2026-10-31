@@ -20,7 +20,7 @@
    const dt=Math.min(.09,Math.max(0,now-s.last));s.last=now;
    const held=holds.has(person.id)&&!person.meeting&&!person.travel;
    const from={x:s.x,y:s.y},gap=distance(from,target);
-   if(!held&&!s.bridge&&gap>11&&graph?.route){
+   if(!held&&!person.pause&&!s.bridge&&gap>11&&graph?.route){
     const route=graph.route([s.x,s.y],[target.x,target.y]);
     // In disconnected OSM components there is no verified pedestrian route;
     // never draw a fictional connector through a house or private parcel.
