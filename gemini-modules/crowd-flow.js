@@ -109,26 +109,32 @@
    const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];
    // Small fictional routines without simulation ticks or persistent saves.
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
-   const role=hub==='mercado'?'feira':hub==='rodoviaria'?'espera':shop&&i%3===0?'vitrine':
+   const central=['igreja','mercado','rodoviaria'].includes(hub);
+   const role=hub==='mercado'?'feira':hub==='rodoviaria'?'espera':hub==='igreja'?'observador':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
    // Time-driven short routines: different villagers linger at different moments.
    // Seconds provide a gentle rhythm without persistent schedules or timers.
    const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
    const phase=((cycle*.62+i*13)%59+59)%59;
-   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira'||role==='espera');
-   const neighborWave=(role==='vizinho'||role==='senhora'||role==='espera')&&phase>=11&&phase<14;
-   const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
+   // Established central sidewalks get quiet, staggered beats; no extra NPCs.
+   const centralPhase=central?((phase+i*3)%59):phase;
+   const resting=central?centralPhase<4.5:phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine');
+   const looking=central&&centralPhase>=6&&centralPhase<9;
+   const neighborWave=(role==='vizinho'||role==='senhora'||central)&&centralPhase>=12&&centralPhase<14.5;
+   const waveStrength=neighborWave?Math.max(0,Math.min(.72,(centralPhase-12)/.8,(14.5-centralPhase)/.8)):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
    const waveAge=waving?3.8-(wavedUntil-now):0;
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
     role==='feira'?(resting?'observando as bancas':hour<12?'indo à feira':'voltando da feira'):
     role==='vitrine'?'observando a vitrine':
-    role==='espera'?(resting?'aguardando com calma':neighborWave?'acenando numa despedida':'seguindo seu caminho'):
+    role==='espera'?(resting?'aguardando com calma':looking?'observando chegadas':neighborWave?'acenando numa despedida':'seguindo seu caminho'):
+    role==='observador'?(resting?'apreciando a praça':looking?'observando a Matriz':neighborWave?'cumprimentando conhecidos':'caminhando pelo centro'):
     role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
-   const kind=(role==='vitrine'||role==='feira')?'look':'rest';
+   const kind=(role==='vitrine'||role==='feira'||role==='observador')?'look':'rest';
+   const gestureStrength=resting?Math.max(0,Math.min(.65,centralPhase/.9,(4.5-centralPhase)/.9)):looking?Math.max(0,Math.min(.6,(centralPhase-6)/.6,(9-centralPhase)/.6)):0;
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
-    pause:resting||waving||neighborWave,moment:resting?{kind,strength:Math.min(1,phase/.8,(5-phase)/.8)}:null,
+    pause:resting||looking||waving||neighborWave,moment:resting||looking?{kind:looking?'look':kind,strength:gestureStrength}:null,
     social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
      neighborWave?{pose:'wave',facing:i%2?1:-1,intensity:waveStrength}:null,
     greeting:waving?{age:waveAge}:null};
@@ -136,7 +142,7 @@
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
- function openSlot(sample,people=[],junctions=[],clearance=23){
+ function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[]){
   // Try nearby points first, then a few farther points along the same
   // mapped walking path. Never draw a decorative walker on a busy corner.
   const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
@@ -147,6 +153,8 @@
    if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
    if(people.some(other=>Number.isFinite(other?.x)&&Number.isFinite(other?.y)&&Math.hypot(p.x-other.x,p.y-other.y)<separation))continue;
    if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
+   // House/shop footprints also reserve a small access strip for doorways.
+   if(entrances.some(e=>Number.isFinite(e?.x)&&Number.isFinite(e?.y)&&Math.hypot(p.x-e.x,p.y-e.y)<15))continue;
    return p;
   }
   // Omitting an ambient passer is preferable to a pile-up at a junction.
