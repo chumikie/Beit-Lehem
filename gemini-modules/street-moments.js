@@ -6,7 +6,8 @@
  const GESTURES={
   damiao:{kind:'rest',offset:0},lucia:{kind:'flower',offset:9},
   bia:{kind:'read',offset:17},cica:{kind:'ribbon',offset:5},
-  nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21}
+  nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21},
+  rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8}
  };
  const CYCLE=33,DURATION=3.4;
  let porches=[];
