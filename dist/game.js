@@ -87,7 +87,11 @@ function drawTree(c,x,y,r,seed){
  c.save();
  c.fillStyle='#29493729';c.beginPath();c.ellipse(x+5,y+6,r*.93,r*.45,-.2,0,Math.PI*2);c.fill();
  roundRect(c,x-1.7,y-r*.2,3.4,r*.7,1,'#9c8969');
- const colors=['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
+ // Gradual visual vocabulary outside the central neighborhood: quieter,
+ // earthier foliage without moving or multiplying existing trees.
+ const outlying=data&&Math.hypot(x-data.start[0],y-data.start[1])>450;
+ const colors=outlying?['#7d996c','#79956b','#6c8b61','#91a079','#84976c']:
+  ['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
  c.fillStyle=colors[seed%5];c.beginPath();c.arc(x,y-r*.39,r*.72,0,7);c.arc(x-r*.39,y-r*.67,r*.56,0,7);c.arc(x+r*.37,y-r*.68,r*.58,0,7);c.fill();
  c.fillStyle='#bad2a05e';c.beginPath();c.ellipse(x-r*.22,y-r*.87,r*.37,r*.24,-.2,0,7);c.fill();
  c.fillStyle='#eff3cc70';for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
@@ -96,15 +100,22 @@ function drawTree(c,x,y,r,seed){
 function house(c,b){
  c.save();c.translate(b.x,b.y);c.rotate(b.angle);
  const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
+ const outlying=!b.centralBlock&&data&&Math.hypot(b.x-data.start[0],b.y-data.start[1])>450;
  roundRect(c,x+3,y+4,b.w,b.h,2,'#32503b2f');
  roundRect(c,x,y,b.w,b.h,1.6,'#f2e6cb','#ad9e8580');
- const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
+ const roofs=outlying?['#b7896e','#b49a78','#a5a993','#bd9278','#8caa96']:
+  ['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
  roundRect(c,x-1,y-1,b.w+2,b.h*.62,1.5,roofs[b.color]);
  // Tiny overlapping tile rhythm and warm edge highlight: stylized, not surveyed facades.
  c.strokeStyle='#fff4d244';c.lineWidth=.65;
  for(let row=2;row<b.h*.54;row+=3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
  c.fillStyle='#fff4d9a8';c.fillRect(x,y+b.h*.57,b.w,1.2);
  if(flat){roundRect(c,x-1,y+b.h*.48,b.w+2,2.7,.5,'#f8e1bc','#ad9882');}
+ if(outlying&&b.seed%5===1){
+  // A soft eave and pale wall wash: landscape transition, not another house.
+  c.fillStyle='#f0e3c88c';c.fillRect(x+1,y+b.h*.6,b.w-2,.9);
+  c.fillStyle='#c3b2906e';c.fillRect(x+1,y+b.h*.62,1,b.h*.3);
+ }
  if(shop){
   roundRect(c,x+1,y+b.h*.61,b.w-2,3.3,.6,'#f9e7bf');
   c.fillStyle='#9fb9a3';c.fillRect(x+2,y+b.h*.65,b.w-4,2.4);
