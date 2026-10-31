@@ -17,12 +17,18 @@
     {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'},
     {id:'janela-bia',label:'✏️ Desenhar uma janela para a carta de Bia',reply:'Nara desenha uma janela aberta ao lado da carta: “Para lembrar que sempre existe um caminho de volta.”'},
     {id:'paisagem-bia',label:'🌿 Desenhar a paisagem que Bia quer conhecer',reply:'Nara pinta um horizonte delicado: “Os sonhos também precisam de espaço no papel.”'}]},
+  {id:'rosa',name:'Rosa',hub:'sonho_doce',variant:10,tone:'#b78483',icon:'☕',role:'Vizinha das conversas tranquilas',
+   morning:'observa o movimento e ajeita um pequeno caderno',afternoon:'descansa e troca notícias com quem passa',
+   greeting:'Eu gosto de uma conversa sem pressa. Sempre tem uma história bonita nas ruas.',
+   options:[{id:'prosa',label:'☕ Fazer uma pausa para conversar',reply:'Rosa escuta com atenção e diz: “Às vezes a melhor descoberta é ter tempo para alguém.”'},
+    {id:'caderno',label:'📒 Anotar uma lembrança do passeio',reply:'Rosa abre o caderno e guarda uma frase sobre o dia: “Essa eu não quero esquecer.”'}]},
   {id:'teo',name:'Téo',hub:'rodoviaria',variant:8,tone:'#85a0c5',icon:'✉️',role:'O colecionador de recados',
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
    options:[{id:'envelope',label:'Ajudar a separar envelopes',reply:'Téo alinha os envelopes e coloca um coração no de cima. “Pronto, ninguém se perde!”'},
     {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]}
  ]);
+ const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{}});
  function restore(raw){
   const state=fresh();if(!raw||typeof raw!=='object')return state;
@@ -57,8 +63,8 @@
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
   const first=!state.seen.includes(id);if(first)state.seen.push(id);
-  return{ok:true,first,reply:choice.reply,unlocked:state.seen.length===RESIDENTS.length};
+  return{ok:true,first,reply:choice.reply,unlocked:coreProgress(state)===3};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,interact};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,coreProgress,interact};
 })(typeof window!=='undefined'?window:globalThis);
 
