@@ -30,3 +30,29 @@ test('Kawaii motor state is initialized exactly once, without temporal dead-zone
   assert.match(declarations, /let kawaiiState=window\.RoncadorKawaiiMoto\.fresh\(\)/);
   assert.equal((declarations.match(/kawaiiState=/g) || []).length, 1);
 });
+
+test('the same HUD controls move to the mobile diary and back on desktop', () => {
+  const from = game.indexOf('function placeKawaiiHud(){');
+  const to = game.indexOf('function resize(){', from);
+  assert.ok(from > 0 && to > from);
+  const hud = { parentElement: null };
+  const createParent = () => ({
+    querySelector: () => null,
+    insertBefore(node) { node.parentElement = this; },
+    appendChild(node) { node.parentElement = this; },
+  });
+  const sidebar = createParent(), world = createParent();
+  let mobile = true;
+  const document = { querySelector: selector => selector === '.kawaii-hud-bar' ? hud : world };
+  const place = vm.runInNewContext(`${game.slice(from, to)};placeKawaiiHud`, {
+    document,
+    matchMedia: () => ({ matches: mobile }),
+    $: () => sidebar,
+  });
+  place();
+  assert.equal(hud.parentElement, sidebar);
+  mobile = false;
+  place();
+  assert.equal(hud.parentElement, world);
+  assert.match(game, /\.sidebar \.kawaii-hud-bar\{position:static;display:grid/);
+});
