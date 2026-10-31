@@ -61,6 +61,15 @@
    return{...person,...s.result};
   }
   function present(person,now,reduce){
+   // A subtle reach uses the existing gesture renderer and carried props:
+   // Damião's basket, Lúcia's flower and Bia's notebook. Never move their feet.
+   const gestures={damiao:{kind:'rest',pose:'offer',facing:1},
+    lucia:{kind:'flower',pose:'receive',facing:1},
+    bia:{kind:'read',pose:'receive',facing:-1}};
+   const cue=gestures[person.id],moment=person.moment;
+   if(cue&&moment?.kind===cue.kind&&!person.social&&!person.walking&&!person.arriving&&!person.meeting&&!person.travel){
+    person.social={pose:cue.pose,facing:cue.facing,intensity:Math.min(.55,Math.max(0,moment.strength)*.55),react:false,stage:'routine'};
+   }
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
    let v=visuals.get(person.id);
    if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now};visuals.set(person.id,v);}
