@@ -816,14 +816,21 @@ function drawStreetLife(c,time,view){
   }
  }
 }
+function boltRestingByGreen(at){
+ if(!at||at.walking)return false;
+ const nearby=(p,r)=>Math.hypot(p.x-at.x,p.y-at.y)<r;
+ return floraLayer.points.some(p=>['canopy','shade','flowerbed'].includes(p.kind)&&nearby(p,27))||
+  detailedFacades&&houses.some(h=>h.seed%7===2&&['matriz','joao','clovis'].includes(h.centralBlock)&&nearby(h,30));
+}
 function drawStreetPets(c,time,view){
  const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'casa_varanda',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
   const at=walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
+  const greenRest=pet.bolt&&boltRestingByGreen(at);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
-  const bounce=reduce?0:Math.sin(time*(pet.cat?3.7:5.2)+pet.variant)*.65;
+  const bounce=reduce?0:Math.sin(time*(greenRest?1.4:pet.cat?3.7:5.2)+pet.variant)*(greenRest?.2:.65);
   c.save();c.translate(at.x,at.y+bounce);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
   const fur=pet.bolt?'#eee0c3':pet.cat?'#f0d3ac':'#cd9870';
@@ -836,7 +843,7 @@ function drawStreetPets(c,time,view){
    if(pet.bolt){c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();}
    c.restore();continue;
   }
-  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*2+pet.variant)*2),9,-13);c.stroke();
+  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*(greenRest?1.5:2)+pet.variant)*(greenRest?1:2)),9,-13);c.stroke();
   roundRect(c,-6,-7,12,9,4,fur,'#9c846b');
   c.fillStyle=pet.bolt?'#d7bb91':fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
   if(pet.bolt){
@@ -852,6 +859,10 @@ function drawStreetPets(c,time,view){
   else{roundRect(c,-8,-10,4,8,2,'#a47359');}
   c.fillStyle='#51483e';c.beginPath();c.arc(-5,-7,0.8,0,7);c.arc(-1,-7,0.8,0,7);c.fill();
   c.strokeStyle='#a77a67';c.lineWidth=.6;c.beginPath();c.moveTo(-3,-5);c.lineTo(-3,-3);c.stroke();
+  if(greenRest&&zoom>=1.15){
+   // Bolt quietly watches the plants during a natural stop on his street route.
+   c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
+  }
   if(pet.name&&zoom>1.2){
    roundRect(c,-18,-22,36,10,4,'#fff9ebee','#b89f7d');
    c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,-17);
@@ -2287,7 +2298,7 @@ function clickWorld(e){
  if(boltAt&&Math.hypot(x-boltAt.x,y-boltAt.y)<20){
   spawnEmojiBurst(boltAt.x,boltAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
   note(659,0,.09);note(880,.09,.13);
-  notify('🐕 💕 Bolt abanou o rabo todo feliz na calçada da Rua Clóvis Bezerra!');
+  notify(boltRestingByGreen(boltAt)?'🐕 🌿 Bolt descansou um instante perto das plantas e recebeu seu carinho!':'🐕 💕 Bolt abanou o rabo todo feliz com seu carinho!');
   return;
  }
  if(Math.hypot(x-guide.x,y-guide.y)<22&&Math.hypot(player.x-guide.x,player.y-guide.y)<32){talkGuide();return;}
