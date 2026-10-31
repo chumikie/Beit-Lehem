@@ -42,18 +42,23 @@ function applyUserPublicPlaceCorrections(){
  const positions=[
   {id:'sagrada_familia',name:'Igreja Matriz Sagrada Família',p:[145,125]},
   {id:'prefeitura',name:'Prefeitura Municipal',p:[-241.8,392]},
-  {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[106.5,95]}
+  {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[106.5,95]},
+  {id:'pedra_cordeiro',name:'Mirante da Pedra do Cordeiro',geo:[-6.6984919,-35.5472188]},
+  {id:'parque_sao_luis',name:'Parque Artesanal São Luís',geo:[-6.7129197,-35.5237656]}
  ];
  for(const place of positions){
   const landmark=data.landmarks.find(p=>p.id===place.id);
   if(!landmark)continue;
   const prior=landmark.p;
-  landmark.p=place.p.slice();
-  landmark.positionStatus='user_reference_proposed';
+  const projection=data.projection;
+  const corrected=place.geo?[(place.geo[1]-projection.originLon)*projection.metersPerDegreeLon,
+   (place.geo[0]-projection.originLat)*projection.metersPerDegreeLat]:place.p;
+  landmark.p=corrected.slice();
+  landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
   for(const point of data.points){
    if(point.tags?.name===landmark.name&&
     Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
-    point.p=place.p.slice();
+    point.p=corrected.slice();
    }
   }
  }
