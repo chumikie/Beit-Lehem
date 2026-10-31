@@ -816,16 +816,32 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21}
  };
  const CYCLE=33,DURATION=3.4;
+ let porches=[];
+ function setHouses(houses){
+  porches=Array.isArray(houses)?houses.filter(h=>h&&['matriz','joao','clovis'].includes(h.centralBlock)&&h.w>=18&&h.seed%7===2&&Number.isFinite(h.x)&&Number.isFinite(h.y)).map(h=>({x:h.x,y:h.y})):[];
+  return porches.length;
+ }
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function choose(person,elapsed,world){
   const config=GESTURES[person?.id];
   if(!config||person.meeting||person.travel||person.arriving||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
+  // An occasional fictional doorstep gesture at the cooler end of the day.
+  // It changes only the resident's pose on an existing mapped path.
+  const nearPorch=Number.isFinite(person.x)&&Number.isFinite(person.y)&&
+   porches.some(h=>Math.hypot(h.x-person.x,h.y-person.y)<32);
+  if(nearPorch&&world.minute>=16*60+45&&world.minute<18*60+5){
+   const porchPhase=((elapsed+config.offset)%41+41)%41;
+   if(porchPhase<3.2){
+    const kind=['damiao','cica'].includes(person.id)?'sweep':['lucia','nara','teo'].includes(person.id)?'chair':'rest';
+    return{kind,strength:smooth(Math.min(1,porchPhase/.55,(3.2-porchPhase)/.55)),phase:porchPhase,nearPorch:true};
+   }
+  }
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
   if(phase>=DURATION)return null;
   const strength=smooth(Math.min(1,phase/.65,(DURATION-phase)/.65));
   return{kind:config.kind,strength,phase};
  }
- return{GESTURES,CYCLE,DURATION,choose};
+ return{GESTURES,CYCLE,DURATION,choose,setHouses};
 });
 
 </script><script>
@@ -4000,6 +4016,7 @@ function preprocess(){
  residentMotion=window.RoncadorResidentMotion.create(pathfinder);
  streetGreetings=window.RoncadorStreetGreetings.create(pathfinder);
  streetGreetings.setHouses(houses);
+ window.RoncadorStreetMoments.setHouses(houses);
  roadDetails=window.RoncadorRoadDetails.prepare(roads,pathfinder);
  terrainLayer=window.RoncadorTerrainRelief.prepare(data,terrainData);
  streetPaths.clear();
@@ -4399,7 +4416,7 @@ function residentsInStreets(){
    if(point)point.walking=false;
   }else point=walkingPoint(def.id,schedule.hub,i);
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel};
-  const moment=window.RoncadorStreetMoments.choose(behavior,elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,x:point?.x,y:point?.y},elapsed,living);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -4414,7 +4431,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    const next=roadPath?.length?window.RoncadorStreetLife.sample(roadPath,elapsed*(.72+def.variant*.07)+def.variant*12+63):null;
    if(next&&primary.every(p=>Math.hypot(p.x-next.x,p.y-next.y)>21))at=next;
   }
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel,x:at?.x,y:at?.y},elapsed,living);
   return at?[residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -4443,6 +4460,10 @@ function drawDailyGesture(c,person,time){
  if(moment.kind==='rest'){
   c.moveTo(-7,-9);c.quadraticCurveTo(-11,-4,-6,-2);
   c.moveTo(7,-9);c.quadraticCurveTo(10,-3,6,-2);
+ }else if(moment.kind==='sweep'){
+  c.moveTo(7,-8);c.quadraticCurveTo(13,-11,12,-14+sway*.45);
+ }else if(moment.kind==='chair'){
+  c.moveTo(7,-10);c.quadraticCurveTo(13,-8,12,-5+sway*.3);
  }else if(moment.kind==='flower'){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-13,10,-16+sway*.35);
  }else if(moment.kind==='look'){
@@ -4456,6 +4477,13 @@ function drawDailyGesture(c,person,time){
   c.moveTo(7,-8);c.quadraticCurveTo(12,-13,13,-15+sway);
  }
  c.stroke();
+ if(moment.kind==='sweep'){
+  // A hand-held broom sweeps lightly; nothing is placed on the street.
+  c.strokeStyle='#96744c';c.lineWidth=1.4;c.beginPath();
+  c.moveTo(12,-14+sway*.45);c.lineTo(15+sway*.6,5);c.stroke();
+  c.strokeStyle='#cda974';c.lineWidth=2.5;c.beginPath();
+  c.moveTo(12+sway*.6,5);c.lineTo(18+sway*.6,5);c.stroke();
+ }
  // Props are worn/carried, never placed as purported real-world objects.
  if(moment.kind==='ribbon'||moment.kind==='flower'||moment.kind==='letter'){
   const color=moment.kind==='flower'?'#deafb7':moment.kind==='ribbon'?'#79b8af':'#eec9a4';
