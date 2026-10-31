@@ -38,6 +38,27 @@ view.present(turned,1.016,false);
 assert(turned.gaze<previous&&turned.gaze>-.65,'gaze eases toward a friend rather than snapping');
 view.present(turned,1.032,true);
 assert.equal(turned.gaze,-.65,'reduced motion uses a stable direct gaze');
+// Frame-rate-independent visual transition from walking to greeting and back.
+for(const hz of [20,30,60]){
+ const renderer=motion.create(graph);
+ const step=1/hz;
+ const moving={id:'nara',walking:true,heading:0,walkBlend:1};
+ renderer.present(moving,0,false);
+ assert.equal(moving.walkBlend,1);
+ let paused;
+ for(let i=1;i<=hz;i++){
+  paused={id:'nara',walking:false,heading:0,walkBlend:1,social:{pose:'wave',facing:-1}};
+  renderer.present(paused,i*step,false);
+ }
+ assert(paused.walkBlend<.01,'feet come to rest while waving at '+hz+' FPS');
+ const start={id:'nara',walking:true,heading:0,walkBlend:1};
+ renderer.present(start,1+step,false);
+ assert(start.walkBlend>0&&start.walkBlend<.5,'feet ease into motion after farewell at '+hz+' FPS');
+ const still={id:'nara',walking:false,walkBlend:1,moment:{kind:'rest'}};
+ renderer.present(still,1+2*step,true);
+ assert.equal(still.walkBlend,0,'reduced-motion preference removes gait from resting pose');
+ assert.equal(still.lean,0,'reduced-motion preference removes lean');
+}
 const actor={id:'cica',x:10,y:0,walking:true};
 const frame=view.resolve(actor,1.05,1),readAgain=view.resolve(actor,1.05,1);
 assert.equal(readAgain.travelDistance,frame.travelDistance,'repeat state reads cannot stop the visual gait');
