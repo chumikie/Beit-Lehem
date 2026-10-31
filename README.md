@@ -1,49 +1,40 @@
-# Beit Lehem — mundo em desenvolvimento
+# Beit Lehem — jogo cozy de Belém/PB
 
-Beit Lehem é uma experiência local e offline ambientada em Belém/PB, Rua Nova e no entorno rural e serrano. O objetivo é ampliar um mundo conectado, preservando a identidade artística e a escala do jogo aprovado.
+Beit Lehem explora Belém/PB, Rua Nova e o entorno rural e serrano. **Por decisão do autor, o Gemini Preview é agora a base principal da evolução visual e funcional.** A V2.27 continua preservada como referência técnica e para recuperação.
 
-## Comece aqui: encontre a versão certa
+## Qual arquivo baixar?
 
-**[Abrir o índice de versões e a organização das pastas](docs/VERSOES-E-ESTRUTURA.md)** — links para computador, celular, V2.27 e Gemini; instruções para baixar e um fluxo de edição leve.
+**[Índice de versões e instruções](docs/VERSOES-E-ESTRUTURA.md)**
 
-## Quatro arquivos, três papéis diferentes
+- **Jogo atual — computador:** [previews/beit-lehem-development.html](previews/beit-lehem-development.html) — **agora é a base Gemini**.
+- **Jogo atual — celular:** [previews/beit-lehem-development-mobile.html](previews/beit-lehem-development-mobile.html) — atualmente o mesmo HTML Gemini responsivo; acabamento específico de celular pendente.
+- **Gemini original corrigido para abrir:** [previews/gemini-preview.html](previews/gemini-preview.html) — conteúdo de referência preservado.
+- **V2.27 estável:** [baseline/Belem-Viva-V2-27.html](baseline/Belem-Viva-V2-27.html) — não editar.
 
-- **Base oficial de referência — V2.27:** [`baseline/Belem-Viva-V2-27.html`](baseline/Belem-Viva-V2-27.html). É a melhor versão estável até aqui: ampla, jogável e a base que deve crescer. Sua cópia congelada não deve ser editada.
-- **Referência enriquecida do Gemini:** [`previews/gemini-preview.html`](previews/gemini-preview.html). Reúne mais referências e detalhes locais do que a base oficial. Serve como fonte de informação e comparação; não é uma substituição da V2.27.
-- **Jogo em desenvolvimento — desktop:** [`previews/beit-lehem-development.html`](previews/beit-lehem-development.html). HTML autônomo da V2.27 com os aprimoramentos integrados.
-- **Jogo em desenvolvimento — celular:** [`previews/beit-lehem-development-mobile.html`](previews/beit-lehem-development-mobile.html). A mesma versão, adaptada para telas pequenas. Os dois snapshots devem crescer juntos.
+**Atenção aos saves:** a base Gemini usa uma chave de armazenamento diferente da V2.27. O progresso do diário não é transferido automaticamente entre arquivos/origens. Ainda falta exportação/importação e migração testada.
 
-## Como funciona o código
+## Código e geração
 
-A pasta `dist/` contém os módulos editáveis do jogo, os dados cartográficos, estilos e interfaces. `dist/index.html` é a entrada modular para o processo de build; não é um HTML autônomo pronto para abrir sozinha.
+- **Base de trabalho Gemini:** `references/gemini-2026-10-31/experimento-anonimizado.html.txt`, inicialmente preservada como monólito. Precisamos extrair seus sistemas gradualmente para módulos pequenos antes de alterações amplas.
+- **Prévia Gemini:** `scripts/build-gemini-preview.cjs` aplica uma correção de inicialização à cópia, sem alterar a fonte.
+- **Prévias principais:** `npm run build:development-preview` regenera ambas a partir do Gemini.
+- **Módulos V2.27:** `dist/` permanece como biblioteca de referência de código estável, incluindo roteamento, gestos, UI, fachadas e salvamento antigo. `npm run build` ainda gera a V2.27 modular como recurso de comparação; não é a prévia principal.
 
-O snapshot de desenvolvimento pode ser regenerado com Node.js 18 ou superior:
-
-```sh
-npm run build:development-preview
-```
-
-Para gerar e abrir no navegador padrão:
-
-```sh
-npm run play:development-preview
-```
-
-A V2.27 congelada continua separada. A prévia Gemini permanece uma referência independente. Não há hospedagem, servidor remoto, GitHub Pages ou deploy.
-
-## Validar alterações
+Com Node.js 18+:
 
 ```sh
 npm test
 npm run verify:baseline
-npm run build
 npm run build:development-preview
+npm run play:development-preview
 ```
 
-Os testes automatizados cobrem regras de dados e módulos, mas não substituem uma conferência visual em navegador e dispositivo físico.
+**Ainda não aprovamos a base Gemini como versão estável.** A correção de inicialização permite gerar a prévia, mas há pendências documentadas no álbum de seis setores, identidade do hospital, exportação e interface móvel. A validação completa do jogo e a inspeção física continuam pendentes.
 
-## Direção de desenvolvimento
+## Direção artística e territorial
 
-Prioridades atuais: mapa, escala, navegação, fachadas, cotidiano comunitário e identidade cozy de Belém/PB. A riqueza visual do Gemini orienta a composição; não incorporar itens ou estética idol/TsuLiPa. Preservar a extensão do território e suas conexões. Não reduzir a área de exploração para dar aparência de conclusão. Não integrar novas missões, moto ou contatos enquanto a geografia e a apresentação ainda estiverem sendo consolidadas.
+A aparência deve seguir a riqueza de ruas, lugares e cotidiano do Gemini, com identidade **cozy de Belém/PB**, nunca tema idol ou assets do TsuLiPa. O mapa amplo e seus dados devem ser preservados; o conhecimento e as fotografias do autor validam os pontos locais, diferenciados dos dados OSM. A V2.28 reformulada e rejeitada não passa a ser aprovada por esta decisão.
 
-Veja [as decisões do projeto](docs/DECISOES.md), [o mapa do código](docs/MAPA-DO-CODIGO.md) e [os próximos passos](docs/PROXIMOS-PASSOS.md).
+Sem hospedagem, deploy, GitHub Pages ou merge sem autorização explícita.
+
+Leia [decisões](docs/DECISOES.md), [próximos passos](docs/PROXIMOS-PASSOS.md) e [mapa do código](docs/MAPA-DO-CODIGO.md).
