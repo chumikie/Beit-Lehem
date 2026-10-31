@@ -73,8 +73,18 @@
    }
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
    let v=visuals.get(person.id);
-   if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now};visuals.set(person.id,v);}
+   if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now,socialStrength:0,lastSocial:null};visuals.set(person.id,v);}
    const dt=Math.max(0,Math.min(.09,now-v.last));v.last=now;
+   // Gentle entrance and exit of a greeting; do not wave while feet are moving.
+   const requested=person.social?Math.max(0,Math.min(1,Number(person.social.intensity??1))):0;
+   v.socialStrength=(v.socialStrength||0)+(requested-(v.socialStrength||0))*(1-Math.exp(-dt*(requested?8:6)));
+   if(person.social){
+    person.social={...person.social,intensity:reduce?requested:v.socialStrength};
+    v.lastSocial={...person.social};
+   }else if(!reduce&&v.socialStrength>.045&&v.lastSocial&&(person.walkBlend||0)<.3){
+    person.social={...v.lastSocial,pose:'wave',stage:'farewell',react:false,intensity:v.socialStrength};
+   }
+
    v.gaze=reduce?desired:v.gaze+(desired-v.gaze)*(1-Math.exp(-dt*10));
    person.gaze=v.gaze;
    // Ease the body's slight lean as the walker slows, turns, or greets someone.
