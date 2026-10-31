@@ -47,3 +47,16 @@ O guia `docs/GUIA-REFERENCIAS-LOCAIS.md` registra que o autor forneceu referênc
 - Prefeitura de Belém/PB, notícia histórica sobre Parque São Luís (2019): https://mail.belem.pb.gov.br/noticia/turismo-e-sustentabilidade-conhe-a-o-parque-de-divers-es-constru-do-com-materiais-recicl-veis-em-bel-m
 
 As fontes municipais documentam **existência, contexto e distâncias aproximadas**, não latitude/longitude, geometrias ou situação de acesso atual. Nenhuma inspeção visual em navegador ou medição geodésica foi realizada.
+
+## Complemento — recuperação das referências anteriores
+
+Uma busca adicional no histórico de colaboração recuperou os seguintes dados, **sem transformá-los em posições aprovadas**:
+
+- Os links Google Maps citados no passado chegaram truncados (`https://www.google.com/...`), sem URLs completas que permitam validar pontos.
+- O protótipo anterior também usava a posição interna `[258,-356]` para Parque São Luís/Lagoa de Serra, próxima da posição atual `[219.41,-363.86]`. **As duas são ilustrativas e próximas demais do centro** para concluir que representam o local real.
+- Foram anotadas posições de protótipo para `Açude Tribofe/Riacho do Grotão [340,106]` e `Cachoeira do Roncador/Rio Bananeiras [-382,512]`. **Não incorporar tais pontos como hidrografia confirmada** sem verificar município, feições, margens e referências: a mera menção ao Roncador não comprova que seja um destino do território jogável de Belém.
+- Há referências geográficas históricas para Lagoa do Matias/Matau, Gameleira e Sítio Picada em material de apoio. São **localidades a pesquisar**, não coordenadas aprovadas para novos atrativos.
+- Para Pedra do Cordeiro, o histórico continua indicando apenas posição geral a oeste e distância aproximada, **sem coordenada corrigida**.
+- O usuário explicitou que o afloramento é muito maior que o desenho atual. **Separar a extensão da rocha do ponto de entrada da trilha e do cruzeiro/mirante** é requisito para a representação futura.
+
+**Decisão desta rodada:** manter os dados e a exploração como estão até confirmar pontos de acesso e extensão. A ordem aprovada continua: (1) destinos afastados, (2) águas e serras, (3) setores exploráveis. Nenhuma dessas fases deve apagar o território.
