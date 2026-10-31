@@ -882,13 +882,13 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
 });
 
 </script></head><body>
-<header class="topbar"><a class="brand" href="#" aria-label="Trilhas de Roncador"><span class="brand-icon">⌁</span><span>TRILHAS<span class="brand-sub">de Roncador</span></span></a><span class="edition"><i></i> UMA PEQUENA GRANDE EXPEDIÇÃO</span><nav aria-label="Opções do jogo"><button id="sound" class="icon-button" aria-label="Ativar sons" title="Ativar sons">♫<span class="sound-dot"></span></button><button id="help" class="icon-button" aria-label="Como jogar" title="Como jogar">?</button><button id="mapButton" class="map-button">⌖ <span>Abrir mapa</span><kbd>M</kbd></button></nav></header>
+<header class="topbar"><a class="brand" href="#" aria-label="Beit Lehem"><span class="brand-icon">⌁</span><span>BEIT<span class="brand-sub">LEHEM</span></span></a><span class="edition"><i></i> UMA PEQUENA GRANDE EXPEDIÇÃO</span><nav aria-label="Opções do jogo"><button id="sound" class="icon-button" aria-label="Ativar sons" title="Ativar sons">♫<span class="sound-dot"></span></button><button id="help" class="icon-button" aria-label="Como jogar" title="Como jogar">?</button><button id="mapButton" class="map-button">⌖ <span>Abrir mapa</span><kbd>M</kbd></button></nav></header>
 <main class="layout"><section class="game" aria-label="Área do jogo"><canvas id="world" tabindex="0" aria-label="Mapa jogável. Use WASD ou setas para caminhar, Shift para correr e E para explorar um marco próximo."></canvas><div id="loading" class="loading"><span class="loading-compass">✦</span>Preparando seus caminhos…</div>
 <div class="game-top"><span class="expedition-tag">✦ EXPEDIÇÃO 01</span><span id="location" class="location">Rua Independência</span><span class="north">N<span>↑</span></span></div>
 <div class="world-tools"><button id="zoomIn" aria-label="Aproximar mapa">+</button><button id="zoomOut" aria-label="Afastar mapa">−</button><button id="recenter" aria-label="Centralizar no personagem" title="Centralizar (R)">⌖</button></div>
 <div class="destination" id="destination"><span class="destination-arrow">↗</span><div><small>PRÓXIMA DESCOBERTA</small><strong id="destinationName">Primeiros caminhos</strong></div><span id="distance">104 m</span></div>
 <div class="mini-wrap"><div class="mini-title">SEU CANTINHO NO MAPA <span>⌖</span></div><canvas id="minimap" width="220" height="150" aria-label="Minimapa com sua posição e os selos da expedição"></canvas><div class="mini-footer"><span><i></i> Você</span><span>✦ Marco</span><span id="terrainReadout" class="terrain-readout" title="Terreno aproximado: NASA SRTM 30 m">⛰ ≈ — m</span></div></div>
-<div id="welcome" class="welcome"><div class="welcome-eyebrow"><span>✦</span> VAMOS POR AÍ?</div><h1>Toda rua guarda<br>uma descoberta.</h1><p>Calce a curiosidade. Explore os caminhos de Roncador e complete seu passaporte de aventura.</p><button id="start" class="primary">Começar expedição <span>↗</span></button><div class="welcome-note">6 selos para encontrar <span>·</span> no seu ritmo</div></div>
+<div id="welcome" class="welcome"><div class="welcome-eyebrow"><span>✦</span> VAMOS POR AÍ?</div><h1>Toda rua guarda<br>uma descoberta.</h1><p>Calce a curiosidade. Explore os caminhos de Beit Lehem e complete seu passaporte de aventura.</p><button id="start" class="primary">Começar expedição <span>↗</span></button><div class="welcome-note">6 selos para encontrar <span>·</span> no seu ritmo</div></div>
 <div class="game-bottom"><div class="controls-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>caminhar</span><kbd>SHIFT</kbd><span>correr</span><span class="hint-dot">·</span><span>ou clique em um caminho</span></div><div class="time-pill">◷ <span id="timer">00:00</span></div></div>
 <div class="touch-pad" id="touchPad" aria-label="Controles de movimento"><button data-move="up" aria-label="Caminhar para cima">↑</button><button data-move="left" aria-label="Caminhar para esquerda">←</button><span></span><button data-move="right" aria-label="Caminhar para direita">→</button><button data-move="down" aria-label="Caminhar para baixo">↓</button></div>
 <button id="interact" class="interact" hidden>✦ Explorar este lugar <kbd>E</kbd></button><div id="toast" class="toast" role="status" aria-live="polite"></div><button id="mobileRoute" class="mobile-route">Seu passaporte <span id="mobileCount">0/6</span> ↑</button>
@@ -2949,12 +2949,12 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     stylesheet.href = 'cozy.css';
     document.head.append(stylesheet);
   }
-  document.title = 'Trilhas do Roncador — Belém Viva · V2.27 Cozy';
-  document.querySelector('.brand-sub').textContent = 'do Roncador';
-  document.querySelector('.edition').textContent = '☼ BELÉM VIVA · V2.27';
-  document.querySelector('.welcome h1').innerHTML = 'Belém tem histórias<br>para viver.';
+  document.title = 'Beit Lehem — Belém/PB · Jogo cozy';
+  document.querySelector('.brand-sub').textContent = 'LEHEM';
+  document.querySelector('.edition').textContent = '☼ BEIT LEHEM · PRÉVIA';
+  document.querySelector('.welcome h1').innerHTML = 'Beit Lehem tem histórias<br>para viver.';
   document.querySelector('.welcome p').textContent = 'Em Belém, as ruas têm histórias, encontros e pequenos rituais. Caminhe no seu ritmo, conheça os moradores e guarde lembranças desse cantinho do Brejo.';
-  document.querySelector('.welcome-eyebrow').textContent = '☼ UM NOVO DIA EM BELÉM';
+  document.querySelector('.welcome-eyebrow').textContent = '☼ UM NOVO DIA EM BEIT LEHEM';
   document.querySelector('.welcome-note').textContent = '6 selos para encontrar · 1 nova amizade para começar';
   document.querySelector('.field-note p').textContent = 'Ruas: OpenStreetMap/IBGE. Fachadas e jardins são ilustrações, não contornos reais. Os moradores e a Estação Roncador são ficcionais.';
   document.querySelector('.map-attribution').textContent = '© OpenStreetMap · limite IBGE 2025 · cenário ilustrativo';
@@ -2968,7 +2968,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     <li><kbd>V</kbd><span>Visitar o caderno vivo do Brejo</span></li>
     <li><kbd>E perto de um lugar</kbd><span>Abrir uma cena cultural e guardar uma memória</span></li>
     <li><kbd>Sidebar</kbd><span>Preparar um São Pedro imaginado e mudar a luz da paisagem</span></li>
-    <li><kbd>Vida em Belém</kbd><span>Conhecer moradores, acompanhar rotinas e passar para outro dia</span></li>
+    <li><kbd>Vida em Beit Lehem</kbd><span>Conhecer moradores, acompanhar rotinas e passar para outro dia</span></li>
     <li><kbd>E perto de moradores</kbd><span>Conversar com personagens que caminham nas ruas</span></li>
     <li><kbd>☀ Céu do jogo</kbd><span>Experimentar sol, nuvens e chuvisco imaginários. A chuva pode regar seu canteiro</span></li>
     <li><kbd>♡ Três amizades</kbd><span>Converse em dias diferentes com Damião, Lúcia e Bia para guardar uma lembrança de vizinhança</span></li>
