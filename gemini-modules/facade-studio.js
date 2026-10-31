@@ -55,6 +55,20 @@
   // The roof casts a soft, narrow contact shadow across the wall.
   c.fillStyle=style.block==='matriz'?'#574c3f3c':'#584e462e';c.fillRect(left+.8,front-.25,width-1.6,style.block==='matriz'?1.65:1.3);
   c.fillStyle=[palette.wall,'#ead7c7','#d4ded1','#dfd6c5'][style.shade];c.fillRect(left+1,front+1,width-2,Math.max(1,faceH-2));
+  // Residential edges ease from the warmer centre into quieter plaster and
+  // limewashed lower walls. Every mark stays within the existing footprint.
+  const residentialEdge=['joao','clovis','vicente'].includes(style.block);
+  if(residentialEdge){
+   c.fillStyle=night?'#8e88751f':'#fbf3dd52';
+   c.fillRect(left+1.15,front+1.2,width-2.3,Math.max(.6,faceH*.29));
+   c.fillStyle=style.shade%2?'#8d87772e':'#9a907c23';
+   c.fillRect(left+1,front+faceH-1.45,width-2,Math.min(1.05,faceH*.16));
+   if(seed%4===2){
+    // Sparse worn-plaster strokes, not identical damage on every facade.
+    c.fillStyle='#f9edd76b';
+    c.fillRect(left+width*.28,front+faceH-2.4,Math.min(2.4,width*.16),.45);
+   }
+  }
   if(style.block==='matriz'){
    // Illustrated plaster plinth and a soft side edge; no footprint change.
    c.fillStyle='#a995802c';c.fillRect(left+1,front+faceH-1.35,width-2,.8);
