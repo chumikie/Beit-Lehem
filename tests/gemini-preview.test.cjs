@@ -19,18 +19,20 @@ function createProject(t, source) {
   const sourcePath = path.join(root, SOURCE_RELATIVE);
   fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
   fs.writeFileSync(sourcePath, source, 'utf8');
+  const indexPath=path.join(root,'references','gemini-2026-10-31','INDICE.md');
+  fs.copyFileSync(path.join(__dirname,'..','references','gemini-2026-10-31','INDICE.md'),indexPath);
+  fs.cpSync(path.join(__dirname,'..','gemini-modules'),path.join(root,'gemini-modules'),{recursive:true});
   return { root, sourcePath, outputPath: path.join(root, OUTPUT_RELATIVE) };
 }
 
 function fixture(overrides = {}) {
-  return [
-    '<!-- ARQUIVO DE REFERÊNCIA DE BEIT LEHEM; não executar como versão oficial. -->',
-    '<title>Trilhas de Roncador — Expedição</title>',
-    "const STORE='roncador-expedition-v2-referencias-gemini';",
-    BROKEN_INITIALIZATION,
-    'let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;',
-    '</html>'
-  ].join('\n').replace('roncador-expedition-v2-referencias-gemini', overrides.saveKey || 'roncador-expedition-v2-referencias-gemini');
+  // Use the real archived source: the builder validates several exact
+  // insertion sites which a tiny hand-written fixture cannot represent.
+  const original=fs.readFileSync(path.join(__dirname,'..',SOURCE_RELATIVE),'utf8');
+  return original.replace(
+    "const STORE='roncador-expedition-v2-referencias-gemini'",
+    "const STORE='"+(overrides.saveKey||'roncador-expedition-v2-referencias-gemini')+"'"
+  );
 }
 
 test('gera uma prévia separada, corrige somente a inicialização e preserva o arquivo-fonte', t => {
@@ -51,23 +53,24 @@ test('gera uma prévia separada, corrige somente a inicialização e preserva o 
   assert.ok(preview.includes("const STORE='roncador-expedition-v2-referencias-gemini';"));
 });
 
-test('recusa uma fonte que usaria a chave do diário oficial', t => {
-  const project = createProject(t, fixture({ saveKey: 'roncador-expedition-v2' }));
+function alterGame(project,search,replacement){
+ const file=path.join(project.root,'gemini-modules','game.js');
+ const before=fs.readFileSync(file,'utf8');
+ assert.ok(before.includes(search),'marcador conhecido do módulo editável');
+ fs.writeFileSync(file,before.replace(search,replacement),'utf8');
+}
 
-  assert.throws(
-    () => buildGeminiPreview(project.root),
-    /não está isolada do diário oficial/
-  );
-  assert.equal(fs.existsSync(project.outputPath), false);
+test('recusa um módulo que usaria a chave do diário oficial',t=>{
+ const project=createProject(t,fixture());
+ alterGame(project,"const STORE='roncador-expedition-v2-referencias-gemini'",
+   "const STORE='roncador-expedition-v2'");
+ assert.throws(()=>buildGeminiPreview(project.root),/não está isolada do diário oficial/);
+ assert.equal(fs.existsSync(project.outputPath),false);
 });
 
-test('recusa a fonte se o bloqueio conhecido não estiver exatamente uma vez', t => {
-  const source = fixture().replace(BROKEN_INITIALIZATION, '/* inicialização alterada */');
-  const project = createProject(t, source);
-
-  assert.throws(
-    () => buildGeminiPreview(project.root),
-    /esperado encontrar exatamente uma ocorrência/
-  );
-  assert.equal(fs.existsSync(project.outputPath), false);
+test('recusa um módulo com inicialização de contatos desconhecida',t=>{
+ const project=createProject(t,fixture());
+ alterGame(project,BROKEN_INITIALIZATION,'/* inicialização alterada */');
+ assert.throws(()=>buildGeminiPreview(project.root),/Inicialização de kawaiiState desconhecida/);
+ assert.equal(fs.existsSync(project.outputPath),false);
 });

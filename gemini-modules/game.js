@@ -2075,7 +2075,7 @@ function renderSecondaryDialog(def,feedback){
  const portrait=document.createElement('canvas');portrait.width=110;portrait.height=107;portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Ilustração original de '+def.name);
  const c=portrait.getContext('2d');c.fillStyle='#edf0e5';c.fillRect(0,0,110,107);c.save();c.translate(55,82);c.scale(1.7,1.7);drawSecondaryWalker(c,{x:0,y:0,id:def.id,def,walking:false,variant:def.variant},.3);c.restore();wrap.append(portrait);
  const options=$('secondaryChoices');options.replaceChildren();
- for(const choice of def.options){
+ for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters,luciaGarden,sideNeighbors})){
   const button=document.createElement('button');button.type='button';button.disabled=already;
   // A quiet cue appears only when a contextual story is actually available.
   const special=['banca','janela-bia','paisagem-bia','muda-lucia','amigas'].includes(choice.id);
@@ -2083,7 +2083,7 @@ function renderSecondaryDialog(def,feedback){
   button.onclick=()=>{
    const position=secondaryInStreets().find(p=>p.id===def.id);
    if(!position||Math.hypot(player.x-position.x,player.y-position.y)>=44){renderSecondaryDialog(def,'Caminhe até '+def.name+' novamente para continuar.');return;}
-   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id);
+   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters,luciaGarden,sideNeighbors});
    renderSecondaryDialog(def,result.ok?result.reply:result.reason);
    if(result.ok){note(590,0,.12);note(740,.09,.14);save();if(result.unlocked&&result.first)notify('♡ Três novos vizinhos conhecidos! Uma lembrança apareceu no álbum.');}
   };options.append(button);

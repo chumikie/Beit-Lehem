@@ -36,20 +36,6 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n window.RoncadorAffectionMemory.appendSocialKeepsakes(grid,{marketMorning,luciaGarden,biaLetters,communitySeen},document);\n}\nfunction observe()",
     'Cartões afetivos no álbum existente'
   );
-  // One extra fictional action at Ciça's EXISTING dialog, unlocked by the
-  // already-saved Mercado chapter; no extra interface or save schema.
-  html=replaceExactlyOnce(
-    html,
-    'for(const choice of def.options){',
-    'for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters,luciaGarden,sideNeighbors})){',
-    'Opções contextuais de Ciça'
-  );
-  html=replaceExactlyOnce(
-    html,
-    'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id)',
-    'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters,luciaGarden,sideNeighbors})',
-    'Condição da fita para Damião'
-  );
   // Lúcia's existing planter ages with the fictional calendar. No new map points.
   html=replaceExactlyOnce(html,"window.RoncadorLuciaGarden.claim(luciaGarden)","window.RoncadorLuciaGarden.claim(luciaGarden,living.day)",'Crescimento de Lúcia');
   html=replaceExactlyOnce(html,"const nod=reduce?0:Math.sin(time*2.1)*.9;\n   c.save();","const nod=reduce?0:Math.sin(time*2.1)*.9;\n   const bloom=window.RoncadorLuciaGarden.growth(luciaGarden,living.day);\n   c.save();",'Crescimento de Lúcia');
