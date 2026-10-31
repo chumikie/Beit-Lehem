@@ -4101,6 +4101,28 @@ function drawTree(c,x,y,r,seed){
  c.fillStyle='#eff3cc70';for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
  c.restore();
 }
+function drawRuralShrub(c,x,y,r,seed){
+ // Low, irregular scrub is an artistic variant, not a surveyed plant location.
+ const far=zoom<1.15;
+ c.save();c.translate(x,y);
+ c.fillStyle='#36503b26';c.beginPath();c.ellipse(2,3,r*.78,r*.28,0,0,Math.PI*2);c.fill();
+ const palette=['#728e60','#809a66','#637f58','#92a778'];
+ const color=palette[seed%palette.length];
+ c.fillStyle=color;c.beginPath();
+ c.ellipse(-r*.33,-r*.2,r*.48,r*.38,-.3,0,Math.PI*2);
+ c.ellipse(r*.25,-r*.24,r*.53,r*.42,.25,0,Math.PI*2);
+ c.ellipse(0,-r*.43,r*.47,r*.43,0,0,Math.PI*2);c.fill();
+ if(!far){
+  c.strokeStyle='#526d4c';c.lineWidth=.85;c.lineCap='round';
+  c.beginPath();c.moveTo(0,0);c.lineTo(-r*.28,-r*.38);
+  c.moveTo(0,0);c.lineTo(r*.31,-r*.42);c.stroke();
+  c.fillStyle='#b8c99b88';
+  for(const [dx,dy] of [[-.38,-.48],[.17,-.64],[.42,-.24]]){
+   c.beginPath();c.arc(dx*r,dy*r,1.1,0,Math.PI*2);c.fill();
+  }
+ }
+ c.restore();
+}
 function house(c,b){
  c.save();c.translate(b.x,b.y);c.rotate(b.angle);
  const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
@@ -5041,10 +5063,10 @@ function render(time){
    let seed=Math.floor(hash(gx*7,gy*11)*10000),x=gx*45+hash(gx,gy)*32,y=gy*45+hash(gy+30,gx+2)*32;
    const village=areas.some(a=>a.tags.landuse==='residential'&&inside(x,y,a.p[0]));
    tree=null;
-   if((seed%10)>=(village?8:2)&&nearestRoad(x,y).d>=22&&(!marketStall||Math.hypot(x-marketStall.p[0],y-marketStall.p[1])>=22)&&!houses.some(b=>Math.hypot(x-b.x,y-b.y)<20)&&!scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,12),x,y))&&!areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))tree={x,y,seed,r:10+seed%8};
+   if((seed%10)>=(village?8:2)&&nearestRoad(x,y).d>=22&&(!marketStall||Math.hypot(x-marketStall.p[0],y-marketStall.p[1])>=22)&&!houses.some(b=>Math.hypot(x-b.x,y-b.y)<20)&&!scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,12),x,y))&&!areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))tree={x,y,seed,r:10+seed%8,rural:!village};
    treeCache.set(key,tree);
   }
-  if(tree)drawTree(ctx,tree.x,tree.y,tree.r,tree.seed);
+  if(tree){if(tree.rural&&tree.seed%5===0)drawRuralShrub(ctx,tree.x,tree.y,tree.r,tree.seed);else drawTree(ctx,tree.x,tree.y,tree.r,tree.seed);}
  }
  drawWildlife(ctx,time,{left,right,top,bottom});
  if(showScenery){
