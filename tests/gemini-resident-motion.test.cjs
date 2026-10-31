@@ -39,7 +39,7 @@ test('cumprimentos começam e terminam suavemente sem acenar em movimento',()=>{
  const leaving=motion.present({id:'rosa',x:0,y:0,walking:false,walkBlend:0},.10,false);
  assert.equal(leaving.social.pose,'wave');
  assert.ok(leaving.social.intensity<entering.social.intensity);
- const walking=motion.present({id:'rosa',x:0,y:0,walking:true,walkBlend:1},.15,false);
+ const walking=motion.present({id:'rosa',x:0,y:0,walking:true,walkBlend:.2},.15,false);
  assert.equal(walking.social,undefined,'não acena com os pés já em movimento');
 });
 test('não cria atalho quando o próximo ponto pertence a trecho desconectado',()=>{
