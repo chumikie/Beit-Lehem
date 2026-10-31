@@ -30,7 +30,7 @@ function fixture(overrides = {}) {
     BROKEN_INITIALIZATION,
     'let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;',
     '</html>'
-  ].join('\\n').replace('roncador-expedition-v2-referencias-gemini', overrides.saveKey || 'roncador-expedition-v2-referencias-gemini');
+  ].join('\n').replace('roncador-expedition-v2-referencias-gemini', overrides.saveKey || 'roncador-expedition-v2-referencias-gemini');
 }
 
 test('gera uma prévia separada, corrige somente a inicialização e preserva o arquivo-fonte', t => {
