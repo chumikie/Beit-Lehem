@@ -144,3 +144,33 @@ test('balão comunitário mantém tamanho contido nas ruas e no celular',()=>{
  assert.match(game,/const width=phone\?108:124,height=27\+rows\.length\*9,top=cy-87\+bounce/);
  assert.match(game,/const phone=matchMedia\('\(max-width:800px\)'\)\.matches,rows=wrapEncounterSpeech\(speech,phone\?20:26\)/);
 });
+
+test('nomes priorizam três pessoas próximas no desktop e duas no celular',()=>{
+ const fs=require('node:fs'),vm=require('node:vm');
+ const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ const start=source.indexOf('const labelLimit=matchMedia(');
+ const end=source.indexOf('\n for(const person of people){',start);
+ assert.ok(start>=0&&end>start,'seleção de nomes encontrada');
+ const scope=source.slice(start,end);
+ const people=[
+  {id:'rosa',def:{name:'Rosa'},x:20,y:0},
+  {id:'mila',def:{name:'Mila'},x:45,y:0},
+  {id:'zeca',def:{name:'Zeca'},x:60,y:0},
+  {id:'cica',def:{name:'Ciça'},x:80,y:0},
+  {id:'nara',def:{name:'Nara'},x:140,y:0},
+  {id:'bia',def:{name:'Bia'},x:10,y:0,meeting:true}
+ ];
+ for(const [phone,expected] of [[false,3],[true,2]]){
+  const names=vm.runInNewContext(scope+';visibleNames',{people,player:{x:0,y:0},matchMedia:()=>({matches:phone})});
+  assert.equal(names.size,expected);
+  assert.ok(names.has('rosa')&&names.has('mila'));
+  assert.equal(names.has('nara'),false,'distância evita nomes excessivos');
+  assert.equal(names.has('bia'),false,'encontros priorizam a conversa');
+ }
+});
+test('balões completos exigem zoom e proximidade sem remover as cenas',()=>{
+ const fs=require('node:fs');
+ const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ assert.equal(source.split('if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105)').length-1,2);
+ assert.ok(source.includes('RoncadorEncounterChoreography.draw'));
+});
