@@ -41,13 +41,13 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   html=replaceExactlyOnce(
     html,
     'for(const choice of def.options){',
-    'for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters})){',
+    'for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters,luciaGarden,sideNeighbors})){',
     'Opções contextuais de Ciça'
   );
   html=replaceExactlyOnce(
     html,
     'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id)',
-    'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters})',
+    'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters,luciaGarden,sideNeighbors})',
     'Condição da fita para Damião'
   );
   // Lúcia's existing planter ages with the fictional calendar. No new map points.
