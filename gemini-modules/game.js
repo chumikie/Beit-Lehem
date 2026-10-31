@@ -577,8 +577,9 @@ function drawScenicLayer(c,viewport,details=false){
   if(scene.id==='pedra_cordeiro'&&details)drawPedraLandscape(c,x,y);
   c.save();c.translate(x,y);c.scale(scene.scale,scene.scale);
   const prop={p:[0,0],kind:scene.kind,name:scene.name};
-  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60);
-   if(scene.positionStatus!=='osm_point'){
+  const sceneDistance=Math.hypot(player.x-x,player.y-y);
+  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60,{zoom,distance:sceneDistance});
+   if(scene.positionStatus!=='osm_point'&&zoom>=1.85&&sceneDistance<=90){
     c.fillStyle='#fff9e8';c.strokeStyle='#ac986d';c.lineWidth=1;
     c.beginPath();c.roundRect(-48,49,96,13,4);c.fill();c.stroke();
     c.fillStyle='#806c47';c.font='bold 7px system-ui';c.textAlign='center';c.fillText('ILUSTRAÇÃO · SEM LOCAL EXATO',0,57);
@@ -2151,7 +2152,9 @@ function drawResidentPortrait(def,index){
  portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Retrato kawaii ilustrado de '+def.name);
  const pc=portrait.getContext('2d');pc.fillStyle='#f1eee3';pc.fillRect(0,0,92,104);
  pc.fillStyle=def.tone+'24';pc.beginPath();pc.ellipse(46,86,34,19,0,0,7);pc.fill();
- pc.save();pc.translate(46,82);pc.scale(1.42,1.42);
+ // Portrait cards need a readable face at sidebar sizes; this only affects
+ // the offscreen portrait canvas, never the walking sprite or its world scale.
+ pc.save();pc.translate(46,91);pc.scale(2.5,2.5);
  drawKawaiiWalker(pc,{x:0,y:0,id:def.id,def,walking:false,meeting:false,variant:index},1.3);
  pc.restore();
  return portrait;
