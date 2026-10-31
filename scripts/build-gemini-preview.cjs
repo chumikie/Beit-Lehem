@@ -36,6 +36,20 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n window.RoncadorAffectionMemory.appendSocialKeepsakes(grid,{marketMorning,luciaGarden,biaLetters,communitySeen},document);\n}\nfunction observe()",
     'Cartões afetivos no álbum existente'
   );
+  // One extra fictional action at Ciça's EXISTING dialog, unlocked by the
+  // already-saved Mercado chapter; no extra interface or save schema.
+  html=replaceExactlyOnce(
+    html,
+    'for(const choice of def.options){',
+    'for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning})){',
+    'Opções contextuais de Ciça'
+  );
+  html=replaceExactlyOnce(
+    html,
+    'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id)',
+    'window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning})',
+    'Condição da fita para Damião'
+  );
   // The author's Bolt tribute replaces the old provisional dog name in legacy scenery.
   html=html.replace(/\bPingo\b/g,'Bolt').replace(/\bpingo\b/g,'bolt');
   if (!html.startsWith('<!-- ARQUIVO DE REFERÊNCIA DE BEIT LEHEM')) {
