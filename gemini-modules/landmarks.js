@@ -166,28 +166,37 @@
       c.strokeStyle = '#d9c4a1'; c.lineWidth = .7; c.beginPath(); c.moveTo(-30, y); c.lineTo(30, y); c.stroke();
     }
   }
-  function stall(c, x, y, color, produce = '#dea06e') {
+  function stall(c, x, y, color, produce = '#dea06e', variant = 0) {
     ellipse(c, x + 1.5, y + 4, 9, 3.5, '#344a3426');
-    rounded(c, x - 7, y - 3, 14, 10, 1.4, '#c3a582', '#8d816e');
-    c.fillStyle = '#a88f67'; c.fillRect(x - 6, y + 4, 12, 1.2);
-    for (let i = 0; i < 4; i++) circle(c, x - 4.5 + i * 3, y + 2, 1.5, i % 2 ? '#9aad6b' : produce);
-    polygon(c, [[x-9,y-5],[x+9,y-5],[x+7,y-13],[x-7,y-13]], color, '#fff4d0');
-    c.strokeStyle = '#fff3c6'; c.lineWidth = 1.4;
-    for (let i = -6; i <= 6; i += 6) { c.beginPath(); c.moveTo(x+i,y-12); c.lineTo(x+i,y-5); c.stroke(); }
+    rounded(c, x - 7, y - 3, 14, 10, 1.4, variant % 2 ? '#b9a488' : '#c3a582', '#8d816e');
+    rounded(c, x - 6, y + 3.6, 12, 1.4, .5, '#a88f67');
+    for (let i = 0; i < (variant === 2 ? 3 : 4); i++) circle(c, x - 4.5 + i * (variant === 2 ? 4 : 3), y + 2, 1.5, i % 2 ? '#9aad6b' : produce);
+    const slope = variant === 1 ? 10 : variant === 2 ? 11 : 13;
+    polygon(c, [[x-9,y-5],[x+9,y-5],[x+7,y-slope],[x-7,y-slope]], color, '#fff4d0');
+    // Alternate stripes with a plain canvas canopy and a folded-edge canopy.
+    if (variant === 0) {
+      c.strokeStyle = '#fff3c6'; c.lineWidth = 1.4;
+      for (let i = -6; i <= 6; i += 6) { c.beginPath(); c.moveTo(x+i,y-12); c.lineTo(x+i,y-5); c.stroke(); }
+    } else if (variant === 1) {
+      rounded(c,x-8,y-6,16,1.4,.6,'#fff2d0b8');
+    } else {
+      for(let i=-5;i<=5;i+=5) circle(c,x+i,y-5,.9,'#f2d6b2');
+    }
+    if (variant === 2) { ellipse(c,x+5,y+5,2.9,1.4,'#8d775d');ellipse(c,x+5,y+4.5,2.3,.7,'#ead7ab'); }
   }
   function drawMarketDetails(c, marketDay) {
     polygon(c, [[-25,-29],[18,-29],[30,-7],[-32,-7]], '#ba8062', '#96684e');
     rounded(c, -25, -7, 50, 24, 1.5, '#f2dfbc', '#9d9780');
     rounded(c, -18, -5, 36, 11, 2, '#73948b', '#54716f');
-    for (let i = -21; i <= 21; i += 8) rounded(c, i-3, 10, 6, 7, 1, '#d8b88e', '#b58e68');
+    for (let i = -21; i <= 21; i += 8) rounded(c, i-3, 10, 6, 7, 1, i % 3 === 0 ? '#c9ab84' : '#d8b88e', '#b58e68');
     rounded(c, -18, -30, 36, 8, 3, '#fff4db', '#927358');
     c.fillStyle = '#8a6c4d'; c.font = 'bold 7px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('MERCADO', 0, -26);
-    stall(c, -24, 19, '#d18e75', '#e6bd76');
-    stall(c, 22, 19, '#86a5a1', '#b9c77a');
+    stall(c, -24, 19, '#d18e75', '#e6bd76', 0);
+    stall(c, 22, 19, '#86a5a1', '#b9c77a', 1);
     if (marketDay) {
-      stall(c, -39, 5, '#c47f65', '#c8a46c');
-      stall(c, 38, -3, '#e3b46f', '#d5ac81');
-      stall(c, -36, -22, '#829e84', '#e1b76c');
+      stall(c, -39, 5, '#c47f65', '#c8a46c', 2);
+      stall(c, 38, -3, '#e3b46f', '#d5ac81', 0);
+      stall(c, -36, -22, '#829e84', '#e1b76c', 1);
       for (let i = 0; i < 7; i++) {
         const x = -27 + i * 8.5, y = 34 + (i % 2) * 3;
         circle(c, x, y, 2.8, ['#a67764','#dbb3a1','#84a189'][i % 3]);
@@ -203,22 +212,31 @@
       }
       ellipse(c,14,34,5.5,2.8,'#879795');ellipse(c,14,32,4.8,1.5,'#d9dfd4');
       circle(c,14,32,.9,'#abb2a5');
+      rounded(c,23,31,8,3,1,'#a78263');
+      for(const x of [24.5,27,29])circle(c,x,30,1.2,x===27?'#e5bd78':'#a3b47b');
     }
   }
   function drawTerminalGround(c) {
     // The terminal shares the warm paving and soft contact shadow of town blocks.
     rounded(c, -31, -13, 66, 39, 5, '#425f4930');
     rounded(c, -33, -16, 66, 39, 5, '#e1d9c4', '#b5b39d');
-    rounded(c, -28, -11, 56, 23, 2, '#d5d9c8');
+    rounded(c, -29, -11, 58, 29, 2, '#d5d9c8');
+    rounded(c, -26, 13, 52, 2, 1, '#bcb59e73');
   }
   function drawTerminalDetails(c) {
-    // Small light-and-shadow study on the existing illustrated terminal symbol.
+    // Covered waiting bay, readable roof and shaded bench on the existing symbol.
     // Not a claim about the present-day facade or bus timetable.
-    rounded(c, -29, -16, 58, 16, 2.5, '#849e9b', '#6d8b87');
-    rounded(c, -27, -14.5, 54, 1.4, .7, '#e5eee17a');
-    rounded(c, -27, -1.8, 54, 1.4, .7, '#405f6260');
-    c.strokeStyle = '#f0f3e7'; c.lineWidth = .95;
-    for (let i = -20; i < 24; i += 10) { c.beginPath(); c.moveTo(i, -15); c.lineTo(i, 0); c.stroke(); }
+    ellipse(c,1,5,29,5,'#47645a2c');
+    rounded(c, -27, -6, 54, 12, 1.5, '#8eaaa4', '#698985');
+    for (let i = -19; i < 25; i += 11) rounded(c,i,-3,7,7,1,'#d8e5dc','#6e918f');
+    for (const x of [-24,24]) rounded(c,x,-7,1.7,20,.5,'#667e76');
+    polygon(c,[[-31,-16],[31,-16],[27,-8],[-27,-8]],'#75928f','#607e7a');
+    rounded(c,-27,-14,54,1.3,.6,'#d8e2d5a8');
+    rounded(c,-27,-8.9,54,1.7,.6,'#47645e99');
+    rounded(c,-23,9,46,2,1,'#b39b79');
+    for(const x of [-20,20])rounded(c,x,10,2,4,.5,'#8c8975');
+    rounded(c,-11,8,22,1.5,.5,'#e9d6af');
+    // Bus remains a small emblem in the foreground, not the whole terminal.
     rounded(c, -18, 3, 36, 13, 5, '#e8dabb', '#a7a28d');
     for (let i = -13; i < 15; i += 8) rounded(c, i, 5, 6, 5, 1, '#789a9d');
     circle(c, -11, 16, 3.3, '#67746a'); circle(c, 11, 16, 3.3, '#67746a');
