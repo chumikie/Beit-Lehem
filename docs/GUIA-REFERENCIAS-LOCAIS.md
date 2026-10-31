@@ -94,3 +94,12 @@ Os sistemas de contatos e moto ficam preservados como ideias e código de consul
 6. Só então decidir contatos, moto, presentes e atividades como entregas próprias.
 
 Ao concluir cada etapa, registrar o que mudou ao jogar, como foi testado e quais dúvidas persistem. A PR pode crescer com esses passos; o merge depende de autorização expressa.
+
+
+## Integração da primeira camada de rua e fachada
+
+A primeira integração preserva integralmente a malha OSM: os 462 trechos e seus pontos continuam iguais, assim como os limites, áreas, terreno e geologia. As 17 propostas viárias do catálogo são usadas pela camada local `dist/local-road-references.js`. Ela acrescenta nomes de exibição e superfícies propostas sem editar `road.tags`; nomes marcados como "a confirmar" não são exibidos. A contagem visível passa a 91 nomes distintos (86 da fonte OSM + 5 referências locais).
+
+O estudo de fachadas agora considera seis áreas: Matriz, Feira, Rua João Pessoa, Rua Clóvis Bezerra, eixo da Feliciano Pedrosa e Rua Vicente Cado. Os três novos centros de estudo são calculados ao longo das geometrias públicas das vias existentes. Não criam pontos cadastrais, endereços, novas ruas ou fachadas individualizadas. Os detalhes de portões, vãos, toldos, beirais e vegetação são composições artísticas inspiradas pelas referências recebidas.
+
+A V2.27 permanece a base oficial. A prévia Gemini é material de referência; o jogo em desenvolvimento é gerado em `previews/beit-lehem-development.html` a partir dos módulos editáveis de `dist/`.

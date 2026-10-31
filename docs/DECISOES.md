@@ -13,3 +13,8 @@
 - Não há exportação/importação do diário ainda. Implementar de forma testável antes de trocar a origem/local de execução supondo que o progresso migrará sozinho.
 
 - Referências do Gemini: conservar cópia grande anonimizada e guia cumulativo em uma única PR de rascunho. Commits e atualizações na PR estão autorizados; merge permanece proibido até autorização expressa. Não publicar nomes ou vínculos residenciais particulares.
+
+
+## Crescimento a partir das referências Gemini
+
+A V2.27 é a base oficial de maior qualidade e extensão. O experimento Gemini é a referência com mais dados locais; suas informações são integradas em camadas graduais, sem substituir a arte ou reduzir o mundo. A malha OSM de 462 trechos permanece inalterada. Nomes e superfícies locais são exibidos por `dist/local-road-references.js`, sem sobrescrever as tags originais. O estudo de fachadas cresce para seis zonas, preservando o progresso já salvo nas três antigas. O snapshot do jogo em desenvolvimento é gerado a partir dos módulos de `dist/`.

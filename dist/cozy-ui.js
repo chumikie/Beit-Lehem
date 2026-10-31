@@ -32,7 +32,7 @@
     <li><kbd>♡ Três amizades</kbd><span>Converse em dias diferentes com Damião, Lúcia e Bia para guardar uma lembrança de vizinhança</span></li>
     <li><kbd>☼ Cenas do dia</kbd><span>Visite Mercado, Rodoviária e Igreja em períodos do jogo para guardar um álbum de três momentos fictícios</span></li>
     <li><kbd>♧ Flora OSM</kbd><span>Ative uma camada vegetal decorativa restrita aos polígonos verdes registrados na base cartográfica</span></li>
-    <li><kbd>▦ Quadras</kbd><span>Compare fotos históricas com os acabamentos ilustrados em três trechos do centro</span></li>
+    <li><kbd>▦ Quadras</kbd><span>Compare fotos históricas com os acabamentos ilustrados em seis áreas do centro</span></li>
     <li><kbd>♥ Gestos</kbd><span>Converse e escolha uma pequena ajuda diária para Damião, Lúcia ou Bia</span></li>
     <li><kbd>🧺 Mercado</kbd><span>Conheça Damião, arrume três detalhes ilustrativos da banca e guarde uma lembrança de manhã</span></li>
     <li><kbd>🌷 Matriz</kbd><span>Depois da manhã com Damião, ajude Lúcia a preparar uma muda ilustrativa e escolha a memória que ficará no álbum</span></li>
@@ -45,7 +45,7 @@
 
   document.querySelector('.topbar nav').insertAdjacentHTML('beforeend', `
     <button id="realCity" class="real-city-button" type="button" title="Ver ruas e locais reais de Belém no mapa e no Google">◈ <span>Belém real</span></button>
-    <button id="centralBlocks" class="real-city-button block-button" type="button" title="Explorar as três quadras centrais ilustradas, comparar referências e marcar trajetos">▦ <span>Quadras</span></button>
+    <button id="centralBlocks" class="real-city-button block-button" type="button" title="Explorar as seis áreas ilustradas de fachadas, comparar referências e marcar trajetos">▦ <span>Quadras</span></button>
     <button id="sceneryToggle" class="real-city-button scene-toggle" type="button" aria-pressed="true" title="Alternar as ilustrações de igrejas, mercado, praça e rodoviária no mapa">⌂ <span>Cenários</span></button>
     <button id="natureAtlas" class="real-city-button" type="button" title="Abrir o canteiro e as paisagens do Brejo">♧ <span>Vida no Brejo</span></button>
     <button id="observe" class="cozy-observe" type="button" title="Registrar uma paisagem no diário (F)" aria-label="Registrar uma paisagem no diário">✿ <span>Observar</span></button>
@@ -244,9 +244,9 @@
       <button class="dialog-close" data-close="blockDialog" aria-label="Fechar estudo das quadras">×</button>
       <span class="eyebrow">▦ ATELIÊ DAS RUAS · BELÉM/PB</span>
       <h2 id="blockTitle">Cada quadra conta uma história</h2>
-      <p>Começamos por três áreas do centro. As referências de rua e os locais vêm do OpenStreetMap; <strong>as casas são pequenas composições artísticas</strong>, sem posição, endereço, cor ou dimensão cadastral. As fotos históricas orientam detalhes, nunca comprovam uma fachada atual.</p>
+      <p>O estudo agora reúne seis áreas conectadas do centro e de seus eixos viários. As referências de rua e os locais vêm do OpenStreetMap; <strong>as casas são pequenas composições artísticas</strong>, sem posição, endereço, cor ou dimensão cadastral. As fotos históricas orientam detalhes, nunca comprovam uma fachada atual.</p>
       <p id="blockCount" class="block-count">Preparando acabamentos...</p>
-      <p class="block-sketch-status" id="blockSketchStatus" aria-live="polite">0/3 detalhes registrados</p>
+      <p class="block-sketch-status" id="blockSketchStatus" aria-live="polite">0/6 detalhes registrados</p>
       <section class="road-evidence" aria-label="Tipos de rua e precisão cartográfica"><strong>◈ O chão que pisamos</strong><p id="roadEvidence">Preparando a leitura dos pisos e do relevo...</p><button id="terrainToggle" type="button" class="terrain-toggle" aria-pressed="true">⛰ Ocultar curvas do terreno</button><p class="terrain-credit">Curvas artísticas calculadas sobre amostras do modelo <a href="https://doi.org/10.5067/MEaSUREs/SRTM/SRTMGL1.003" target="_blank" rel="noopener noreferrer">NASA SRTMGL1</a>, consultado via <a href="https://www.opentopodata.org/datasets/srtm/" target="_blank" rel="noopener noreferrer">OpenTopoData</a>. Altitude aproximada; não é GPS nem topografia de rua.</p></section>
       <button id="blockFacadesToggle" class="block-facades-toggle" type="button" aria-pressed="true">▦ Ocultar acabamentos nas casas ilustrativas</button>
       <div id="blockCards" class="central-block-gallery"></div>

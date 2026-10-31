@@ -1,34 +1,23 @@
 # Próximos passos
 
-## Preparação atual
+## Base e direção aprovadas
 
-- Base aprovada: V2.27; preservar mapa amplo, arte, personagens e continuidade entre Belém, Rua Nova e o entorno rural/serrano.
-- A revisão de referências locais e a prévia isolada do experimento Gemini seguem na mesma PR de rascunho. Não fazer merge.
-- Não incluir hospedagem, deploy ou workflows. O projeto continua local/offline.
-- Novas atividades, incluindo crescimento da muda de Lúcia, permanecem pausadas enquanto mapa, escala, navegação e apresentação são consolidados.
+- A V2.27 é a melhor base estável e deve continuar crescendo; não substituí-la pelo experimento Gemini.
+- O Gemini é uma referência mais rica em informações e precisão local. Aproveitar dados, descrições de ruas e estudos visuais em melhorias graduais.
+- O mundo deve continuar amplo e conectado entre Belém, Rua Nova e o entorno rural/serrano. Não reduzir os limites de exploração.
+- Prioridades atuais: mapa, escala, navegação, fachadas e personagens. Novas atividades, moto e contatos ficam pausados.
 
-## Etapa imediata — comparar a prévia experimental
+## Integração em andamento
 
-1. Encontrar o snapshot em `previews/gemini-preview.html` e baixar pelo GitHub para abrir localmente.
-2. Também é possível regenerá-lo com `npm run build:gemini` ou gerar e abrir com `npm run play:gemini`.
-3. Comparar o experimento com a V2.27, usando a mesma situação de mapa/câmera sempre que possível.
-4. Registrar o que realmente melhora em escala, legibilidade, fachadas, navegação e personagens; não aceitar automaticamente posições aproximadas ou mudanças amplas.
+1. A camada local de 17 referências viárias acrescenta nomes de cinco trechos e propostas de piso sem editar as tags ou geometrias OSM. O mapa passa a exibir 91 nomes distintos, mantendo 86 nomes na fonte OSM.
+2. O estudo ilustrativo de fachadas cresce de três para seis áreas, incluindo Rua Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado. Os novos centros são calculados ao longo de geometrias viárias existentes, sem usar pontos residenciais.
+3. O snapshot `previews/beit-lehem-development.html` é gerado a partir de `dist/` e da V2.27, para comparar o jogo que estamos realmente construindo.
 
-A prévia corrige somente o bloqueio de inicialização conhecido e mantém uma chave de diário própria. Ainda não foi validada em navegador ou aparelho físico; não é uma versão oficial nem prova que os demais sistemas estejam prontos.
+## Próxima rodada
 
-## Próximas etapas de mundo
+1. Conferir a comparação visual do novo snapshot com a V2.27: amplitude do mapa, leitura das ruas, escala e continuidade das fachadas.
+2. Revisar se os seis estudos cobrem trechos com densidade coerente, sem uniformizar todas as casas nem mover personagens.
+3. Continuar enriquecendo a malha rural/serrana a partir de referências específicas, sem inventar coordenadas de lugares ou acessos.
+4. Depois das revisões de espaço, aprimorar navegação e transições de câmera, mantendo o caminho nas vias reais do mapa.
 
-1. Depois da comparação, escolher um trecho conectado e bem delimitado para revisar mapa, escala e frentes de construção.
-2. Comparar um ajuste visual pequeno com a base, preservando a amplitude do mapa e a arte/personagens aprovados.
-3. Revisar uma fachada comercial, sua esquina e a conexão viária; depois seguir por conjuntos de escola, ginásio e outros marcos.
-4. Organizar as ligações para Rua Nova, áreas rurais e serranas. Parque São Luís/Lagoa de Serra e Pedra do Cordeiro continuam exigindo referências específicas de posição e acesso.
-5. Retomar o acabamento dos encontros e gestos cotidianos somente depois que o espaço em volta estiver consistente.
-
-## Ainda não implementado ou validado
-
-- Território serrano integralmente verificado e desenhado.
-- Revisão visual/comportamental completa em navegador e aparelho físico.
-- Exportação e importação do diário oficial entre navegadores/pastas/origens.
-- Correção dos contratos do álbum experimental, contadores dos setores novos e arte própria do Hospital na cópia Gemini.
-
-Não misturar contatos, moto, inventário ou novas atividades com a etapa de geografia e apresentação. A mesma PR de referências deve receber as atualizações desta linha de trabalho; sem merge sem autorização expressa.
+Não integrar novas missões, sistema de moto ou contatos nesta etapa. Cada avanço deve registrar o que mudou, como foi testado e o que ainda é hipótese.

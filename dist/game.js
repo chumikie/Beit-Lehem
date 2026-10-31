@@ -33,9 +33,9 @@ function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 function preprocess(){
- areas=data.areas;roads=data.roads;missions=data.missions;
+ areas=data.areas;roads=window.RoncadorLocalRoadReferences.apply(data.roads);data.streetNameCount=window.RoncadorLocalRoadReferences.countDistinctNames(roads);missions=data.missions;
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
- if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
+ const displayName=road.displayTags?.name||road.tags.name;if(displayName&&!used.has(displayName)&&length>40){used.add(displayName);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:displayName,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
  const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(s.road.tags.highway!=='residential'||houses.length>=650)continue;for(let v=18;v<s.len;v+=33){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=20+r*8,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<16||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<19))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,11),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),w:10+r*8,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
@@ -128,7 +128,7 @@ function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,tr
 function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoin='round';for(const r of roads){if(viewport&&r.bounds&&(r.bounds[2]<viewport.left||r.bounds[0]>viewport.right||r.bounds[3]<viewport.top||r.bounds[1]>viewport.bottom))continue;let major=/^(primary|secondary|trunk)/.test(r.tags.highway),trail=['path','footway','track','steps'].includes(r.tags.highway);
  const widths={primary:15,secondary:14,tertiary:11.7,primary_link:10.7,residential:9.6,unclassified:10,service:6.5,path:4.5,footway:4.5,track:5.5,steps:4};
  const width=widths[r.tags.highway]||10,materials={asphalt:'#cecfc1',paved:'#e2d9be',unpaved:'#d0c39a',paving_stones:'#e8d8ba',sett:'#deccaf'};
- path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b40';c.lineWidth=width+3;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
+ path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b40';c.lineWidth=width+3;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.displayTags?.surface||r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
  if(major&&!simple){c.strokeStyle='#f2edcfb0';c.lineWidth=.8;c.setLineDash([7,7]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c';c.lineWidth=1;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
 function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
@@ -1342,14 +1342,14 @@ function renderAlbum(){
   const description=document.createElement('span');description.textContent='Uma ajuda na feira, um cuidado com as plantas e uma conversa sobre sonhos.';
   content.append(title,description);article.append(thumbnail,content);grid.append(article);
  }
- if(facadeSketches.length===3){
+ if(facadeSketches.length>=3){
   const article=document.createElement('article');article.className='album-card facade-memory';
   const preview=document.createElement('canvas');preview.width=186;preview.height=90;
   preview.className='facade-memory-preview';preview.setAttribute('role','img');preview.setAttribute('aria-label','Três casinhas imaginadas com portas, flores e toldos');
   window.RoncadorFacadeStudio.drawPreview(preview,'feira',lightPhase);
   const content=document.createElement('div');content.className='album-card-content';
   const title=document.createElement('strong');title.textContent='Um caderno de portas e janelas';
-  const description=document.createElement('span');description.textContent='Você observou os três trechos do ateliê e imaginou suas fachadas: Matriz, Feira e Rua João Pessoa. A arte não representa casas reais identificadas.';
+  const description=document.createElement('span');description.textContent=facadeSketches.length>=6?'Você registrou seis áreas de estudo: Matriz, Feira, João Pessoa, Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado. As fachadas continuam sendo composições artísticas.':'Seu caderno preserva os três estudos iniciais e agora pode crescer até seis áreas: Matriz, Feira, João Pessoa, Clóvis Bezerra, Feliciano Pedrosa e Vicente Cado.';
   content.append(title,description);article.append(preview,content);grid.append(article);
  }
 }
@@ -1409,7 +1409,7 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  else if(near>=0)$('interact').innerHTML='✦ '+missions[near].title+' <kbd>E</kbd>';
  else if(nearCulture)$('interact').innerHTML='✿ Visitar '+nearCulture.name+' <kbd>E</kbd>';
  $('cozyGuideHint').hidden=!active||guideDistance>85||guideDistance<32||anyDialog();
- const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();observeMarketChange(secondarySnapshot);drawMini();}
+ const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.displayTags?.name||road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();observeMarketChange(secondarySnapshot);drawMini();}
 function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('Chegue perto de um marco dourado para guardar o selo.');return;}const i=near,m=missions[i];collected.add(i);target=missions.findIndex((_,j)=>!collected.has(j));for(let n=0;n<22;n++){const a=n/22*Math.PI*2;particles.push({x:m.p[0],y:m.p[1]-16,vx:Math.cos(a)*18,vy:Math.sin(a)*18-10,life:1.5,r:1.2+hash(n)*2,color:n%2?'#f3d586':'#faf0be'});}note(523,0,.2);note(659,.1,.2);note(784,.2,.35);notify('Selo '+(collected.size)+'/6 · '+m.name+' — '+m.description);renderMissions();updateUI();save();if(collected.size===missions.length)setTimeout(()=>{if(collected.size===6){$('winTime').textContent=formatTime(elapsed);showDialog('winDialog');note(1046,.1,.4);}},950);}
 function gpsFor(p){const proj=data.projection;return{lat:proj.originLat-p[1]/proj.metersPerDegreeLat,lon:proj.originLon+p[0]/proj.metersPerDegreeLon};}
 function locationLinks(p){const {lat,lon}=gpsFor(p),at=lat.toFixed(6)+','+lon.toFixed(6);return{maps:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(at),streetView:'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+encodeURIComponent(at)};}
@@ -1704,7 +1704,7 @@ function showGeologicalAtlas(){if(!loaded)return;
  showDialog('geologyDialog');
 }
 function showRealCity(){if(!loaded)return;const n=data.streetNameCount||new Set(roads.map(r=>r.tags.name).filter(Boolean)).size;$('realCityStats').textContent=`${roads.length} trechos de vias · ${n} nomes de ruas · ${data.points.length} pontos nomeados dentro do limite municipal IBGE. Comece pelo centro e amplie o mapa para explorar os povoados.`;
- const road=nearestRoad(player.x,player.y);$('realCityCurrent').textContent=(road.s?.road.tags.name||'Caminho sem nome mapeado')+' · posição aproximada do personagem';const links=locationLinks([player.x,player.y]);$('currentMaps').href=links.maps;$('currentStreetView').href=links.streetView;
+ const road=nearestRoad(player.x,player.y);$('realCityCurrent').textContent=(road.s?.road.displayTags?.name||road.s?.road.tags.name||'Caminho sem nome mapeado')+' · posição aproximada do personagem';const links=locationLinks([player.x,player.y]);$('currentMaps').href=links.maps;$('currentStreetView').href=links.streetView;
  const container=$('realCityPlaces');container.replaceChildren();const places=data.points.filter(p=>Math.hypot(p.p[0],p.p[1])<2500).sort((a,b)=>Math.hypot(...a.p)-Math.hypot(...b.p));for(const place of places){const card=document.createElement('article');card.className='real-city-place';const name=document.createElement('strong');name.textContent=place.tags.name;const desc=document.createElement('small');desc.textContent='Ponto do OpenStreetMap · sem fachada nem contorno cadastrado';const anchor=document.createElement('a');anchor.textContent='Consultar no mapa ↗';anchor.href=locationLinks(place.p).maps;anchor.target='_blank';anchor.rel='noopener noreferrer';card.append(name,desc,anchor);const landmark=data.landmarks.find(l=>l.name===place.tags.name);if(landmark){const visit=document.createElement('button');visit.type='button';visit.className='culture-visit';visit.textContent='✿ Abrir cena cultural';visit.onclick=()=>openCultureFromGuide(landmark.id);card.append(visit);}container.append(card);}const plaza=document.createElement('button');plaza.type='button';plaza.className='culture-visit';plaza.textContent='♧ Ver a Praça 6 de Setembro (sem localização confirmada)';plaza.onclick=()=>openCultureFromGuide('praca_6_setembro');container.append(plaza);showDialog('realCityDialog');}
 function showCentralBlocks(){
  if(!loaded)return;
@@ -1740,16 +1740,16 @@ function showCentralBlocks(){
    const result=window.RoncadorFacadeStudio.recordSketch(facadeSketches,block.id,inReach);
    if(!result.recorded)return;
    sketch.disabled=true;sketch.textContent='✓ Detalhe guardado no caderno';
-   $('blockSketchStatus').textContent=facadeSketches.length+'/3 detalhes registrados'+(facadeSketches.length===3?' · cartão no álbum ✓':'');
+   $('blockSketchStatus').textContent=facadeSketches.length+'/6 detalhes registrados'+(facadeSketches.length>=6?' · cartão completo no álbum ✓':' · progresso preservado');
    note(587,0,.13);note(784,.11,.17);save();
-   notify(result.unlocked?'✿ Três quadras registradas! O cartão entrou no álbum.':'✎ Detalhe de '+block.title+' guardado · '+facadeSketches.length+'/3');
+   notify(result.unlocked?'✿ Seis áreas registradas! O cartão completo entrou no álbum.':'✎ Detalhe de '+block.title+' guardado · '+facadeSketches.length+'/6');
   };
   card.append(art,copy,route,sketch);gallery.append(card);
  }
  $('blockFacadesToggle').setAttribute('aria-pressed',String(detailedFacades));
  $('blockFacadesToggle').textContent=detailedFacades?'▦ Ocultar acabamentos nas casas ilustrativas':'▦ Mostrar acabamentos nas casas ilustrativas';
- $('blockCount').textContent=centralBlocks.reduce((sum,b)=>sum+b.count,0)+' casas ilustrativas em três áreas de estudo';
- $('blockSketchStatus').textContent=facadeSketches.length+'/3 detalhes registrados'+(facadeSketches.length===3?' · cartão no álbum ✓':'');
+ $('blockCount').textContent=centralBlocks.reduce((sum,b)=>sum+b.count,0)+' casas ilustrativas em seis áreas de estudo';
+ $('blockSketchStatus').textContent=facadeSketches.length+'/6 detalhes registrados'+(facadeSketches.length>=6?' · cartão completo no álbum ✓':' · progresso preservado');
  $('roadEvidence').textContent=roadDetails?`OSM: ${roadDetails.totalRoads} trechos viários, ${roadDetails.knownSurface} com piso descrito (${roadDetails.surfaceCounts.asphalt} asfalto, ${roadDetails.surfaceCounts.paved} pavimentados, ${roadDetails.surfaceCounts.unpaved} sem pavimentação, ${roadDetails.surfaceCounts.paving_stones+roadDetails.surfaceCounts.sett} em pedra) e ${roadDetails.junctions.length} entroncamentos. Elevação: ${terrainLayer?`${terrainLayer.values.length} amostras SRTM (terreno de ${terrainLayer.min} a ${terrainLayer.max} m), grade 140 m, curvas estimadas de 10 em 10 m`:'indisponível'}. O modelo não comprova o declive de uma rua curta ou calçada. Nenhuma medição direta de ladeira consta nos trechos OSM.`:'Aguardando análise das ruas.';
  $('terrainToggle').setAttribute('aria-pressed',String(showTerrain));
  $('terrainToggle').textContent=showTerrain?'⛰ Ocultar curvas do terreno':'⛰ Mostrar curvas do terreno';

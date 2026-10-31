@@ -9,7 +9,9 @@
     "play": "node scripts/project.cjs play",
     "build:gemini": "node scripts/build-gemini-preview.cjs",
     "play:gemini": "node scripts/project.cjs play:gemini",
-    "verify:baseline": "node scripts/project.cjs verify-baseline"
+    "verify:baseline": "node scripts/project.cjs verify-baseline",
+    "build:development-preview": "node scripts/build-development-preview.cjs",
+    "play:development-preview": "node scripts/project.cjs play:development-preview"
   },
   "engines": {
     "node": ">=18"

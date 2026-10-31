@@ -1,19 +1,7 @@
-const assert=require('node:assert/strict');
-const blocks=require('../dist/central-blocks.js');
-const map=require('../dist/map.json');
-
-const street=blocks.streetAnchor(map);
-assert.equal(street.length,2);
-assert(map.roads.some(road=>road.tags.name==='Rua João Pessoa'&&road.p.some(p=>p[0]===street[0]&&p[1]===street[1])), 'third study must be anchored to a real OSM street coordinate');
-
-const church=map.landmarks.find(l=>l.id==='igreja').p;
-const market=map.landmarks.find(l=>l.id==='mercado').p;
-const homes=[{x:church[0]+10,y:church[1]+10,seed:1,w:14,h:12,angle:0},{x:market[0]+8,y:market[1]+6,seed:2,w:14,h:12,angle:0},{x:street[0]+8,y:street[1]+4,seed:3,w:14,h:12,angle:0},{x:10000,y:10000,seed:4,w:14,h:12,angle:0}];
-const original=homes.map(h=>[h.x,h.y]);
-const layout=blocks.prepare(map,homes);
-assert.deepEqual(layout.map(b=>b.id),['matriz','feira','joao']);
-assert(layout.every(b=>b.count>=1), 'all three study districts should have some illustrative houses');
-assert.deepEqual(homes.map(h=>[h.x,h.y]),original,'decorative facade study cannot move roads or houses');
-assert.equal(homes[3].centralBlock,null,'distant homes are not decorated as centre blocks');
-assert.equal(layout.reduce((n,b)=>n+b.count,0),homes.filter(h=>h.centralBlock).length);
-console.log('V2.13: three OSM-anchored study areas classify houses without modifying positions.');
+const assert=require('node:assert/strict'),blocks=require('../dist/central-blocks.js'),map=require('../dist/map.json');
+const ids=blocks.BLOCKS.map(b=>b.id);assert.deepEqual(ids,['matriz','feira','joao','clovis','feliciano','vicente']);
+for(const [name,wayIds] of Object.entries(blocks.WAY_GROUPS)){const anchor=blocks.midpointOnWays(map,wayIds);assert(anchor&&anchor.p.every(Number.isFinite));const roads=map.roads.filter(r=>wayIds.includes(blocks.baseWayId(r.id)));let distance=Infinity;for(const road of roads)for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],d=dx*dx+dy*dy,t=Math.max(0,Math.min(1,((anchor.p[0]-a[0])*dx+(anchor.p[1]-a[1])*dy)/d));distance=Math.min(distance,Math.hypot(anchor.p[0]-a[0]-t*dx,anchor.p[1]-a[1]-t*dy));}assert(distance<.02,'anchor must be on mapped public road: '+name);}
+const street=blocks.streetAnchor(map),homes=blocks.BLOCKS.map((b,i)=>{const p=b.id==='matriz'?map.landmarks.find(l=>l.id==='igreja').p:b.id==='feira'?map.landmarks.find(l=>l.id==='mercado').p:b.id==='joao'?street:blocks.midpointOnWays(map,blocks.WAY_GROUPS[b.id]).p;return{x:p[0]+.1,y:p[1]+.1,seed:i,w:14,h:12,angle:0};});
+homes.push({x:10000,y:10000,seed:99,w:14,h:12,angle:0});const original=homes.map(h=>[h.x,h.y]),result=blocks.prepare(map,homes);
+assert.deepEqual(result.map(b=>b.id),ids);assert(result.every(b=>b.count>=1));assert.deepEqual(homes.map(h=>[h.x,h.y]),original);assert.equal(homes.at(-1).centralBlock,null);assert.equal(result.reduce((n,b)=>n+b.count,0),homes.filter(h=>h.centralBlock).length);
+console.log('Zonas de fachada: seis âncoras em vias públicas; casas e geometrias permanecem inalteradas.');
