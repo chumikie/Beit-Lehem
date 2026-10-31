@@ -81,7 +81,7 @@
    if(person.social){
     person.social={...person.social,intensity:reduce?requested:v.socialStrength};
     v.lastSocial={...person.social};
-   }else if(!reduce&&v.socialStrength>.045&&v.lastSocial&&(person.walkBlend||0)<.3){
+   }else if(!reduce&&!person.walking&&v.socialStrength>.045&&v.lastSocial&&(person.walkBlend||0)<.3){
     person.social={...v.lastSocial,pose:'wave',stage:'farewell',react:false,intensity:v.socialStrength};
    }
 
