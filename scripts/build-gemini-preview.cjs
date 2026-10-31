@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {applyOverrides}=require('./gemini-workbench.cjs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const SOURCE_RELATIVE = path.join('references', 'gemini-2026-10-31', 'experimento-anonimizado.html.txt');
@@ -25,6 +26,8 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   }
 
   let html = fs.readFileSync(sourcePath, 'utf8');
+  const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
+  html=workbench.html;
   if (!html.startsWith('<!-- ARQUIVO DE REFERÊNCIA DE BEIT LEHEM')) {
     throw new Error('A fonte não contém o cabeçalho de referência esperado; nenhuma prévia foi gerada.');
   }
@@ -47,12 +50,12 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   const fixedInitialization =
     'let belemContacts=window.RoncadorBelemContacts.fresh();';
 
-  html = replaceExactlyOnce(
-    html,
-    brokenInitialization,
-    fixedInitialization,
-    'Correção pontual da inicialização de kawaiiState'
-  );
+  if (html.includes(brokenInitialization)) {
+    html = replaceExactlyOnce(html, brokenInitialization, fixedInitialization,
+      'Correção pontual da inicialização de kawaiiState');
+  } else if (!html.includes(fixedInitialization)) {
+    throw new Error('Inicialização de kawaiiState desconhecida após sobreposição dos módulos.');
+  }
 
   html = replaceExactlyOnce(
     html,
@@ -71,6 +74,7 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   return {
     outputPath,
     experimentalSaveKey,
+    modulesUsed:workbench.used,
     bytes: Buffer.byteLength(html, 'utf8')
   };
 }
@@ -80,6 +84,7 @@ if (require.main === module) {
     const result = buildGeminiPreview();
     console.log(`Prévia Gemini gerada: ${path.relative(PROJECT_ROOT, result.outputPath)} (${result.bytes} bytes).`);
     console.log(`Diário experimental isolado: ${result.experimentalSaveKey}`);
+    console.log(`Módulos Gemini aplicados: ${result.modulesUsed.join(', ')||'nenhum'}`);
     console.log('A fonte .html.txt e a versão oficial V2.27 não foram modificadas.');
   } catch (error) {
     console.error(error.message);
