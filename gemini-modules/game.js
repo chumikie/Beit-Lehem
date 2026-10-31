@@ -36,6 +36,35 @@ function note(freq=440,delay=0,length=.12){if(!sound)return;try{audio=audio||new
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
+function applyUserPublicPlaceCorrections(){
+ // Positions supplied by the author, checked against existing road/park geometry.
+ // Keep OSM source and private residential anchors untouched.
+ const positions=[
+  {id:'sagrada_familia',name:'Igreja Matriz Sagrada Família',p:[145,125]},
+  {id:'prefeitura',name:'Prefeitura Municipal',p:[-241.8,392]},
+  {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[106.5,95]}
+ ];
+ for(const place of positions){
+  const landmark=data.landmarks.find(p=>p.id===place.id);
+  if(!landmark)continue;
+  const prior=landmark.p;
+  landmark.p=place.p.slice();
+  landmark.positionStatus='user_reference_proposed';
+  for(const point of data.points){
+   if(point.tags?.name===landmark.name&&
+    Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
+    point.p=place.p.slice();
+   }
+  }
+ }
+ const plaza=data.cultureReferences?.find(p=>p.id==='praca_6_setembro');
+ if(plaza){
+  plaza.p=[139.7,145.5];
+  plaza.visualReference=plaza.p.slice();
+  plaza.positionStatus='user_reference_proposed';
+  plaza.artStatus='posição proposta no polígono de parque existente; desenho ainda conceitual';
+ }
+}
 function preprocess(){
  areas=data.areas;roads=data.roads;missions=data.missions;
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
@@ -2505,7 +2534,7 @@ const embeddedGeology=$('embedded-geology-data');
 const geologyPromise=Promise.resolve().then(()=>embeddedGeology?JSON.parse(embeddedGeology.textContent):{points:[]}).catch(()=>({points:[]}));
 const embeddedTerrain=$('embedded-terrain-data');
 const terrainPromise=Promise.resolve().then(()=>embeddedTerrain?JSON.parse(embeddedTerrain.textContent):null).catch(()=>null);
-Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
+Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;applyUserPublicPlaceCorrections();terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
 // Small read-only inspection surface for diagnostics; does not mutate game state.
 Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
 })();
