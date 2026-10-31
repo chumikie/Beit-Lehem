@@ -145,49 +145,76 @@ const GEMINI_LOCAL_PLACES=[
 ];
 function drawGeminiLocalPlaces(c,viewport){
  if(zoom<1.25)return;
+ const night=living?.minute>=18*60||living?.minute<6*60;
  for(const place of GEMINI_LOCAL_PLACES){
   const [x,y]=place.p;
-  if(x<viewport.left-32||x>viewport.right+32||y<viewport.top-35||y>viewport.bottom+35)continue;
+  if(x<viewport.left-48||x>viewport.right+48||y<viewport.top-48||y>viewport.bottom+48)continue;
   c.save();c.translate(x,y);
-  // A small symbolic postcard, intentionally NOT a cadastral footprint.
-  c.fillStyle='#fff6e5';c.strokeStyle='#8d826c';c.lineWidth=.8;
-  c.beginPath();c.roundRect(-11,-18,22,25,4);c.fill();c.stroke();
+  // Illustrated vignette at a user-confirmed anchor, never a surveyed lot.
+  // Its framing makes the scene visibly distinct from cadastral buildings.
+  c.fillStyle='#435c472d';c.beginPath();c.ellipse(1,9,19,5,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#fff6e5';c.strokeStyle='#a8957b';c.lineWidth=.9;
+  c.beginPath();c.roundRect(-18,-27,36,34,5);c.fill();c.stroke();
+  c.fillStyle='#e3d7bf';c.fillRect(-15,2,30,2);
+  const wall=place.kind==='school'?'#c8dfe2':place.kind==='gym'?'#c5dbd6':
+   place.kind==='bakery'?'#f3d7d6':place.kind==='bar'?'#ead0ac':
+   place.kind==='civic'?'#ebdfc3':place.kind==='chapel'?'#f1e4cc':'#f5e2cf';
+  c.fillStyle='#655d4b22';c.fillRect(-13,-16,28,19);
+  c.fillStyle=wall;c.fillRect(-14,-18,28,20);
   if(place.kind==='gym'){
-   c.strokeStyle='#809eab';c.lineWidth=2.1;c.beginPath();c.arc(0,-8,8,Math.PI,0);c.stroke();
-   c.fillStyle='#c2d8d4';c.fillRect(-8,-8,16,10);
-   c.strokeStyle='#73958c';c.lineWidth=.7;c.strokeRect(-6,-6,12,6);
+   c.fillStyle='#6f94a5';c.beginPath();c.arc(0,-17,14,Math.PI,0);c.lineTo(14,-17);c.closePath();c.fill();
+   c.strokeStyle='#e7f3eb';c.lineWidth=1.1;c.beginPath();c.arc(0,-17,10,Math.PI,0);c.stroke();
+   c.fillStyle='#91afb0';c.fillRect(-10,-13,20,13);
+   c.strokeStyle='#f6e7cb';c.lineWidth=.8;c.strokeRect(-8,-11,16,9);
+   c.beginPath();c.moveTo(0,-11);c.lineTo(0,-2);c.stroke();
   }else if(place.kind==='school'){
-   c.fillStyle='#a4bfcd';c.fillRect(-8,-12,16,14);
-   c.fillStyle='#f2e7c9';c.fillRect(-2,-4,4,6);
-   c.fillStyle='#e6f2ee';c.fillRect(-6,-9,4,4);c.fillRect(2,-9,4,4);
-   c.fillStyle='#617e94';c.fillRect(-9,-14,18,2);
+   c.fillStyle='#638d9e';c.fillRect(-15,-21,30,4);
+   c.fillStyle='#fff4df';for(const q of [-9,-3,5,11])c.fillRect(q-2,-13,4,4);
+   c.fillStyle='#688b87';c.fillRect(-3,-5,6,7);
+   c.strokeStyle='#f8efe1';c.lineWidth=.7;c.strokeRect(-3,-5,6,7);
+   c.fillStyle='#f6ecd8';c.beginPath();c.arc(0,-19,1.6,0,Math.PI*2);c.fill();
   }else if(place.kind==='bakery'||place.kind==='bar'){
-   c.fillStyle=place.kind==='bakery'?'#d99ca8':'#ba8a60';c.fillRect(-9,-12,18,4);
-   c.fillStyle='#fff0d4';for(let i=-7;i<8;i+=5)c.fillRect(i,-12,2,4);
-   c.fillStyle='#96b4ab';c.fillRect(-7,-7,14,9);
-   if(place.kind==='bakery'){
-    c.fillStyle='#f7e0b4';c.beginPath();c.arc(0,-2,3,Math.PI,0);c.fill();
-    c.fillStyle='#e9a8a3';c.fillRect(-3,-2,6,2);
+   const sweet=place.kind==='bakery';
+   c.fillStyle=sweet?'#cd8e9f':'#9f725b';c.fillRect(-16,-21,32,5);
+   c.fillStyle='#fff0d5';for(let q=-14;q<16;q+=6)c.fillRect(q,-21,2.5,5);
+   c.fillStyle=night?'#edc28b':'#a6c6c1';c.fillRect(-11,-13,22,14);
+   c.strokeStyle='#fff0d5';c.lineWidth=1;c.strokeRect(-11,-13,22,14);
+   if(sweet){
+    // Pastry display, two cake silhouettes and a little bakery awning.
+    c.fillStyle='#f5e3bb';c.fillRect(-9,-5,18,1.4);
+    for(const q of [-5,5]){
+     c.fillStyle='#e7adad';c.fillRect(q-3,-4,6,2.6);
+     c.fillStyle='#fff2dc';c.beginPath();c.arc(q,-5,3,Math.PI,0);c.fill();
+    }
    }else{
-    c.fillStyle='#eec780';c.fillRect(-5,-2,10,1.5);
-    c.fillStyle='#705f50';c.fillRect(-4,-.5,1.2,3);c.fillRect(3,-.5,1.2,3);
+    c.fillStyle='#f2ca82';c.fillRect(-9,-5,18,2);
+    for(const q of [-7,7]){c.fillStyle='#72594c';c.fillRect(q,-3,1.5,4);}
+    c.fillStyle='#e8c077';c.beginPath();c.arc(-11,-24,2.1,0,Math.PI*2);c.fill();
+    c.beginPath();c.arc(11,-24,2.1,0,Math.PI*2);c.fill();
    }
   }else if(place.kind==='civic'){
-   c.fillStyle='#e0cfab';c.fillRect(-8,-10,16,13);
-   c.fillStyle='#7f9b9b';for(const q of [-5,0,5])c.fillRect(q-1,-7,2,9);
-   c.fillStyle='#af9677';c.fillRect(-10,-13,20,3);
+   c.fillStyle='#a78968';c.beginPath();c.moveTo(-17,-18);c.lineTo(0,-26);c.lineTo(17,-18);c.fill();
+   c.fillStyle='#e8d7b5';for(const q of [-10,-4,4,10])c.fillRect(q-1.5,-16,3,17);
+   c.fillStyle='#8c9f98';c.fillRect(-2,-6,4,8);
+   c.fillStyle='#a78968';c.fillRect(-16,1,32,2);
   }else{
-   c.fillStyle=place.kind==='chapel'?'#e9d9ba':'#f0dfc9';c.fillRect(-8,-10,16,13);
-   c.fillStyle='#93a6a0';c.beginPath();c.moveTo(-10,-10);c.lineTo(0,-17);c.lineTo(10,-10);c.fill();
-   c.fillStyle='#78958d';c.fillRect(-2,-4,4,7);
-   c.strokeStyle='#9c7a6b';c.lineWidth=1;c.beginPath();
-   c.moveTo(0,-20);c.lineTo(0,-15);c.moveTo(-2,-18);c.lineTo(2,-18);c.stroke();
+   const chapel=place.kind==='chapel';
+   c.fillStyle=chapel?'#9eaaa1':'#c1927e';c.beginPath();c.moveTo(-16,-18);c.lineTo(0,-27);c.lineTo(16,-18);c.fill();
+   c.fillStyle='#8eaa9b';c.beginPath();c.roundRect(-3,-7,6,9,3);c.fill();
+   c.fillStyle='#8ba9a8';for(const q of [-10,10])c.fillRect(q-2,-12,4,5);
+   if(!chapel){c.fillStyle='#e6d7bc';c.fillRect(-4,-29,8,11);c.fillStyle='#6e9898';c.fillRect(-2,-25,4,4);}
+   c.strokeStyle='#986f67';c.lineWidth=1.2;c.beginPath();c.moveTo(0,-33);c.lineTo(0,-27);c.moveTo(-3,-30);c.lineTo(3,-30);c.stroke();
   }
-  c.fillStyle='#6a796f';c.fillRect(-4,5,8,1);
+  // Inset pots and shadows add neighborhood warmth without extra map objects.
+  for(const q of [-13,13]){
+   c.fillStyle='#b58e76';c.fillRect(q-2,0,4,3);
+   c.fillStyle='#80a176';c.beginPath();c.arc(q,-1,3,0,Math.PI*2);c.fill();
+  }
+  if(night){c.fillStyle='#ffe4a020';c.fillRect(-12,-15,24,16);}
   if(zoom>1.55){
    c.textAlign='center';c.textBaseline='middle';c.font='600 7px system-ui';
-   c.lineWidth=2.5;c.strokeStyle='#fff8e9';c.strokeText(place.name,0,-28);
-   c.fillStyle='#536c61';c.fillText(place.name,0,-28);
+   c.lineWidth=2.5;c.strokeStyle='#fff8e9';c.strokeText(place.name,0,-40,110);
+   c.fillStyle='#536c61';c.fillText(place.name,0,-40,110);
   }
   c.restore();
  }
