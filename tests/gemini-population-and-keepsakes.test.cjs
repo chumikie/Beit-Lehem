@@ -50,3 +50,27 @@ test('histórias de Lúcia, Ciça e Nara desbloqueiam gentilezas conectadas',()=
  assert.ok(cards.includes('mila-cores'));
  assert.equal(new Set(cards).size,cards.length);
 });
+
+test('rotinas ficcionais de Rosa, Zeca e Mila variam por dia sem mudar os pontos de encontro',()=>{
+ for(const id of ['rosa','zeca','mila']){
+  const person=neighbors.RESIDENTS.find(p=>p.id===id);
+  const days=[1,2,3].map(day=>neighbors.agenda({day,minute:9*60},person));
+  assert.equal(new Set(days.map(x=>x.activity)).size,3,id+' deve ter três gestos matinais distintos');
+  assert.ok(days.every(x=>x.present&&x.hub===person.hub));
+  assert.equal(neighbors.agenda({day:2,minute:23*60},person).present,false);
+ }
+});
+test('memórias comunitárias reconhecem atividades de outros moradores e laço da banca',()=>{
+ const ribbon={marketMorning:{claimed:true},sideNeighbors:{choices:{cica:'banca'}}};
+ const damiao=affection.snapshot(ribbon,'damiao');
+ assert.equal(damiao.remembered,true);
+ assert.match(JSON.stringify(damiao),/Ciça|laço/i);
+ for(const [id,progress] of [
+  ['rosa',{marketMorning:{claimed:true}}],
+  ['zeca',{luciaGarden:{claimed:true}}],
+  ['mila',{sideNeighbors:{choices:{cica:'banca'}}}]
+ ]){
+  const note=affection.snapshot(progress,id);
+  assert.equal(note.remembered,true,id);
+ }
+});
