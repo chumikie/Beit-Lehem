@@ -38,3 +38,27 @@ Não integrar novas missões, sistema de moto ou contatos nesta etapa. Cada avan
 3. Projetar migração explícita de diário entre a chave Gemini e a chave V2.27, sempre com backup e opção reversível.
 4. Extrair partes do monólito Gemini para módulos pequenos e testáveis, mantendo seus recursos e o visual cozy intactos.
 5. Refinar a edição de celular sem diminuir mapa ou eliminar recursos. Contatos e moto continuam no Gemini experimental e exigem revisão antes de serem aprovados como sistemas estáveis.
+
+
+## Etapa visual priorizada pelo autor — 31/10/2026
+
+**Escopo aprovado:** avançar uma quadra do centro de Belém/PB por vez; dar identidade às cenas urbanas, refinar expressões e revisar a legibilidade no celular. A base a editar é o **Gemini Preview** da PR #1; a V2.27 permanece congelada. Nada de merge, hospedagem ou mudança na malha OSM.
+
+### Primeiro incremento visual: entorno da Matriz
+
+1. **Inventário antes de desenhar:** registrar fotografias e vídeos datados que mostrem a Igreja e os arredores; anotar fonte, data, direção da câmera e grau de confiança. A fotografia histórica de 2007 não comprova a pintura atual das casas. A rua exata e o contorno das edificações ficam pendentes quando não há identificação.
+2. **Uma composição controlada:** trabalhar apenas a paleta, os materiais visíveis, volumes de fachada, sombra de beiral, iluminação e vegetação dos edifícios *ilustrativos* já existentes na área. Não inserir prédios adicionais nem mudar coordenadas ou contagem de ruas para preencher vazios.
+3. **Módulo correto:** inventariar com `npm run gemini:list`; extrair `facade-studio` (e só dependências diretamente necessárias) para `gemini-modules/`, sem reescrever o HTML Gemini. Fazer um ajuste pequeno com comparação antes/depois da Matriz.
+4. **Gente em escala:** revisar a relação jogador/moradores/fachadas no zoom próximo e distante. Priorizar espera, olhar e despedida quando o gesto puder ser vinculado a uma rotina; novas atividades e missões continuam pausadas.
+5. **Celular na mesma entrega:** comparar 390 × 844 e uma largura menor; conferir escala, nomes dos personagens, botões de toque, balões, camadas sobrepostas e áreas seguras. A prévia móvel hoje é idêntica à desktop: não declarar adaptação adicional sem editar e testar a geração.
+6. **Portões de conclusão:** testes do módulo, `npm test`, `npm run verify:baseline`, `npm run build:development-preview`, inspeção visual quando autorizada. Preservar save Gemini e imagens/fontes originais. Commit pequeno somente nesta PR, sem merge.
+
+**Como o jogador perceberá:** caminhar em torno da Matriz e reconhecer um conjunto de fachadas com materiais, sombras e volumes mais coerentes — sem perder o mapa amplo. A revisão de celular deve deixar o mesmo lugar legível com menos oclusões.
+
+### Fila após esse incremento
+
+1. Mercado e ruas comerciais: variação de toldos e fachadas baseada em evidências, conservando a feira e seus horários ficcionais.
+2. Rodoviária: relação entre praça de circulação, sombras, pessoas esperando e os caminhos existentes.
+3. Outros setores e zona rural/serrana: somente após localizar fontes e comparar a abrangência territorial.
+
+**Estado deste registro:** planejamento e critérios definidos; nenhuma alteração de sprite, mapa ou CSS foi implementada por este documento.
