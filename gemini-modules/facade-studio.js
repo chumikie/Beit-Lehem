@@ -42,18 +42,20 @@
   if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===SKETCH_IDS.length};
   state.push(id);return{recorded:true,unlocked:state.length===SKETCH_IDS.length,progress:state.length};
  }
- function draw(c,home,phase='manha',minute=8*60){
+ function draw(c,home,phase='manha',minute=8*60,zoomLevel=1.85){
   const style=variant(home);if(!style)return false;
   const palette=PALETTES[style.block],seed=style.seed,night=phase==='anoitecer'||minute>=18*60||minute<6*60;
   const width=home.w,height=home.h;
+  // Only microdetails are reduced at distant zoom; facade and lot are unchanged.
+  const distant=zoomLevel<1.15;
   c.save();c.translate(home.x,home.y);c.rotate(home.angle);
   const left=-width/2,top=-height/2,front=top+height*.63,faceH=height*.37;
   // Roof: one thin ridge + uneven ceramic joints; no added footprint.
   c.strokeStyle=style.shade%2?'#f8ddbb88':'#f2e7c988';c.lineWidth=.65;
   c.beginPath();c.moveTo(left+1,top+height*.15);c.lineTo(left+width-1,top+height*.15);c.stroke();
-  for(let i=2+(seed%3);i<width-2;i+=4.2){c.beginPath();c.moveTo(left+i,top+height*.17);c.lineTo(left+i+1,top+height*.29);c.stroke();}
+  if(!distant)for(let i=2+(seed%3);i<width-2;i+=4.2){c.beginPath();c.moveTo(left+i,top+height*.17);c.lineTo(left+i+1,top+height*.29);c.stroke();}
   // The roof casts a soft, narrow contact shadow across the wall.
-  c.fillStyle=style.block==='matriz'?'#574c3f3c':'#584e462e';c.fillRect(left+.8,front-.25,width-1.6,style.block==='matriz'?1.65:1.3);
+  c.fillStyle=night?'#403b3b34':style.block==='matriz'?'#574c3f3c':'#584e462e';c.fillRect(left+.8,front-.25,width-1.6,style.block==='matriz'?1.65:1.3);
   c.fillStyle=[palette.wall,'#ead7c7','#d4ded1','#dfd6c5'][style.shade];c.fillRect(left+1,front+1,width-2,Math.max(1,faceH-2));
   // Residential edges ease from the warmer centre into quieter plaster and
   // limewashed lower walls. Every mark stays within the existing footprint.
@@ -63,7 +65,7 @@
    c.fillRect(left+1.15,front+1.2,width-2.3,Math.max(.6,faceH*.29));
    c.fillStyle=style.shade%2?'#8d87772e':'#9a907c23';
    c.fillRect(left+1,front+faceH-1.45,width-2,Math.min(1.05,faceH*.16));
-   if(seed%4===2){
+   if(!distant&&seed%4===2){
     // Sparse worn-plaster strokes, not identical damage on every facade.
     c.fillStyle='#f9edd76b';
     c.fillRect(left+width*.28,front+faceH-2.4,Math.min(2.4,width*.16),.45);
@@ -148,15 +150,15 @@
    c.fillStyle='#ffd88620';c.fillRect(windowX-1,windowY-1,Math.min(6.6,width*.43),windowH+2);
   }
   // Authentic Belém/PB house micro-details: tile number plaque, meter box & rooftop water tank
-  if(seed%2===0){
+  if(!distant&&seed%2===0){
    c.fillStyle='#3b6e8c';c.fillRect(left+1.4,windowY-.3,2.1,1.3);
    c.fillStyle='#ffffff';c.fillRect(left+1.7,windowY,1.5,.6);
   }
-  if(seed%3===1){
+  if(!distant&&seed%3===1){
    c.fillStyle='#b8bec4';c.fillRect(left+width-2.8,windowY+.6,1.5,2.1);
    c.strokeStyle='#6e767d';c.lineWidth=.4;c.strokeRect(left+width-2.8,windowY+.6,1.5,2.1);
   }
-  if(seed%5===0){
+  if(!distant&&seed%5===0){
    c.fillStyle='#4a90c2';c.beginPath();c.ellipse(left+width*.72,top+height*.22,2.4,1.6,0,0,Math.PI*2);c.fill();
    c.strokeStyle='#2f658d';c.lineWidth=.45;c.stroke();
   }

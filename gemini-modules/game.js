@@ -187,7 +187,7 @@ function house(c,b){
  c.restore();
  if(detailedFacades){
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);
-  window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute);
+  window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute,zoom);
  }
 }
 function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,true);if(a.tags.landuse==='residential'){c.fillStyle='#bec59b';c.fill();c.strokeStyle='#adba8c';c.lineWidth=2;c.stroke();}else if(a.tags.landuse==='forest'||a.tags.leisure==='nature_reserve'){c.fillStyle='#8cba7c77';c.fill();if(!detail){c.strokeStyle='#61894d88';c.lineWidth=3;c.setLineDash([8,6]);c.stroke();c.setLineDash([]);}}else if(a.tags.landuse==='grass'||a.tags.landuse==='meadow'||a.tags.leisure==='park'||a.tags.leisure==='garden'){c.fillStyle='#b4cf8d';c.fill();}else if(a.tags.leisure==='pitch'){c.fillStyle='#88ab6c';c.fill();c.lineWidth=1.1;c.strokeStyle='#e7edd2b0';c.stroke();let xs=ring.map(p=>p[0]),ys=ring.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),ww=Math.max(...xs)-x,hh=Math.max(...ys)-y;const cx=x+ww/2,cy=y+hh/2;c.strokeRect(x+4,y+4,ww-8,hh-8);c.beginPath();c.moveTo(x+4,cy);c.lineTo(x+ww-4,cy);c.stroke();c.beginPath();c.arc(cx,cy,Math.min(ww,hh)*.16,0,Math.PI*2);c.stroke();}}
