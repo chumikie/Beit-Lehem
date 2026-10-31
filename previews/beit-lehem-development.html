@@ -3422,6 +3422,89 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorCrowdFlow=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
  const waves=new Map();
+
+ // Fictional conversations inspired by the author's Belém/PB references.
+ // One short line per tap, varied locally; no network, personal data or save.
+ const WORDS={
+  mercado:[
+   'Bom dia! O movimento da feira anima a semana inteira.',
+   'O cheiro de sorda quentinha me lembra as manhãs daqui.',
+   'Hoje vim olhar as frutas e encontrar os conhecidos.',
+   'A feira é boa até pra quem vem só trocar dois dedos de prosa.'
+  ],
+  sonho_doce:[
+   'Passar aqui dá uma vontade de levar um docinho pra casa!',
+   'Já pensou num café com pão doce numa tarde tranquila?',
+   'Eu gosto de olhar a vitrine antes de escolher.'
+  ],
+  bar_prosa:[
+   'Fim de tarde é hora de sentar e conversar um bocadinho.',
+   'Cada mesa daqui parece guardar uma história.',
+   'O melhor do bairro é encontrar alguém conhecido pelo caminho.'
+  ],
+  escola_anita:[
+   'Cedinho essas ruas ficam cheias de passos e conversas.',
+   'Olhe como a rua muda quando o dia vai chegando ao fim.',
+   'Depois das cinco, uma cadeira na calçada já vira convite pra conversa.'
+  ],
+  xaviezao:[
+   'Quando tem jogo, o ginásio fica cheio de torcida e alegria.',
+   'Escute só: parece até que a bola vai quicar de novo!',
+   'Por aqui sempre tem alguém contando a partida de ontem.'
+  ],
+  rodoviaria:[
+   'Tem gente chegando e gente indo, cada qual com uma história.',
+   'Toda viagem boa merece alguém esperando na volta.',
+   'A rodoviária sempre lembra encontro e despedida.'
+  ],
+  igreja:[
+   'Gosto do sossego que dá caminhar por aqui de manhã.',
+   'Esses caminhos me fazem lembrar das festas da padroeira.',
+   'Hoje o céu está tão bonito para uma caminhada!'
+  ],
+  sagrada_familia:[
+   'As igrejas guardam tantas lembranças das famílias daqui.',
+   'A cidade muda, mas certos encontros a gente nunca esquece.'
+  ],
+  capela_luz:[
+   'Esse trecho mais quietinho é bom para caminhar sem pressa.',
+   'Uma brisinha já muda o jeito da tarde, não acha?'
+  ],
+  parque_sao_luis:[
+   'Os brinquedos artesanais daqui parecem feitos com carinho.',
+   'Uma volta no parque e a gente volta a ser criança!',
+   'A criatividade do povo também faz parte da paisagem.'
+  ],
+  hospital_santa_lucia:[
+   'Tomara que todo mundo que passou por aqui volte bem pra casa.',
+   'Cuidar dos vizinhos também faz uma cidade acolhedora.'
+  ],
+  prefeitura:[
+   'O centro tem um movimento diferente a cada hora.',
+   'Que bom encontrar alguém conhecido no meio da rua!'
+  ],
+  pedra_cordeiro:[
+   'Lá para os caminhos de pedra, a paisagem muda de cor.',
+   'A serra e o Agreste têm belezas bem diferentes, viu?'
+  ]
+ };
+ const GENERIC=[
+  'Bom dia, minha filha! Vai passear um bocadinho?',
+  'Vou ali e já volto. Depois a gente põe a conversa em dia!',
+  'Que alegria encontrar gente boa pela rua!',
+  'Essas calçadas já ouviram tanta história bonita.',
+  'Se der tempo, sente um pouquinho e aproveite a brisa.',
+  'Quando a tarde cai, dá vontade de ficar só olhando o movimento.'
+ ];
+ const talks=new Map();
+ function say(person,world){
+  if(!person?.id?.startsWith('passeio-'))return '';
+  const pool=WORDS[person.hub]||GENERIC;
+  const next=(talks.get(person.id)||0)+1;talks.set(person.id,next);
+  const index=(next-1+Math.max(0,Math.floor(Number(world?.day)||1)-1))%pool.length;
+  return '“'+pool[index]+'”';
+ }
+
  function greet(id,now){
   if(typeof id!=='string'||!id.startsWith('passeio-')||!Number.isFinite(now))return false;
   waves.set(id,now+3.8);return true;
@@ -3480,7 +3563,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   // Omitting an ambient passer is preferable to a pile-up at a junction.
   return null;
  }
- return{plan,openSlot,greet};
+ return{plan,openSlot,greet,say};
 });
 
 </script>
@@ -6060,7 +6143,7 @@ function clickWorld(e){
    window.RoncadorCrowdFlow.greet(visitor.id,elapsed);
    spawnEmojiBurst(visitor.x,visitor.y-18,['🌷','💛','✨'],4);
    note(659,0,.10);
-   notify('Oi, vizinhança! ♡ '+(visitor.activity||'Um encontro feliz pelo caminho')+'.');
+   notify(window.RoncadorCrowdFlow.say(visitor,living)||'Oi, vizinhança! ♡');
   }else setRoute(visitor.x,visitor.y,26);
   return;
  }
