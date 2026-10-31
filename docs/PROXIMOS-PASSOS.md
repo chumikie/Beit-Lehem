@@ -15,9 +15,9 @@
 
 ## Próxima rodada
 
-1. Conferir a comparação visual do novo snapshot com a V2.27: amplitude do mapa, leitura das ruas, escala e continuidade das fachadas.
+1. Conferir a comparação visual do novo snapshot com a V2.27: amplitude do mapa, leitura das ruas, escala e continuidade das fachadas. O minimapa já mostra a extensão cartográfica completa com a janela do jogador destacada; o mapa ampliado alterna entre a região próxima e o território completo.
 2. Revisar se os seis estudos cobrem trechos com densidade coerente, sem uniformizar todas as casas nem mover personagens.
 3. Continuar enriquecendo a malha rural/serrana a partir de referências específicas, sem inventar coordenadas de lugares ou acessos.
-4. Depois das revisões de espaço, aprimorar navegação e transições de câmera, mantendo o caminho nas vias reais do mapa.
+4. Depois das revisões de espaço, aprimorar navegação e transições de câmera, mantendo o caminho nas vias reais do mapa. Os personagens que caminham pelas ruas usam o mesmo roteador conectado, sem atalhos inventados.
 
 Não integrar novas missões, sistema de moto ou contatos nesta etapa. Cada avanço deve registrar o que mudou, como foi testado e o que ainda é hipótese.
