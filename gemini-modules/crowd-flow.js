@@ -3,7 +3,7 @@
    These are artistic routines, not measured pedestrian traffic. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorCrowdFlow=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
- const waves=new Map();
+ const waves=new Map(),slots=new Map();
 
  // Fictional conversations inspired by the author's Belém/PB references.
  // One short line per tap, varied locally; no network, personal data or save.
@@ -142,10 +142,19 @@
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
- function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[]){
+ function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN){
   // Try nearby points first, then a few farther points along the same
   // mapped walking path. Never draw a decorative walker on a busy corner.
   const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
+  // Keep a walker's chosen spot while it remains safe. A temporary crowd
+  // must not make the target oscillate between two sides of the street.
+  if(typeof id==='string'&&Number.isFinite(now)){
+   const prior=slots.get(id);
+   if(prior&&now>=prior.time&&now-prior.time<18){
+    offsets.splice(offsets.indexOf(prior.offset),1);
+    offsets.unshift(prior.offset);
+   }else if(prior)slots.delete(id);
+  }
   const cornerRadius=20;
   const separation=Math.max(23,Number.isFinite(clearance)?clearance:23);
   for(const offset of offsets){
@@ -155,6 +164,7 @@
    if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
    // House/shop footprints also reserve a small access strip for doorways.
    if(entrances.some(e=>Number.isFinite(e?.x)&&Number.isFinite(e?.y)&&Math.hypot(p.x-e.x,p.y-e.y)<15))continue;
+   if(typeof id==='string'&&Number.isFinite(now))slots.set(id,{offset,time:now});
    return p;
   }
   // Omitting an ambient passer is preferable to a pile-up at a junction.

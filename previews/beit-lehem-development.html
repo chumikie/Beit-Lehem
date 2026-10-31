@@ -2113,7 +2113,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     else if(raw?.biaLetters?.claimed)memory=['Voltei a ler a carta que escrevemos. A saudade cabe inteira numa página.','a carta que escrevemos','warm'];
     break;
    case 'cica':
-    if(raw?.marketMorning?.claimed&&raw?.marketWitnessed)memory=[known('fitas-de-bom-dia')?'Meu laço e a arrumação de vocês deixaram a banca uma graça!':'Vi como você e Damião ajeitaram a banca. Ficou uma graça!','a banca que arrumaram','warm'];
+    if(neighbors.choices?.cica==='banca'&&raw?.marketMorning?.claimed)memory=['Separei uma fita para a banca de Damião. Aquela ajuda de vocês merecia um laço!','a fita da banca','joy'];
+    else if(raw?.marketMorning?.claimed&&raw?.marketWitnessed)memory=[known('fitas-de-bom-dia')?'Meu laço e a arrumação de vocês deixaram a banca uma graça!':'Vi como você e Damião ajeitaram a banca. Ficou uma graça!','a banca que arrumaram','warm'];
     else if(known('fitas-de-bom-dia'))memory=['Damião sorriu quando viu o laço. Acho que escolhi a cor certa!','o laço de Damião','joy'];
     else if(neighbors.choices?.cica==='fitas')memory=['Lembra como organizamos as fitas? Ainda separo as cores daquele jeito.','as fitas que arrumamos','warm'];
     else if(neighbors.choices?.cica==='cores')memory=['Ainda guardo a dupla de cores que escolhemos.','as cores que escolhemos','warm'];
@@ -2935,7 +2936,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    morning:'separa fitas e dobra tecidos',afternoon:'ajeita cores para a próxima manhã',
    greeting:'Bom dia! Uma fita só ganha graça quando encontra a cor certa.',
    options:[{id:'fitas',label:'Ajudar a organizar as fitas',reply:'Ciça abre um sorriso e arruma as fitas por cor. “Agora dá gosto de olhar!”'},
-    {id:'cores',label:'Escolher uma combinação de cores',reply:'“Sálvia e terracota combinam com o nosso passeio”, diz Ciça, mostrando duas fitas.'}]},
+    {id:'cores',label:'Escolher uma combinação de cores',reply:'“Sálvia e terracota combinam com o nosso passeio”, diz Ciça, mostrando duas fitas.'},
+    {id:'banca',label:'🎀 Preparar uma fita para a banca de Damião',reply:'“Damião vai gostar desta fita!”, diz Ciça, separando um laço para a banca que vocês arrumaram.'}]},
   {id:'nara',name:'Nara',hub:'igreja',variant:7,tone:'#b99ab3',icon:'✏️',role:'A desenhista de janelas',
    morning:'desenha linhas no seu caderninho',afternoon:'repassa os traços das fachadas',
    greeting:'Toda janela tem uma forma bonita. Gosto de imaginar as histórias atrás delas.',
@@ -2966,16 +2968,22 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   const morning=minute<12*60;
   return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
  }
- function interact(state,clock,id,choiceId){
+ function availableOptions(def,context={}){
+  return def?.options?.filter(choice=>choice.id!=='banca'||(
+   def.id==='cica'&&context.marketMorning?.claimed===true
+  ))||[];
+ }
+ function interact(state,clock,id,choiceId,context={}){
   const def=RESIDENTS.find(r=>r.id===id),choice=def?.options.find(o=>o.id===choiceId);
   if(!def||!choice)return{ok:false,reason:'Escolha indisponível.'};
+  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
   const first=!state.seen.includes(id);if(first)state.seen.push(id);
   return{ok:true,first,reply:choice.reply,unlocked:state.seen.length===RESIDENTS.length};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,interact};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,interact};
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
@@ -3633,7 +3641,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    These are artistic routines, not measured pedestrian traffic. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorCrowdFlow=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
- const waves=new Map();
+ const waves=new Map(),slots=new Map();
 
  // Fictional conversations inspired by the author's Belém/PB references.
  // One short line per tap, varied locally; no network, personal data or save.
@@ -3772,10 +3780,19 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
- function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[]){
+ function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN){
   // Try nearby points first, then a few farther points along the same
   // mapped walking path. Never draw a decorative walker on a busy corner.
   const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
+  // Keep a walker's chosen spot while it remains safe. A temporary crowd
+  // must not make the target oscillate between two sides of the street.
+  if(typeof id==='string'&&Number.isFinite(now)){
+   const prior=slots.get(id);
+   if(prior&&now>=prior.time&&now-prior.time<18){
+    offsets.splice(offsets.indexOf(prior.offset),1);
+    offsets.unshift(prior.offset);
+   }else if(prior)slots.delete(id);
+  }
   const cornerRadius=20;
   const separation=Math.max(23,Number.isFinite(clearance)?clearance:23);
   for(const offset of offsets){
@@ -3785,6 +3802,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
    // House/shop footprints also reserve a small access strip for doorways.
    if(entrances.some(e=>Number.isFinite(e?.x)&&Number.isFinite(e?.y)&&Math.hypot(p.x-e.x,p.y-e.y)<15))continue;
+   if(typeof id==='string'&&Number.isFinite(now))slots.set(id,{offset,time:now});
    return p;
   }
   // Omitting an ambient passer is preferable to a pile-up at a junction.
@@ -5006,9 +5024,11 @@ function drawStreetLife(c,time,view){
  const ambientPeople=[];
  for(const passer of walkers){
   const occupied=residents.concat(secondaries,ambientPeople);
-  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses);
+  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed);
   if(!at)continue;
   const passerNow=residentMotion.resolve({...passer,...at},elapsed,living.day);
+  // A detour in progress keeps its walking pose; no mid-step wave or pause.
+  if(passerNow.arriving||passerNow.walking){passerNow.moment=null;passerNow.social=null;}
   if(residents.concat(secondaries,ambientPeople).some(p=>Math.hypot(p.x-passerNow.x,p.y-passerNow.y)<22))continue;
   ambientPeople.push(passerNow);
  }

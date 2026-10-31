@@ -860,9 +860,11 @@ function drawStreetLife(c,time,view){
  const ambientPeople=[];
  for(const passer of walkers){
   const occupied=residents.concat(secondaries,ambientPeople);
-  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses);
+  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed);
   if(!at)continue;
   const passerNow=residentMotion.resolve({...passer,...at},elapsed,living.day);
+  // A detour in progress keeps its walking pose; no mid-step wave or pause.
+  if(passerNow.arriving||passerNow.walking){passerNow.moment=null;passerNow.social=null;}
   if(residents.concat(secondaries,ambientPeople).some(p=>Math.hypot(p.x-passerNow.x,p.y-passerNow.y)<22))continue;
   ambientPeople.push(passerNow);
  }
