@@ -28,3 +28,9 @@
 - Fotos e links fornecidos pelo usuário orientam desenho e pesquisa. Registrar local, direção e fonte quando conhecidos.
 - Não armazenar ZIPs de cada versão, vídeos, credenciais, dependências ou caches no Git. Não modificar configurações globais da conta GitHub.
 - Preferir ações reversíveis; não declarar teste de navegador, celular ou integração externa que não foi executado.
+
+## Referências e PR de evolução
+
+- O usuário autorizou commits e atualizações na branch `review/referencias-locais-2026-10-31`, em uma única PR de rascunho. Não criar outra PR para cada arquivo. Não fazer merge sem autorização expressa.
+- Consultar `docs/GUIA-REFERENCIAS-LOCAIS.md` e o índice em `references/gemini-2026-10-31/INDICE.md`; ler o trecho pertinente do arquivo grande, em vez de reler tudo.
+- Conservar a fonte anonimizada como referência; não sobrescrever `dist/` com o experimento. Coordenadas propostas não são dados OSM confirmados. Não reintroduzir dados pessoais do anexo original.

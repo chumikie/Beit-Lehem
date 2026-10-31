@@ -19,3 +19,7 @@
 | Testes | `tests/*.test.cjs` | `npm test` roda todos localmente |
 
 `game.js` ainda concentra funções de várias áreas. Dividi-lo é trabalho gradual: extrair um sistema de cada vez, com comportamento preservado e teste pertinente. Não reorganizar tudo junto de uma reformulação visual.
+
+## Referências Gemini em revisão
+
+Guia: `GUIA-REFERENCIAS-LOCAIS.md`. Catálogo desativado e análise: `../drafts/referencias-locais-2026-10-31/`. HTML grande anonimizado: `../references/gemini-2026-10-31/experimento-anonimizado.html.txt`. Consultar o `INDICE.md` dessa pasta antes de ler a fonte: ele indica os intervalos por módulo. Nenhuma dessas referências está carregada no jogo.

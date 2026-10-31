@@ -21,3 +21,7 @@
 - Revisão visual/comportamental completa em navegador e aparelho físico.
 
 Não retomar crescimento da muda ou novas missões nesta etapa.
+
+## Referências locais em revisão
+
+Consultar `GUIA-REFERENCIAS-LOCAIS.md` e `../drafts/referencias-locais-2026-10-31/ANALISE.md`. A próxima etapa de cenário é confirmar o trecho residencial da Clóvis Bezerra e seus lotes/frentes. Guardar contatos, moto e novas atividades para entregas próprias. Atualizar a mesma PR de referências, sem merge.

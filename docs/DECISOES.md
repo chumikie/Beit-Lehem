@@ -11,3 +11,5 @@
 - GitHub privado para desenvolvimento; cópia local para jogar; nenhuma hospedagem.
 - Testes locais. Não incluir workflows; desativação administrativa de Actions ainda pendente de conferência pelo proprietário apenas neste repositório; preservar o projeto principal e as configurações globais da conta.
 - Não há exportação/importação do diário ainda. Implementar de forma testável antes de trocar a origem/local de execução supondo que o progresso migrará sozinho.
+
+- Referências do Gemini: conservar cópia grande anonimizada e guia cumulativo em uma única PR de rascunho. Commits e atualizações na PR estão autorizados; merge permanece proibido até autorização expressa. Não publicar nomes ou vínculos residenciais particulares.
