@@ -3421,7 +3421,13 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    These are artistic routines, not measured pedestrian traffic. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorCrowdFlow=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
- function plan(world,isFair){
+ const waves=new Map();
+ function greet(id,now){
+  if(typeof id!=='string'||!id.startsWith('passeio-')||!Number.isFinite(now))return false;
+  waves.set(id,now+3.8);return true;
+ }
+ function plan(world,isFair,now=NaN){
+  if(Number.isFinite(now))for(const [id,until] of waves)if(until<=now)waves.delete(id);
   const hour=(Number(world?.minute)||0)/60,day=Math.max(1,Math.floor(Number(world?.day)||1));
   if(hour<6||hour>=22)return[];
   const busy=hour>=8&&hour<12||hour>=16&&hour<20;
@@ -3434,9 +3440,27 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    'sagrada_familia','sonho_doce','igreja','prefeitura',
    'pedra_cordeiro','missao:5','missao:2','missao:1'];
   const rotation=(day-1)%hubs.length;
-  return Array.from({length:number},(_,i)=>({
-   id:'passeio-'+(i+1),variant:i+1,hub:hubs[(i+rotation)%hubs.length],def:null
-  }));
+  return Array.from({length:number},(_,i)=>{
+   const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];
+   // Small fictional routines without simulation ticks or persistent saves.
+   const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
+   const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
+    i%5===0?'senhora':i%4===0?'vizinho':'passeante';
+   const phase=((Number(world?.minute)||0)+i*11)%43;
+   const resting=phase<3&&(role==='senhora'||role==='vizinho'||role==='vitrine');
+   const wavedUntil=waves.get(id)||0;
+   const waving=Number.isFinite(now)&&now<wavedUntil;
+   const waveAge=waving?3.8-(wavedUntil-now):0;
+   const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
+    role==='feira'?(hour<12?'indo à feira':'voltando do passeio'):
+    role==='vitrine'?'olhando as vitrines':
+    role==='vizinho'?'descansando um instante':'caminhando pelo bairro';
+   const kind=role==='vitrine'?'read':role==='senhora'?'flower':'rest';
+   return {id,variant:i+1,hub,def:null,localRole:role,activity,
+    pause:resting||waving,moment:resting?{kind,strength:1}:null,
+    social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:null,
+    greeting:waving?{age:waveAge}:null};
+  });
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
@@ -3456,7 +3480,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   // Omitting an ambient passer is preferable to a pile-up at a junction.
   return null;
  }
- return{plan,openSlot};
+ return{plan,openSlot,greet};
 });
 
 </script>
@@ -3803,6 +3827,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
 const $=id=>document.getElementById(id),canvas=$('world'),ctx=canvas.getContext('2d'),mini=$('minimap'),mc=mini.getContext('2d'),big=$('bigmap'),bc=big.getContext('2d');
 const STORE='roncador-expedition-v2-referencias-gemini',keys=new Set(),touches=new Map(),reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?1.55:1.85,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
+let ambientHitTargets=[];
 let pathfinder=null,residentMotion=null,streetGreetings=null,guide={x:0,y:0},nearGuide=false,friendship=0,chapter=0,observations=new Set(),photos={};
 let nearCulture=null,cultureActiveId=null,cultureNotes={},gardenStep=0,gardenHarvests=0,scenicScenes=[],showScenery=true,festivalCelebrated=false,lightPhase='manha',showWildlife=true,wildlife=[],showGeology=false,geologyPoints=[],streetPaths=new Map(),nearResident=null,fairStalls=[];
 let living=window.RoncadorLivingWorld.fresh();
@@ -4337,7 +4362,7 @@ function drawKawaiiWalker(c,person,time){
  roundRect(c,-10,-10+wave,4.3,10,2,'#e6b797');roundRect(c,6,-10-wave,4.3,10,2,'#e6b797');
  // Head and large, blushing kawaii eyes.
  roundRect(c,-7.5,-26,15,16,6,'#eac09d','#d4a784');
- c.fillStyle=damiao?'#5b493e':lucia?'#584a53':'#59483d';
+ c.fillStyle=damiao?'#5b493e':lucia?'#584a53':person.localRole==='senhora'?'#b3a89c':'#59483d';
  c.beginPath();c.ellipse(0,-23,8,5.2,0,Math.PI,Math.PI*2);c.lineTo(7,-19);c.lineTo(5,-24);c.fill();
  if(damiao){c.fillStyle='#68564a';c.beginPath();c.ellipse(0,-27,7.9,2.4,0,Math.PI,Math.PI*2);c.fill();}
  if(lucia){c.fillStyle='#79576b';c.beginPath();c.arc(6,-26,4,0,7);c.fill();c.fillStyle='#e7b4ac';c.beginPath();c.arc(8,-28,2.1,0,7);c.fill();}
@@ -4497,7 +4522,7 @@ function drawCommunityEncounter(c,time,people,view){
 }
 function drawStreetLife(c,time,view){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
- const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere());
+ const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere(),elapsed);
  const residents=residentsInStreets(),secondaries=secondaryInStreets(residents);
  const greeted=streetGreetings.apply(residents.concat(secondaries),elapsed,living);
  residentMotion.hold(greeted);
@@ -4512,6 +4537,7 @@ function drawStreetLife(c,time,view){
   if(residents.concat(secondaries,ambientPeople).some(p=>Math.hypot(p.x-passerNow.x,p.y-passerNow.y)<22))continue;
   ambientPeople.push(passerNow);
  }
+ ambientHitTargets=ambientPeople;
  const people=[...ambientPeople,...residents,...secondaries].sort((a,b)=>a.y-b.y);
  for(const person of people){
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
@@ -6024,6 +6050,18 @@ function clickWorld(e){
   const person=crowd[0];
   if(Math.hypot(player.x-person.x,player.y-person.y)<44){if(person.secondary)talkSecondary(person.id);else talkResident(person.id);}
   else setRoute(person.x,person.y,26);
+  return;
+ }
+ // Fictional passers can answer a friendly tap; no mission or save change.
+ const visitor=ambientHitTargets.filter(p=>Math.abs(x-p.x)<17&&y>=p.y-40&&y<=p.y+12)
+  .sort((a,b)=>Math.hypot(x-a.x,y-(a.y-18))-Math.hypot(x-b.x,y-(b.y-18)))[0];
+ if(visitor){
+  if(Math.hypot(player.x-visitor.x,player.y-visitor.y)<54){
+   window.RoncadorCrowdFlow.greet(visitor.id,elapsed);
+   spawnEmojiBurst(visitor.x,visitor.y-18,['🌷','💛','✨'],4);
+   note(659,0,.10);
+   notify('Oi, vizinhança! ♡ '+(visitor.activity||'Um encontro feliz pelo caminho')+'.');
+  }else setRoute(visitor.x,visitor.y,26);
   return;
  }
  if(near>=0&&Math.hypot(x-missions[near].p[0],y-missions[near].p[1])<28){collect();return;}
