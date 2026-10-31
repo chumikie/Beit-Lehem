@@ -874,7 +874,7 @@ function drawCommunityEncounter(c,time,people,view){
  const phrase=window.RoncadorStreetCommunity.line(living,event),separator=phrase.indexOf(':');
  const speaker=separator>=0?phrase.slice(0,separator):'Amigos',speech=separator>=0?phrase.slice(separator+1).trim():phrase;
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(speech,phone?20:26);
- const width=phone?114:139,height=27+rows.length*9,top=cy-91+bounce;
+ const width=phone?108:124,height=27+rows.length*9,top=cy-87+bounce;
  c.shadowColor='#344c4230';c.shadowBlur=5;c.shadowOffsetY=2;
  roundRect(c,cx-width/2,top,width,height,9,'#fff9edf5','#d6b8a2');c.shadowBlur=0;c.shadowOffsetY=0;
  c.fillStyle='#fff9ed';c.beginPath();c.moveTo(cx-6,top+height-1);c.lineTo(cx,top+height+6);c.lineTo(cx+7,top+height-1);c.fill();
