@@ -2,7 +2,11 @@
 
 Beit Lehem é uma experiência local e offline ambientada em Belém/PB, Rua Nova e no entorno rural e serrano. O objetivo é ampliar um mundo conectado, preservando a identidade artística e a escala do jogo aprovado.
 
-## Três arquivos, três papéis diferentes
+## Comece aqui: encontre a versão certa
+
+**[Abrir o índice de versões e a organização das pastas](docs/VERSOES-E-ESTRUTURA.md)** — links para computador, celular, V2.27 e Gemini; instruções para baixar e um fluxo de edição leve.
+
+## Quatro arquivos, três papéis diferentes
 
 - **Base oficial de referência — V2.27:** [`baseline/Belem-Viva-V2-27.html`](baseline/Belem-Viva-V2-27.html). É a melhor versão estável até aqui: ampla, jogável e a base que deve crescer. Sua cópia congelada não deve ser editada.
 - **Referência enriquecida do Gemini:** [`previews/gemini-preview.html`](previews/gemini-preview.html). Reúne mais referências e detalhes locais do que a base oficial. Serve como fonte de informação e comparação; não é uma substituição da V2.27.
@@ -40,6 +44,6 @@ Os testes automatizados cobrem regras de dados e módulos, mas não substituem u
 
 ## Direção de desenvolvimento
 
-Prioridades atuais: mapa, escala, navegação, fachadas e personagens. Preservar a extensão do território e suas conexões. Não reduzir a área de exploração para dar aparência de conclusão. Não integrar novas missões, moto ou contatos enquanto a geografia e a apresentação ainda estiverem sendo consolidadas.
+Prioridades atuais: mapa, escala, navegação, fachadas, cotidiano comunitário e identidade cozy de Belém/PB. A riqueza visual do Gemini orienta a composição; não incorporar itens ou estética idol/TsuLiPa. Preservar a extensão do território e suas conexões. Não reduzir a área de exploração para dar aparência de conclusão. Não integrar novas missões, moto ou contatos enquanto a geografia e a apresentação ainda estiverem sendo consolidadas.
 
 Veja [as decisões do projeto](docs/DECISOES.md), [o mapa do código](docs/MAPA-DO-CODIGO.md) e [os próximos passos](docs/PROXIMOS-PASSOS.md).
