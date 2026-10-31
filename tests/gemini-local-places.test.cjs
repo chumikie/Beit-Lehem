@@ -22,4 +22,16 @@ for(const p of places){
  assert(route&&route.points?.length,'connected walking route to '+p.id);
 }
 assert(source.includes('if(setRoute(...localPlace.p,18))'),'tapping an illustrated place uses the existing router');
+// Every local category must render in both daytime and evening without
+// introducing new map geometries or relying on a browser-only side effect.
+const vignette=/function drawGeminiLocalPlaces\(c,viewport\)\{[\s\S]*?\n\}\n(?=function drawMappedPlaces)/.exec(source);
+assert(vignette,'the detailed place renderer remains available');
+for(const minute of [9*60,19*60]){
+ const render=vm.runInNewContext('('+vignette[0].trim()+')',{zoom:1.8,living:{minute},GEMINI_LOCAL_PLACES:places,Math});
+ let saved=0,restored=0;
+ const c=new Proxy({}, {get(_target,name){return (..._args)=>{if(name==='save')saved++;if(name==='restore')restored++;};},set(){return true;}});
+ render(c,{left:-200,right:400,top:-850,bottom:700});
+ assert.equal(saved,7,'all seven category scenes drawn');
+ assert.equal(restored,saved,'canvas state restored after drawing');
+}
 console.log('Gemini integration: seven distinct landmark categories, user verification provenance and map rendering OK');
