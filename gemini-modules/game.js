@@ -753,10 +753,10 @@ function drawStreetLife(c,time,view){
   }
   residentMotion.present(person,elapsed,reduce);
   if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
-  // Cross-fade the full portrait into a compact silhouette on wide map views.
-  const detail=Math.max(0,Math.min(1,(zoom-.95)/.30));
-  if(detail<1){c.save();c.globalAlpha*=1-detail;drawDistantResident(c,person);c.restore();}
-  if(detail>0){c.save();c.globalAlpha*=detail;if(person.secondary)drawSecondaryWalker(c,person,time);else drawKawaiiWalker(c,person,time);c.restore();}
+  // One representation per frame avoids ghost outlines at intermediate zoom.
+  if(zoom<1.15)drawDistantResident(c,person);
+  else if(person.secondary)drawSecondaryWalker(c,person,time);
+  else drawKawaiiWalker(c,person,time);
   if(zoom>=1.2&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
    const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
