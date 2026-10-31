@@ -697,7 +697,7 @@ function drawDailyGesture(c,person,time){
 // The same local transform holds faces, limbs and carried props together.
 // Illustrative 14-unit facades and 23-unit characters share one world-scale family.
 // This is a visual ratio, not an assertion about building measurements.
-const WORLD_FACADE_HEIGHT=14,WORLD_CHARACTER_HEIGHT=WORLD_FACADE_HEIGHT*1.65;
+const WORLD_FACADE_HEIGHT=14,WORLD_CHARACTER_HEIGHT=WORLD_FACADE_HEIGHT*1.52;
 function characterDrawScale(base){return base*(zoom<=2?1:1-.12*Math.min(1,(zoom-2)/1.5));}
 // NPCs share a smaller visual scale; their accessories follow the same transform.
 function residentDrawScale(base){return characterDrawScale(base)*.88;}
