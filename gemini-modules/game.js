@@ -1857,8 +1857,15 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  nearGuide=guideDistance<32;
  nearCulture=data.landmarks.find(l=>Math.hypot(player.x-l.p[0],player.y-l.p[1])<43)||null;
  const residentSnapshot=residentsInStreets(),secondarySnapshot=secondaryInStreets(residentSnapshot);
- nearResident=residentSnapshot.find(p=>Math.hypot(player.x-p.x,player.y-p.y)<42)||null;
- nearSecondary=secondarySnapshot.find(p=>Math.hypot(player.x-p.x,player.y-p.y)<42)||null;
+ // Select the nearest available speaker across both casts. Otherwise a
+ // primary resident can hide a closer neighbour's conversation button.
+ const closestSpeaker=residentSnapshot.concat(secondarySnapshot).reduce((best,p)=>{
+  const d=Math.hypot(player.x-p.x,player.y-p.y);
+  return d<42&&(!best||d<best.d)?{person:p,d}:best;
+ },null);
+ nearResident=closestSpeaker&&!closestSpeaker.person.secondary?closestSpeaker.person:null;
+ nearSecondary=closestSpeaker?.person.secondary?closestSpeaker.person:null;
+ if(closestSpeaker&&closestSpeaker.d<guideDistance)nearGuide=false;
  $('interact').hidden=!active||(near<0&&!nearGuide&&!nearCulture&&!nearResident&&!nearSecondary)||anyDialog();
  if(nearGuide)$('interact').innerHTML='♥ Conversar com Lia <kbd>E</kbd>';
  else if(nearResident?.meeting)$('interact').innerHTML='♡ Participar da conversa <kbd>E</kbd>';

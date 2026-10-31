@@ -53,3 +53,9 @@ test('as três prévias incluem as versões atuais dos módulos e preservam o sa
  assert.match(previews[0],/const STORE='roncador-expedition-v2-referencias-gemini'/);
  assert.match(previews[0],/Bolt 🐕/);
 });
+
+test('o botão de conversa escolhe o morador mais próximo, inclusive secundários',()=>{
+ assert.match(game,/const closestSpeaker=residentSnapshot\.concat\(secondarySnapshot\)\.reduce/);
+ assert.match(game,/nearSecondary=closestSpeaker\?\.person\.secondary/);
+ assert.match(previews[0],/const closestSpeaker=residentSnapshot\.concat\(secondarySnapshot\)\.reduce/);
+});
