@@ -9415,18 +9415,15 @@ DjaCxFerUpTm2lGG1o2j8ryUtDxMRm9DBVPYVqDqVIq7lv1aWrfZI//Z
  // slot, a purely decorative passer may be omitted for this frame.
  function openSlot(sample,people=[],junctions=[],clearance=23){
   const offsets=[0,14,-14,29,-29,45,-45,61,-61];
-  let atJunction=null;
   for(const offset of offsets){
    const p=sample(offset);
    if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
    if(people.some(other=>Math.hypot(p.x-other.x,p.y-other.y)<clearance))continue;
-   if(junctions.some(j=>Math.hypot(p.x-j.x,p.y-j.y)<11)){
-    if(!atJunction)atJunction=p;
-    continue;
-   }
+   if(junctions.some(j=>Math.hypot(p.x-j.x,p.y-j.y)<11))continue;
    return p;
   }
-  return atJunction;
+  // No safe sidewalk composition: omit the decorative passer this frame.
+  return null;
  }
  return{plan,openSlot};
 });
@@ -9454,6 +9451,7 @@ DjaCxFerUpTm2lGG1o2j8ryUtDxMRm9DBVPYVqDqVIq7lv1aWrfZI//Z
    const dt=Math.min(.09,Math.max(0,now-s.last));s.last=now;
    const held=holds.has(person.id)&&!person.meeting&&!person.travel;
    const from={x:s.x,y:s.y},gap=distance(from,target);
+   let blocked=false;
    if(!held&&!s.bridge&&gap>11&&graph?.route){
     const route=graph.route([s.x,s.y],[target.x,target.y]);
     // In disconnected OSM components there is no verified pedestrian route;
@@ -9461,11 +9459,15 @@ DjaCxFerUpTm2lGG1o2j8ryUtDxMRm9DBVPYVqDqVIq7lv1aWrfZI//Z
     if(route?.points?.length&&route.distance<1600){
      s.bridge=[{x:s.x,y:s.y},...route.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))];
      s.bridgeIndex=1;
-    }else{s.x=target.x;s.y=target.y;}
+    }else{
+     // A disconnected or invalid route must not teleport the resident.
+     // Keep the last visible position and retry if the graph/target changes.
+     blocked=true;
+    }
    }
    // A short, optional roadside gesture holds the *same* mapped location.
    // Never interrupt a resident already following a bridging road route.
-   const resting=(!!person.pause||held)&&!s.bridge;
+   const resting=(!!person.pause||held||blocked)&&!s.bridge;
    const intent=!resting&&(!!s.bridge||gap>.035);
    s.pace+=(Number(intent)-s.pace)*(1-Math.exp(-dt*(intent?5.5:7)));
    let remaining=resting?0:dt*(person.meeting?37:person.travel?82:43)*(.38+.62*s.pace);
@@ -9491,12 +9493,18 @@ DjaCxFerUpTm2lGG1o2j8ryUtDxMRm9DBVPYVqDqVIq7lv1aWrfZI//Z
   }
   function present(person,now,reduce){
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
+   // Stop the feet for conversations and small pauses, even when the
+   // underlying itinerary still carries momentum from the previous frame.
+   const gait=person.social||person.greeting||person.moment||person.pause?0:(person.walkBlend??Number(!!person.walking));
+   const desiredWalk=Math.max(0,Math.min(1,Number(gait)||0));
    let v=visuals.get(person.id);
-   if(!v||now<v.last||now-v.last>10){v={gaze:desired,last:now};visuals.set(person.id,v);}
+   if(!v||now<v.last||now-v.last>10){v={gaze:desired,walk:desiredWalk,last:now};visuals.set(person.id,v);}
    const dt=Math.max(0,Math.min(.09,now-v.last));v.last=now;
    v.gaze=reduce?desired:v.gaze+(desired-v.gaze)*(1-Math.exp(-dt*10));
+   v.walk=reduce?desiredWalk:v.walk+(desiredWalk-v.walk)*(1-Math.exp(-dt*8));
    person.gaze=v.gaze;
-   person.lean=reduce?0:Math.cos(person.heading||0)*.025*(person.walkBlend??Number(!!person.walking));
+   person.walkBlend=v.walk;
+   person.lean=reduce?0:Math.cos(person.heading||0)*.025*v.walk;
    return person;
   }
   return{resolve,present,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
