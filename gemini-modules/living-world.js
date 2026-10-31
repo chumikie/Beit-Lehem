@@ -60,6 +60,27 @@
       return person?.lastCareKind===kind&&person.lastCareDay>0&&s.day-person.lastCareDay<=1;
     })?.text||null;
   }
+  // Short, illustrated-album-ready diary captions; no new save fields.
+  // They are fictional descriptions of player actions, not real local testimony.
+  const CARE_DIARY={
+    damiao:{
+      cestos:'Na feira, você organizou os cestos com Damião e deixou a passagem mais acolhedora.',
+      historias:'Você parou para ouvir as histórias de Damião, sem pressa de seguir caminho.'
+    },
+    lucia:{
+      mudas:'Perto da Matriz, você cuidou de uma pequena muda com Lúcia.',
+      lembrancas:'Você e Lúcia dividiram uma lembrança tranquila, dessas que cabem no coração.'
+    },
+    bia:{
+      caderno:'Na Rodoviária, você ajudou Bia a colocar suas anotações em ordem.',
+      planos:'Você ouviu os sonhos de Bia e imaginou com ela caminhos para o futuro.'
+    }
+  };
+  const REUNION_DIARY={
+    damiao:'Damião se lembrou de uma gentileza sua. Uma conversa de ontem virou amizade hoje.',
+    lucia:'Lúcia retomou um cuidado compartilhado. Pequenas coisas continuam crescendo entre amigos.',
+    bia:'Bia lembrou de algo que vocês fizeram juntos. Até os planos guardam memórias.'
+  };
   const CARE_TODAY={
     damiao:'Obrigado pela companhia de hoje! Depois a gente continua a conversa perto da banca.',
     lucia:'Gostei de cuidar dessas pequenas coisas com você hoje. Vamos ver como ficam amanhã?',
@@ -160,6 +181,10 @@
     const text=firstToday
       ?(yesterday||neighbor||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
       :(today?CARE_TODAY[id]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.');
+    if(firstToday&&(yesterday||neighbor)){
+      s.notes[0].text=yesterday?REUNION_DIARY[id]:
+        'Um gesto seu chegou a outra pessoa: '+p.name+' comentou uma gentileza feita a um amigo.';
+    }
     return{friendship:n.bond,newMemory:firstToday,text};
   }
   function care(s,id,kind){
@@ -172,7 +197,7 @@
     person.lastCareDay=s.day;person.lastCareKind=kind;person.careCount=clamp(person.careCount+1,0,9999);
     person.fatigue=clamp(person.fatigue+choice.fatigue,0,100);
     person.company=clamp(person.company+choice.company,0,100);
-    s.notes.unshift({day:s.day,text:'Um gesto com '+RESIDENTS.find(p=>p.id===id).name+': '+choice.label.replace(/^[^\p{L}]+/u,'')+'.'});
+    s.notes.unshift({day:s.day,text:CARE_DIARY[id]?.[kind]||'Um gesto de cuidado com um amigo.'});
     s.notes=s.notes.slice(0,12);
     return{ok:true,text:choice.effect,progress:careProgress(s)};
   }
