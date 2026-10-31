@@ -36,6 +36,7 @@
   switch(id){
    case 'damiao':
     if(known('recado-da-feira'))memory=['Guardei o bilhete de Téo junto das anotações da feira.','o recado de Téo','joy'];
+    else if(raw?.marketMorning?.claimed&&neighbors.choices?.cica==='banca')memory=['Ciça me mostrou a fita que vocês prepararam para a banca. Guardei o laço com carinho!','o laço preparado com Ciça','joy'];
     else if(known('fitas-de-bom-dia'))memory=['Olhe a fita de Ciça no meu cesto! Ainda me lembra aquela manhã.','a fita da feira','joy'];
     else if(raw?.marketMorning?.claimed)memory=['Ainda lembro como você me ajudou com os cestos e as frutas.','a manhã de trabalho juntos','warm'];
     break;
@@ -66,16 +67,20 @@
    case 'rosa':
     if(neighbors.choices?.rosa==='prosa')memory=['Nossa conversa tranquila ainda me acompanha pelo caminho.','a pausa para conversar','warm'];
     else if(neighbors.choices?.rosa==='caderno')memory=['Guardei no caderno a frase que escrevemos durante o passeio.','a frase do caderno','joy'];
+    else if(raw?.marketMorning?.claimed)memory=['Soube da ajuda que você deu a Damião na feira. Uma manhã assim rende boa conversa!','a ajuda na feira','warm'];
     break;
    case 'zeca':
     if(raw?.luciaGarden?.claimed&&neighbors.choices?.zeca==='muda-lucia')memory=['Ainda lembro da muda que você cuidou com Lúcia. Uma história boa para compartilhar.','a muda de Lúcia','joy'];
     else if(neighbors.choices?.zeca==='vasos')memory=['Aquele papo sobre vasos me fez olhar melhor para as folhas.','a conversa sobre os vasos','warm'];
     else if(neighbors.choices?.zeca==='sementes')memory=['Ainda lembro da nossa dica de jardim.','o papo sobre sementes','warm'];
+    else if(raw?.luciaGarden?.claimed)memory=['Lúcia me contou da muda que vocês cuidaram. Dá gosto saber que ela tem companhia!','o cuidado com a muda','warm'];
     break;
    case 'mila':
     if(neighbors.choices?.mila==='amigas')memory=['Guardei a ideia de misturar fitas de Ciça e desenhos de Nara.','as cores das amigas','joy'];
     else if(neighbors.choices?.mila==='cores')memory=['A faixa de cor que escolhemos ainda está no meu caderno.','a cor do caderno','warm'];
     else if(neighbors.choices?.mila==='tecidos')memory=['Ainda estou pensando nas estampas que imaginamos.','as estampas do passeio','warm'];
+    else if(neighbors.choices?.cica==='banca')memory=['Ciça mostrou a ideia da fita para Damião. Agora quero desenhar uma igualzinha no meu caderno!','a fita da banca','joy'];
+    else if(['janela-bia','paisagem-bia'].includes(neighbors.choices?.nara))memory=['Nara me contou do desenho que fez para a carta de Bia. Que ideia bonita!','o desenho na carta','warm'];
     break;
    case 'teo':
     if(known('bilhete-de-volta'))memory=['O bilhete de Bia está protegido no meu envelope de capa azul.','a carta de Bia','joy'];
