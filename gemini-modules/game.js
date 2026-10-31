@@ -50,6 +50,7 @@ function preprocess(){
  residentMotion=window.RoncadorResidentMotion.create(pathfinder);
  streetGreetings=window.RoncadorStreetGreetings.create(pathfinder);
  streetGreetings.setHouses(houses);
+ window.RoncadorStreetMoments.setHouses(houses);
  roadDetails=window.RoncadorRoadDetails.prepare(roads,pathfinder);
  terrainLayer=window.RoncadorTerrainRelief.prepare(data,terrainData);
  streetPaths.clear();
@@ -449,7 +450,7 @@ function residentsInStreets(){
    if(point)point.walking=false;
   }else point=walkingPoint(def.id,schedule.hub,i);
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel};
-  const moment=window.RoncadorStreetMoments.choose(behavior,elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,x:point?.x,y:point?.y},elapsed,living);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -464,7 +465,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    const next=roadPath?.length?window.RoncadorStreetLife.sample(roadPath,elapsed*(.72+def.variant*.07)+def.variant*12+63):null;
    if(next&&primary.every(p=>Math.hypot(p.x-next.x,p.y-next.y)>21))at=next;
   }
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel,x:at?.x,y:at?.y},elapsed,living);
   return at?[residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -493,6 +494,10 @@ function drawDailyGesture(c,person,time){
  if(moment.kind==='rest'){
   c.moveTo(-7,-9);c.quadraticCurveTo(-11,-4,-6,-2);
   c.moveTo(7,-9);c.quadraticCurveTo(10,-3,6,-2);
+ }else if(moment.kind==='sweep'){
+  c.moveTo(7,-8);c.quadraticCurveTo(13,-11,12,-14+sway*.45);
+ }else if(moment.kind==='chair'){
+  c.moveTo(7,-10);c.quadraticCurveTo(13,-8,12,-5+sway*.3);
  }else if(moment.kind==='flower'){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-13,10,-16+sway*.35);
  }else if(moment.kind==='look'){
@@ -506,6 +511,13 @@ function drawDailyGesture(c,person,time){
   c.moveTo(7,-8);c.quadraticCurveTo(12,-13,13,-15+sway);
  }
  c.stroke();
+ if(moment.kind==='sweep'){
+  // A hand-held broom sweeps lightly; nothing is placed on the street.
+  c.strokeStyle='#96744c';c.lineWidth=1.4;c.beginPath();
+  c.moveTo(12,-14+sway*.45);c.lineTo(15+sway*.6,5);c.stroke();
+  c.strokeStyle='#cda974';c.lineWidth=2.5;c.beginPath();
+  c.moveTo(12+sway*.6,5);c.lineTo(18+sway*.6,5);c.stroke();
+ }
  // Props are worn/carried, never placed as purported real-world objects.
  if(moment.kind==='ribbon'||moment.kind==='flower'||moment.kind==='letter'){
   const color=moment.kind==='flower'?'#deafb7':moment.kind==='ribbon'?'#79b8af':'#eec9a4';
