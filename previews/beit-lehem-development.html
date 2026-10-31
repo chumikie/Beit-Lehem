@@ -848,7 +848,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    if(clock.minute<7*60||clock.minute>=20*60)active=null;
    if(active){
     const pair=active.ids.map(id=>people.find(p=>p.id===id));
-    if(pair.some(p=>!eligible(p))||now-active.start>=3.8){active=null;}
+    if(pair.some(p=>!eligible(p))||now-active.start>=4.4){active=null;}
    }
    if(!active&&now>=nextCheck&&clock.minute>=7*60&&clock.minute<20*60){
     nextCheck=now+.4;
@@ -870,9 +870,19 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    for(let i=0;i<2;i++){
     const person=pair[i],friend=pair[1-i];
     person.moment=null;person.walking=false;
-    const intensity=smooth(Math.min((age-.65)/.5,(3.3-age)/.6));
-    person.social={pose:age<.65?'listen':age<3.3?'wave':'smile',facing:friend.x>=person.x?1:-1,intensity,react:age>1.1&&age<2.8,spontaneous:true};
-    person.greeting={friend:friend.def?.name||friend.id,age};
+    // A short conversation now ends in distinct beats: look, wave, turn, release.
+    // Positions remain untouched; the resident motion system resumes its own route.
+    const stage=age<.65?'notice':age<2.75?'chat':age<3.15?'look':age<3.85?'wave':'turn';
+    const facing=friend.x>=person.x?1:-1;
+    const outward=Number.isFinite(person.heading)?(Math.cos(person.heading)>=0?1:-1):facing;
+    const intensity=stage==='wave'
+      ?smooth(Math.min((age-3.15)/.18,(3.85-age)/.18))
+      :stage==='chat'?smooth(Math.min((age-.65)/.35,(2.75-age)/.35)):1;
+    person.social={pose:stage==='wave'?'wave':stage==='chat'?'listen':'smile',
+      facing:stage==='turn'?outward:facing,intensity,
+      stage:stage==='look'||stage==='wave'||stage==='turn'?'farewell':stage,
+      react:stage==='chat'&&age>1.1&&age<2.5,spontaneous:true};
+    person.greeting={friend:friend.def?.name||friend.id,age,stage};
    }
    return active.ids.slice();
   }
