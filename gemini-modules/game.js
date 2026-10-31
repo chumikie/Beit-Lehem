@@ -774,7 +774,7 @@ function drawSecondaryWalker(c,person,time){
  // A lowered accessory during rest avoids miming work while the journal says resting.
  const daily=(person.activity||'').toLowerCase(),resting=/descansa|pausa|repousa/.test(daily);
  const gesture=reduce?0:Math.sin(time*2.2+person.variant)*(resting?.25:1);
- const showing=!!(person.meeting||person.social?.react||person.social?.pose==='offer');
+ const showing=!!(person.social?.react||person.social?.pose==='offer'||person.social?.pose==='receive');
  const carry=resting?5:showing?-3+gesture*.45:gesture;
  if(person.id==='rosa'){
   roundRect(c,7,-9+(carry),9,10,1.4,'#d8b78f','#80695d');
@@ -874,7 +874,7 @@ function drawStreetLife(c,time,view){
  const greeted=streetGreetings.apply(residents.concat(secondaries),elapsed,living);
  residentMotion.hold(greeted);
  const event=window.RoncadorEncounterChoreography.current(living);
- if(event&&residents.concat(secondaries).filter(p=>(event.cast||[event.host,event.visitor]).includes(p.id)).every(p=>!p.arriving))window.RoncadorEncounterChoreography.apply(residents.concat(secondaries),living,event);
+ if(event&&residents.concat(secondaries).filter(p=>(event.cast||[event.host,event.visitor]).includes(p.id)).every(p=>!p.arriving&&!p.walking))window.RoncadorEncounterChoreography.apply(residents.concat(secondaries),living,event);
  const ambientPeople=[];
  const conversationSpace=residents.concat(secondaries).filter(p=>greeted.includes(p.id));
  for(const passer of walkers){
