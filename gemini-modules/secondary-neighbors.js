@@ -50,9 +50,22 @@
   return state;
  }
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
+ // Fictional weekly variations; never claims residents' real schedules.
+ const WEEKLY_ROUTINES={
+  rosa:{morning:['observa o movimento e anota uma história','organiza seu caderninho de conversas','cumprimenta quem passa sem pressa'],afternoon:['faz uma pausa e relembra uma visita','procura uma frase bonita para guardar','descansa e troca notícias com conhecidos']},
+  zeca:{morning:['confere as folhas de um vaso ilustrativo','observa a sombra sobre as plantas','separa ideias para cuidar de uma muda'],afternoon:['descansa e conta histórias de jardins','repara nas plantas ao longo do caminho','conversa sobre os cuidados do quintal']},
+  mila:{morning:['experimenta cores no caderno','desenha formas de portas e janelas','separa ideias de fitas e tecidos'],afternoon:['observa padrões nas fachadas','compara cores de pequenos desenhos','imagina uma estampa para as amigas']}
+ };
+ function weeklyActivity(clock,def){
+  const scenes=WEEKLY_ROUTINES[def.id];
+  if(!scenes)return null;
+  const weekday=(((Number(clock?.day)||1)-1)%7+7)%7;
+  const morning=(Number(clock?.minute)||0)<12*60;
+  return scenes[morning?'morning':'afternoon'][weekday%3];
+ }
  function agenda(clock,def){
   const community=root?.RoncadorStreetCommunity?.agenda(clock,def.id);
-  if(community)return community;
+  if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
   const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
@@ -60,7 +73,7 @@
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
-  return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
+  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
  }
  function availableOptions(def,context={}){
   return def?.options?.filter(choice=>{
