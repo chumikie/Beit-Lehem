@@ -108,6 +108,17 @@
    c.fillStyle='#c8b498';c.fillRect(left+width*.51,fy+1,.7,Math.max(1,faceH-2.5));
    c.fillStyle='#d3ad7e';for(let i=0;i<3;i++)c.fillRect(left+3+i*1.5,fy+faceH-2.4,1,1);
    c.fillStyle='#f4e5cc';c.fillRect(left+2,fy+faceH-1.3,bayW,.65);
+   // A few small, anonymous storefront identities inspired by the Gemini
+   // commercial study: display shelves, a side sign or a striped valance.
+   // These details stay within the existing fictitious building footprint.
+   if(seed%4===0){
+    c.fillStyle=palette.accent;for(let j=0;j<3;j++)c.fillRect(left+3+j*2.5,fy+faceH-3.1,1.5,.9);
+   }else if(seed%4===1){
+    c.fillStyle='#e9dbbc';c.fillRect(left+width-3.9,fy-1.3,2.2,2.5);
+    c.fillStyle=palette.trim;c.fillRect(left+width-3.6,fy-.9,1.6,.45);
+   }else if(seed%4===2){
+    c.fillStyle='#fff2d4';for(let j=0;j<3;j++)c.fillRect(left+2.2+j*3,fy+1.2,1,1.2);
+   }
   }
   // Porch/potted plants stay INSIDE each illustrative building's tiny bounds.
   if(style.kind==='vasos'||style.kind==='arcos'&&seed%2===0){
