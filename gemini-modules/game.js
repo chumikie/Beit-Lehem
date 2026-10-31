@@ -817,7 +817,7 @@ function drawStreetLife(c,time,view){
  }
 }
 function drawStreetPets(c,time,view){
- const candidates=[{id:'pingo',name:'Pingo 🐕',hub:'casa_varanda',variant:5,cat:false},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
+ const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'casa_varanda',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
@@ -826,18 +826,28 @@ function drawStreetPets(c,time,view){
   const bounce=reduce?0:Math.sin(time*(pet.cat?3.7:5.2)+pet.variant)*.65;
   c.save();c.translate(at.x,at.y+bounce);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
-  const fur=pet.cat?'#f0d3ac':'#cd9870';
+  const fur=pet.bolt?'#eee0c3':pet.cat?'#f0d3ac':'#cd9870';
   if(zoom<1.15){
    // At wide zoom, avoid subpixel eyes, ears and overlapping fine outlines.
    c.strokeStyle='#8f765e';c.lineWidth=1.3;c.lineCap='round';
    c.beginPath();c.moveTo(4,-3);c.quadraticCurveTo(9,-9,7,-11);c.stroke();
    roundRect(c,-6,-7,12,8,3.5,fur,'#977861');
    c.fillStyle=fur;c.beginPath();c.arc(-4,-7,3.6,0,Math.PI*2);c.fill();
+   if(pet.bolt){c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();}
    c.restore();continue;
   }
   c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*2+pet.variant)*2),9,-13);c.stroke();
   roundRect(c,-6,-7,12,9,4,fur,'#9c846b');
-  c.fillStyle=fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
+  c.fillStyle=pet.bolt?'#d7bb91':fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
+  if(pet.bolt){
+   // Bolt's pale coat, darker floppy ears and charcoal muzzle come from the
+   // author's photographs; the source photos stay outside the game/repository.
+   c.fillStyle='#6d5d55';c.beginPath();c.ellipse(-6.5,-8,2.2,4,-.3,0,Math.PI*2);c.fill();
+   c.fillStyle='#8d7868';c.beginPath();c.ellipse(-1,-7,2.6,3.2,.25,0,Math.PI*2);c.fill();
+   c.fillStyle='#aa998b';c.beginPath();c.ellipse(-4.8,-4.1,3.7,2.2,0,0,Math.PI*2);c.fill();
+   c.fillStyle='#393536';c.beginPath();c.arc(-7,-4.2,1.4,0,Math.PI*2);c.fill();
+   c.strokeStyle='#4c4740';c.lineWidth=1.2;c.beginPath();c.moveTo(-5,-1.9);c.lineTo(3,-1.9);c.stroke();
+  }
   if(pet.cat){c.beginPath();c.moveTo(-7,-9);c.lineTo(-7,-15);c.lineTo(-2,-11);c.moveTo(0,-11);c.lineTo(4,-15);c.lineTo(4,-8);c.fill();}
   else{roundRect(c,-8,-10,4,8,2,'#a47359');}
   c.fillStyle='#51483e';c.beginPath();c.arc(-5,-7,0.8,0,7);c.arc(-1,-7,0.8,0,7);c.fill();
@@ -2273,11 +2283,11 @@ function clickWorld(e){
   notify('✨ (o˘◡˘o) ✨ Prontinho para explorar Belém! Aperte X para a Motinha Kawaii ou G para buzinar!');
   return;
  }
- const pingoAt=walkingPoint('pingo','casa_varanda',5);
- if(pingoAt&&Math.hypot(x-pingoAt.x,y-pingoAt.y)<20){
-  spawnEmojiBurst(pingoAt.x,pingoAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
+ const boltAt=walkingPoint('bolt','casa_varanda',5);
+ if(boltAt&&Math.hypot(x-boltAt.x,y-boltAt.y)<20){
+  spawnEmojiBurst(boltAt.x,boltAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
   note(659,0,.09);note(880,.09,.13);
-  notify('🐕 💕 Pingo abanou o rabo todo feliz na calçada da Rua Clóvis Bezerra!');
+  notify('🐕 💕 Bolt abanou o rabo todo feliz na calçada da Rua Clóvis Bezerra!');
   return;
  }
  if(Math.hypot(x-guide.x,y-guide.y)<22&&Math.hypot(player.x-guide.x,player.y-guide.y)<32){talkGuide();return;}
