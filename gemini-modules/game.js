@@ -2064,7 +2064,10 @@ function renderSecondaryDialog(def,feedback){
  const c=portrait.getContext('2d');c.fillStyle='#edf0e5';c.fillRect(0,0,110,107);c.save();c.translate(55,82);c.scale(1.7,1.7);drawSecondaryWalker(c,{x:0,y:0,id:def.id,def,walking:false,variant:def.variant},.3);c.restore();wrap.append(portrait);
  const options=$('secondaryChoices');options.replaceChildren();
  for(const choice of def.options){
-  const button=document.createElement('button');button.type='button';button.disabled=already;button.textContent=choice.label;
+  const button=document.createElement('button');button.type='button';button.disabled=already;
+  // A quiet cue appears only when a contextual story is actually available.
+  const special=['banca','janela-bia','paisagem-bia','muda-lucia','amigas'].includes(choice.id);
+  button.textContent=(special&&!already?'✦ ':'')+choice.label;
   button.onclick=()=>{
    const position=secondaryInStreets().find(p=>p.id===def.id);
    if(!position||Math.hypot(player.x-position.x,player.y-position.y)>=44){renderSecondaryDialog(def,'Caminhe até '+def.name+' novamente para continuar.');return;}

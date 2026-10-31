@@ -59,3 +59,8 @@ test('o botão de conversa escolhe o morador mais próximo, inclusive secundári
  assert.match(game,/nearSecondary=closestSpeaker\?\.person\.secondary/);
  assert.match(previews[0],/const closestSpeaker=residentSnapshot\.concat\(secondarySnapshot\)\.reduce/);
 });
+
+test('opções especiais exibem marca discreta apenas quando disponíveis',()=>{
+ assert.ok(game.includes("const special=['banca','janela-bia','paisagem-bia','muda-lucia','amigas']"));
+ assert.ok(previews[0].includes("button.textContent=(special&&!already?'✦ ':'')+choice.label;"));
+});
