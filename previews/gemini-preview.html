@@ -5035,16 +5035,18 @@ function drawSecondaryWalker(c,person,time){
  // A lowered accessory during rest avoids miming work while the journal says resting.
  const daily=(person.activity||'').toLowerCase(),resting=/descansa|pausa|repousa/.test(daily);
  const gesture=reduce?0:Math.sin(time*2.2+person.variant)*(resting?.25:1);
+ const showing=!!(person.meeting||person.social?.react||person.social?.pose==='offer');
+ const carry=resting?5:showing?-3+gesture*.45:gesture;
  if(person.id==='rosa'){
-  roundRect(c,7,-9+(resting?5:gesture),9,10,1.4,'#d8b78f','#80695d');
-  c.strokeStyle='#8d7566';c.lineWidth=.65;c.beginPath();c.moveTo(11,-7+(resting?5:gesture));c.lineTo(11,0+(resting?5:gesture));c.stroke();
+  roundRect(c,7,-9+(carry),9,10,1.4,'#d8b78f','#80695d');
+  c.strokeStyle='#8d7566';c.lineWidth=.65;c.beginPath();c.moveTo(11,-7+(carry));c.lineTo(11,0+(carry));c.stroke();
  }else if(person.id==='zeca'){
-  roundRect(c,7,-6+(resting?4:gesture),9,7,2,'#bb8568','#8c6652');
-  c.strokeStyle='#64875c';c.lineWidth=1.2;c.beginPath();c.moveTo(11,-6+(resting?4:gesture));c.lineTo(11,-14+(resting?4:gesture));c.stroke();
-  for(const side of [-1,1]){c.fillStyle='#8db28a';c.beginPath();c.ellipse(11+side*3,-12+(resting?4:gesture),3.3,1.7,side*.4,0,7);c.fill();}
+  roundRect(c,7,-6+(carry),9,7,2,'#bb8568','#8c6652');
+  c.strokeStyle='#64875c';c.lineWidth=1.2;c.beginPath();c.moveTo(11,-6+(carry));c.lineTo(11,-14+(carry));c.stroke();
+  for(const side of [-1,1]){c.fillStyle='#8db28a';c.beginPath();c.ellipse(11+side*3,-12+(carry),3.3,1.7,side*.4,0,7);c.fill();}
  }else if(person.id==='mila'){
-  roundRect(c,7,-9+(resting?5:gesture),10,10,1.8,'#f5e2c8','#a6817a');
-  for(const [i,color] of ['#c598aa','#89a9a5','#e7c18a'].entries()){c.fillStyle=color;c.beginPath();c.arc(10+i*2,-5+(resting?5:gesture),1.25,0,7);c.fill();}
+  roundRect(c,7,-9+(carry),10,10,1.8,'#f5e2c8','#a6817a');
+  for(const [i,color] of ['#c598aa','#89a9a5','#e7c18a'].entries()){c.fillStyle=color;c.beginPath();c.arc(10+i*2,-5+(carry),1.25,0,7);c.fill();}
  }
 
  drawSocialGesture(c,person.social,time);
