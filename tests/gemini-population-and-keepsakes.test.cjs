@@ -137,3 +137,10 @@ test('três vizinhos que chegam à mesma calçada recebem espaço separado na pr
   assert.ok(Math.hypot(residents[i].x-residents[j].x,residents[i].y-residents[j].y)>23,
    residents[i].id+' e '+residents[j].id+' separados');
 });
+
+test('balão comunitário mantém tamanho contido nas ruas e no celular',()=>{
+ const fs=require('node:fs');
+ const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ assert.match(game,/const width=phone\?108:124,height=27\+rows\.length\*9,top=cy-87\+bounce/);
+ assert.match(game,/const phone=matchMedia\('\(max-width:800px\)'\)\.matches,rows=wrapEncounterSpeech\(speech,phone\?20:26\)/);
+});
