@@ -11,7 +11,7 @@ Compartilhar só a **prévia jogável** Beit Lehem — mundo cozy de Belém/PB, 
 | Item | Publicar? | Motivo |
 | --- | --- | --- |
 | `index.html` gerado da prévia Gemini atual | Sim, após sanitização e QA | Jogo jogável em computador e celular |
-| Dois JPEGs embutidos no HTML | Sim, apenas após remover EXIF e confirmar direitos de publicação | Recursos visuais atuais |
+| Dois JPEGs embutidos no HTML | Sim, após remover EXIF; as fontes no Wikimedia Commons indicam domínio público | Recursos visuais atuais |
 | Dados geográficos já necessários ao jogo, embutidos no HTML | Sim, após revisão final | Sem eles o mapa completo não funciona |
 | `AGENTS.md`, `docs/`, `drafts/`, `references/`, `tests/`, `gemini-modules/`, `dist/`, `baseline/`, `.git/` | Não | Desenvolvimento e histórico privados |
 | Chaves, configuração de CI ou acesso remoto | Não | Desnecessários |
@@ -30,7 +30,7 @@ O `index.html` contém mapa, CSS, JS e imagens embutidas. O projeto original NÃ
 - HTML analisado: `previews/beit-lehem-development.html`, ~1,08 MB, branch de desenvolvimento da PR #1.
 - Não foram encontrados elementos `<script src>`, `<link href>` ou `<iframe src>` externos na estrutura HTML.
 - Há `@import` para Google Fonts no CSS embutido. Para uma distribuição completamente offline, remover a importação na cópia pública e usar a pilha de fontes locais; verificar visualmente o resultado.
-- Há **2 JPEGs embutidos em base64 com cabeçalho EXIF**. Remover os segmentos de metadados do export, sem modificar os arquivos de referência; verificar consentimento/direitos dessas imagens antes da publicação.
+- Há **2 JPEGs embutidos em base64 com cabeçalho EXIF**. Remover os segmentos de metadados do export, sem modificar os arquivos de referência. As duas fotografias (igreja e feira, 2007, Júnior Miranda) constam no Wikimedia Commons como domínio público, com links de fonte já presentes no jogo.
 - O mapa e seus marcos OSM/IBGE e ilustrações ficcionais continuam no HTML; devem manter atribuições e distinção entre observação real e criação artística.
 - Não foram identificados endereços de e-mail na inspeção textual do HTML. Isso NÃO substitui auditoria visual e de privacidade.
 - O jogo usa `localStorage` com a chave experimental `roncador-expedition-v2-referencias-gemini`; sem conta, banco ou sincronização. Ao mudar de `file://` para um domínio público, os saves locais anteriores **não são transferidos automaticamente**.
@@ -59,8 +59,9 @@ Alternativa: **novo repositório GitHub público apenas para distribuição**, c
 ## Portões obrigatórios para publicar
 
 - [ ] Remover EXIF dos dois JPEGs embutidos na cópia de distribuição.
-- [ ] Autor confirmar que as duas imagens podem ser compartilhadas publicamente.
+- [x] Licenças das duas imagens históricas conferidas no Wikimedia Commons como domínio público; manter a atribuição e os links na interface.
 - [ ] Remover importação de fonte remota ou aprovar uso online de Google Fonts.
+- [ ] Retirar do pacote público o comentário interno inicial de arquivo de referência, sem alterar a fonte original.
 - [ ] Inspecionar visualmente o jogo no Chrome desktop e em tela de celular.
 - [ ] Testar a inicialização, movimentação, diálogos, controles touch e recuperação de save após recarregar.
 - [ ] Verificar que não há dados pessoais/arquivos de desenvolvimento no pacote final.
@@ -73,3 +74,6 @@ Alternativa: **novo repositório GitHub público apenas para distribuição**, c
 - Cloudflare Direct Upload: https://developers.cloudflare.com/pages/get-started/direct-upload/
 
 Nenhuma implantação, alteração de visibilidade ou conexão de contas deve ser realizada apenas por existir este documento.
+
+- Igreja: https://commons.wikimedia.org/wiki/File:Igreja_N%C2%AA_Sr%C2%AA_da_Concei%C3%A7%C3%A3o_Bel%C3%A9m-PB.jpg
+- Feira: https://commons.wikimedia.org/wiki/File:Feira_Livre_de_Bel%C3%A9m-PB.jpg
