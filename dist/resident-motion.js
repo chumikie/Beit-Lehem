@@ -61,12 +61,18 @@
   }
   function present(person,now,reduce){
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
+   // Stop the feet for conversations and small pauses, even when the
+   // underlying itinerary still carries momentum from the previous frame.
+   const gait=person.social||person.greeting||person.moment||person.pause?0:(person.walkBlend??Number(!!person.walking));
+   const desiredWalk=Math.max(0,Math.min(1,Number(gait)||0));
    let v=visuals.get(person.id);
-   if(!v||now<v.last||now-v.last>10){v={gaze:desired,last:now};visuals.set(person.id,v);}
+   if(!v||now<v.last||now-v.last>10){v={gaze:desired,walk:desiredWalk,last:now};visuals.set(person.id,v);}
    const dt=Math.max(0,Math.min(.09,now-v.last));v.last=now;
    v.gaze=reduce?desired:v.gaze+(desired-v.gaze)*(1-Math.exp(-dt*10));
+   v.walk=reduce?desiredWalk:v.walk+(desiredWalk-v.walk)*(1-Math.exp(-dt*8));
    person.gaze=v.gaze;
-   person.lean=reduce?0:Math.cos(person.heading||0)*.025*(person.walkBlend??Number(!!person.walking));
+   person.walkBlend=v.walk;
+   person.lean=reduce?0:Math.cos(person.heading||0)*.025*v.walk;
    return person;
   }
   return{resolve,present,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
