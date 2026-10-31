@@ -74,3 +74,31 @@ test('memórias comunitárias reconhecem atividades de outros moradores e laço 
   assert.equal(note.remembered,true,id);
  }
 });
+
+test('laço de Ciça só é desenhado após a escolha salva e a manhã concluída',()=>{
+ const fs=require('node:fs');
+ const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ assert.match(game,/marketMorning\.claimed&&sideNeighbors\.choices\?\.cica==='banca'/);
+ assert.match(game,/stalls\.includes\(marketStall\)/);
+ assert.match(game,/ctx\.translate\(rx,ry-17\)/);
+});
+test('Rosa, Zeca e Mila têm acessórios relacionados às atividades em tela',()=>{
+ const fs=require('node:fs');
+ const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ for(const id of ['rosa','zeca','mila'])assert.ok(game.includes("person.id==='"+id+"'"));
+ assert.match(game,/const daily=\(person\.activity\|\|''\)/);
+ assert.match(game,/const gesture=reduce\?0:/);
+});
+test('sete dias de rotina preservam descanso noturno e encontros definidos',()=>{
+ for(let day=1;day<=7;day++){
+  for(const id of ['rosa','zeca','mila']){
+   const def=neighbors.RESIDENTS.find(x=>x.id===id);
+   const morning=neighbors.agenda({day,minute:9*60},def);
+   const evening=neighbors.agenda({day,minute:16*60},def);
+   assert.ok(morning.present&&evening.present,id+' dia '+day);
+   assert.equal(morning.hub,def.hub);
+   assert.equal(evening.hub,def.hub);
+   assert.equal(neighbors.agenda({day,minute:23*60},def).present,false);
+  }
+ }
+});
