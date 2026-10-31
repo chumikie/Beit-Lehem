@@ -174,6 +174,25 @@ test('nomes priorizam proximidade sem cobrir rostos no desktop e no celular',()=
 test('balões completos exigem zoom e proximidade sem remover as cenas',()=>{
  const fs=require('node:fs');
  const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
- assert.equal(source.split('if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105)').length-1,2);
+ assert.equal(source.split('if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76)').length-1,2);
  assert.ok(source.includes('RoncadorEncounterChoreography.draw'));
+});
+
+test('Mercado limita nomes e legendas de pontos sem apagar moradores ou POIs',()=>{
+ const fs=require('node:fs'),vm=require('node:vm');
+ const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ const start=source.indexOf('function layoutResidentNameplates(');
+ const end=source.indexOf('function drawDistantResident(',start);
+ const layout=vm.runInNewContext(source.slice(start,end)+';layoutResidentNameplates',{
+  data:{landmarks:[{id:'mercado',p:[0,0]}]}
+ });
+ const people=[
+  {id:'a',def:{name:'Ana'},x:8,y:0},
+  {id:'b',def:{name:'Bia'},x:60,y:0},
+  {id:'c',def:{name:'Ciça'},x:92,y:0}
+ ];
+ assert.ok(layout(people,{x:0,y:0},1.85,false).length<=1);
+ assert.equal(layout(people,{x:0,y:0},1.4,false).length,0);
+ assert.ok(source.includes('const mayLabel=zoom>(busyMarket?1.9:1.45)'));
+ assert.ok(source.includes('RoncadorLandmarks?.drawMarkers'));
 });
