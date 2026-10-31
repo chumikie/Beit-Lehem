@@ -14,4 +14,12 @@ for(const p of places){
 assert.equal(places.find(p=>p.id==='bar_prosa').fictionalName,true,'fictional bar title stays marked');
 assert(source.includes('user-verified positions'),'the source must distinguish firsthand positions from OSM');
 assert(source.includes('drawGeminiLocalPlaces(ctx,{left,right,top,bottom})'),'the map actually renders the local category art');
+const map=require('../dist/map.json');
+const {buildGraph}=require('../dist/pathfinding.js');
+const graph=buildGraph(map.roads);
+for(const p of places){
+ const route=graph.route(map.start,p.p);
+ assert(route&&route.points?.length,'connected walking route to '+p.id);
+}
+assert(source.includes('if(setRoute(...localPlace.p,18))'),'tapping an illustrated place uses the existing router');
 console.log('Gemini integration: seven distinct landmark categories, user verification provenance and map rendering OK');
