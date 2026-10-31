@@ -813,7 +813,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  const GESTURES={
   damiao:{kind:'rest',offset:0},lucia:{kind:'flower',offset:9},
   bia:{kind:'read',offset:17},cica:{kind:'ribbon',offset:5},
-  nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21}
+  nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21},
+  rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8}
  };
  const CYCLE=33,DURATION=3.4;
  let porches=[];
@@ -824,7 +825,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function choose(person,elapsed,world){
   const config=GESTURES[person?.id];
-  if(!config||person.meeting||person.travel||person.arriving||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
+  if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
   // An occasional fictional doorstep gesture at the cooler end of the day.
   // It changes only the resident's pose on an existing mapped path.
   const nearPorch=Number.isFinite(person.x)&&Number.isFinite(person.y)&&
@@ -836,10 +837,20 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     return{kind,strength:smooth(Math.min(1,porchPhase/.55,(3.2-porchPhase)/.55)),phase:porchPhase,nearPorch:true};
    }
   }
+  const minute=world.minute,hub=person.hub;
+  const morning=minute>=8*60&&minute<11*60;
+  const afternoon=minute>=14*60&&minute<17*60;
+  // The established fictional destinations shape the pose; no new stops,
+  // schedules, shopfronts or geographic claims are introduced.
+  const commerce=['mercado','sonho_doce','bar_prosa'].includes(hub);
+  const waiting=hub==='rodoviaria';
+  const kind=commerce&&morning?'look':waiting&&afternoon?'rest':
+   hub==='igreja'&&afternoon?'flower':config.kind;
+  const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
-  if(phase>=DURATION)return null;
-  const strength=smooth(Math.min(1,phase/.65,(DURATION-phase)/.65));
-  return{kind:config.kind,strength,phase};
+  if(phase>=duration)return null;
+  const strength=smooth(Math.min(1,phase/.65,(duration-phase)/.65));
+  return{kind,strength,phase,hubRoutine:commerce&&morning||waiting&&afternoon};
  }
  return{GESTURES,CYCLE,DURATION,choose,setHouses};
 });
@@ -2082,8 +2093,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorAffectionMemory=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
  const PROTAGONISTS=['damiao','lucia','bia'];
- const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo'};
- const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.']};
+ const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo',rosa:'Rosa',zeca:'Zeca',mila:'Mila'};
+ const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.'],rosa:['Gosto de observar quem passa e ouvir novidades.','Uma conversa tranquila muda a cor da tarde.'],zeca:['As folhas me ensinam a ter paciência.','Depois da sombra, sempre encontro um cantinho verde.'],mila:['Hoje encontrei uma cor nova no caminho.','À tarde, gosto de desenhar o que vi pela cidade.']};
  // Permanent keepsakes are derived from existing quest completion flags.
  // Unlike the 12 recent diary notes, these achievements cannot scroll away.
  const KEEPSAKES=Object.freeze([
@@ -2093,6 +2104,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   {id:'fitas-feira',title:'Fitas de bom-dia',icon:'🎀',caption:'Ciça e Damião dividiram um pequeno gesto de acolhimento.',earned:s=>s?.communitySeen?.includes('fitas-de-bom-dia')===true},
   {id:'desenho-jardim',title:'Uma folha desenhada',icon:'🎨',caption:'Uma lembrança de Nara e Lúcia encontrou lugar no caderno.',earned:s=>s?.communitySeen?.includes('memorias-do-jardim')===true},
   {id:'caderno-bia-nara',title:'Desenhos para os caminhos',icon:'📖',caption:'Nara desenhou uma janela ou paisagem inspirada na carta de Bia.',earned:s=>s?.biaLetters?.claimed===true&&['janela-bia','paisagem-bia'].includes(s?.sideNeighbors?.choices?.nara)},
+  {id:'zeca-lucia',title:'Uma muda entre vizinhos',icon:'🪴',caption:'Zeca ouviu a história da muda cuidada com Lúcia.',earned:s=>s?.luciaGarden?.claimed===true&&s?.sideNeighbors?.choices?.zeca==='muda-lucia'},
+  {id:'mila-cores',title:'Fitas, janelas e cores',icon:'🎨',caption:'Mila uniu ideias de Ciça e Nara num desenho imaginado.',earned:s=>s?.sideNeighbors?.choices?.mila==='amigas'},
   {id:'bilhete-volta',title:'Um bilhete de volta',icon:'💌',caption:'O recado de Bia e Téo ganhou um caminho de volta.',earned:s=>s?.communitySeen?.includes('bilhete-de-volta')===true}
  ]);
  function collection(raw){
@@ -2139,6 +2152,20 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     else if(known('caderno-compartilhado'))memory=['Bia escreveu uma frase ao lado da janela que desenhei.','o caderno compartilhado','joy'];
     else if(neighbors.choices?.nara)memory=['Abri o caderno bem na página que desenhamos juntos.','nosso primeiro desenho','warm'];
     break;
+   case 'rosa':
+    if(neighbors.choices?.rosa==='prosa')memory=['Nossa conversa tranquila ainda me acompanha pelo caminho.','a pausa para conversar','warm'];
+    else if(neighbors.choices?.rosa==='caderno')memory=['Guardei no caderno a frase que escrevemos durante o passeio.','a frase do caderno','joy'];
+    break;
+   case 'zeca':
+    if(raw?.luciaGarden?.claimed&&neighbors.choices?.zeca==='muda-lucia')memory=['Ainda lembro da muda que você cuidou com Lúcia. Uma história boa para compartilhar.','a muda de Lúcia','joy'];
+    else if(neighbors.choices?.zeca==='vasos')memory=['Aquele papo sobre vasos me fez olhar melhor para as folhas.','a conversa sobre os vasos','warm'];
+    else if(neighbors.choices?.zeca==='sementes')memory=['Ainda lembro da nossa dica de jardim.','o papo sobre sementes','warm'];
+    break;
+   case 'mila':
+    if(neighbors.choices?.mila==='amigas')memory=['Guardei a ideia de misturar fitas de Ciça e desenhos de Nara.','as cores das amigas','joy'];
+    else if(neighbors.choices?.mila==='cores')memory=['A faixa de cor que escolhemos ainda está no meu caderno.','a cor do caderno','warm'];
+    else if(neighbors.choices?.mila==='tecidos')memory=['Ainda estou pensando nas estampas que imaginamos.','as estampas do passeio','warm'];
+    break;
    case 'teo':
     if(known('bilhete-de-volta'))memory=['O bilhete de Bia está protegido no meu envelope de capa azul.','a carta de Bia','joy'];
     else if(known('recado-da-feira'))memory=['Damião pediu que eu levasse outro abraço quando voltasse.','o recado da feira','joy'];
@@ -2150,7 +2177,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   const fallback=DEFAULT[id]?.[morning?0:1]||'Que bom encontrar você.';
   const friendly=close?{
    damiao:'Que bom rever você! Já parece gente de casa.',lucia:'Suas visitas sempre dão um respiro ao meu dia.',bia:'Quando você chega, tenho vontade de contar todos os meus planos.',
-   cica:'Olha quem voltou para escolher cores comigo!',nara:'Você já sabe onde guardo meus melhores desenhos.',teo:'Eu sabia que você voltaria para ouvir novidades!'
+   cica:'Olha quem voltou para escolher cores comigo!',nara:'Você já sabe onde guardo meus melhores desenhos.',teo:'Eu sabia que você voltaria para ouvir novidades!',rosa:'Que bom que voltou! Guardei uma boa conversa para hoje.',zeca:'Voltou para ver as plantas? Que bom ter companhia.',mila:'Olha quem chegou! Tenho outra ideia de desenho.'
   }[id]:null;
   const line=memory?.[0]||friendly||fallback;
   const mood=Number(person.fatigue)>75?'sleepy':memory?.[2]||((close||bond>=1)?'warm':'curious');
@@ -2952,7 +2979,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
 
 </script>
 <script>
-/* Three fictional neighbors: daily presence, small gestures and persistent memories.
+/* Fictional neighbors: daily presence, small gestures and persistent memories.
    No placement claims a verified business, home or workplace in Belém/PB. */
 (function(root){
  'use strict';
@@ -2970,12 +2997,30 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'},
     {id:'janela-bia',label:'✏️ Desenhar uma janela para a carta de Bia',reply:'Nara desenha uma janela aberta ao lado da carta: “Para lembrar que sempre existe um caminho de volta.”'},
     {id:'paisagem-bia',label:'🌿 Desenhar a paisagem que Bia quer conhecer',reply:'Nara pinta um horizonte delicado: “Os sonhos também precisam de espaço no papel.”'}]},
+  {id:'rosa',name:'Rosa',hub:'sonho_doce',variant:10,tone:'#b78483',icon:'☕',role:'Vizinha das conversas tranquilas',
+   morning:'observa o movimento e ajeita um pequeno caderno',afternoon:'descansa e troca notícias com quem passa',
+   greeting:'Eu gosto de uma conversa sem pressa. Sempre tem uma história bonita nas ruas.',
+   options:[{id:'prosa',label:'☕ Fazer uma pausa para conversar',reply:'Rosa escuta com atenção e diz: “Às vezes a melhor descoberta é ter tempo para alguém.”'},
+    {id:'caderno',label:'📒 Anotar uma lembrança do passeio',reply:'Rosa abre o caderno e guarda uma frase sobre o dia: “Essa eu não quero esquecer.”'}]},
+  {id:'zeca',name:'Zeca',hub:'escola_anita',variant:11,tone:'#88a386',icon:'🪴',role:'Vizinho que gosta de plantas',
+   morning:'observa vasos e folhas perto do caminho',afternoon:'descansa à sombra e conversa sobre o quintal',
+   greeting:'Planta e amizade têm uma coisa parecida: as duas melhoram com cuidado.',
+   options:[{id:'vasos',label:'🪴 Conversar sobre os vasos',reply:'Zeca ajeita uma folhinha e sorri: “Cada vaso guarda um pouquinho de paciência.”'},
+    {id:'sementes',label:'🌱 Trocar uma dica de plantio',reply:'Zeca conta uma dica imaginada de jardim e agradece a companhia.'},
+    {id:'muda-lucia',label:'🌷 Contar da muda cuidada com Lúcia',reply:'“Lúcia vai gostar de saber que você voltou para olhar a planta”, diz Zeca, contente.'}]},
+  {id:'mila',name:'Mila',hub:'bar_prosa',variant:12,tone:'#c394a6',icon:'🎨',role:'Criadora de cores e pequenos desenhos',
+   morning:'reúne ideias e combina cores no caderno',afternoon:'observa detalhes de fachadas e tecidos',
+   greeting:'Uma cor muda o jeito da gente lembrar de um dia. Qual foi a sua preferida hoje?',
+   options:[{id:'cores',label:'🎨 Escolher uma cor para o caderno',reply:'Mila desenha uma pequena faixa colorida: “Essa combina com o nosso passeio.”'},
+    {id:'tecidos',label:'🧵 Conversar sobre estampas',reply:'Mila mistura duas estampas imaginárias e ri: “Cada uma conta uma história!”'},
+    {id:'amigas',label:'♡ Juntar uma ideia de Ciça e Nara',reply:'Mila imagina uma fita desenhada como uma janela: “Ciça e Nara iam adorar essa mistura!”'}]},
   {id:'teo',name:'Téo',hub:'rodoviaria',variant:8,tone:'#85a0c5',icon:'✉️',role:'O colecionador de recados',
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
    options:[{id:'envelope',label:'Ajudar a separar envelopes',reply:'Téo alinha os envelopes e coloca um coração no de cima. “Pronto, ninguém se perde!”'},
     {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]}
  ]);
+ const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{}});
  function restore(raw){
   const state=fresh();if(!raw||typeof raw!=='object')return state;
@@ -2990,7 +3035,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   if(community)return community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
-  const open=minute>=8*60&&minute<12*60 || minute>=14*60&&minute<18*60;
+  const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
+   def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
+   (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
   return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
@@ -2999,20 +3046,22 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   return def?.options?.filter(choice=>{
    if(choice.id==='banca')return def.id==='cica'&&context.marketMorning?.claimed===true;
    if(choice.id==='janela-bia'||choice.id==='paisagem-bia')return def.id==='nara'&&context.biaLetters?.claimed===true;
+   if(choice.id==='muda-lucia')return def.id==='zeca'&&context.luciaGarden?.claimed===true;
+   if(choice.id==='amigas')return def.id==='mila'&&Boolean(context.sideNeighbors?.choices?.cica)&&Boolean(context.sideNeighbors?.choices?.nara);
    return true;
   })||[];
  }
  function interact(state,clock,id,choiceId,context={}){
   const def=RESIDENTS.find(r=>r.id===id),choice=def?.options.find(o=>o.id===choiceId);
   if(!def||!choice)return{ok:false,reason:'Escolha indisponível.'};
-  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
+  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':id==='zeca'?'Conclua primeiro o cuidado da muda com Lúcia.':id==='mila'?'Conheça primeiro as atividades de Ciça e Nara.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
   const first=!state.seen.includes(id);if(first)state.seen.push(id);
-  return{ok:true,first,reply:choice.reply,unlocked:state.seen.length===RESIDENTS.length};
+  return{ok:true,first,reply:choice.reply,unlocked:coreProgress(state)===3};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,interact};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,coreProgress,interact};
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
@@ -4764,7 +4813,7 @@ function residentsInStreets(){
    if(point)point.walking=false;
   }else point=walkingPoint(def.id,schedule.hub,i);
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel};
-  const moment=window.RoncadorStreetMoments.choose({...behavior,x:point?.x,y:point?.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -4779,7 +4828,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    const next=roadPath?.length?window.RoncadorStreetLife.sample(roadPath,elapsed*(.72+def.variant*.07)+def.variant*12+63):null;
    if(next&&primary.every(p=>Math.hypot(p.x-next.x,p.y-next.y)>21))at=next;
   }
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel,x:at?.x,y:at?.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at?.x,y:at?.y},elapsed,living);
   return at?[residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -5879,7 +5928,7 @@ function renderAlbum(){
   const description=document.createElement('span');description.textContent=chosen?'Com Dona Lúcia você cuidou de uma muda fictícia e guardou: '+chosen.title+'. '+chosen.story:'Um cuidado e uma conversa perto da Matriz.';
   content.append(title,description);article.append(thumbnail,content);grid.append(article);
  }
- if(sideNeighbors.seen.length===3){
+ if(window.RoncadorSecondaryNeighbors.coreProgress(sideNeighbors)===3){
   const article=document.createElement('article');article.className='album-card side-memory';
   const thumbnail=document.createElement('div');thumbnail.className='fair-memory-thumbnail';thumbnail.textContent='🧵 ✏️ ✉️';thumbnail.setAttribute('aria-label','Três pequenos desenhos: fitas, lápis e carta');
   const content=document.createElement('div');content.className='album-card-content';
@@ -6099,7 +6148,7 @@ function lifeSummary(){
  $('carePreview').textContent=world.careProgress(living)+'/3 gestos';
  const out=residentsInStreets();
  const other=secondaryInStreets(),number=out.length+other.length;
- $('sideProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos';
+ $('sideProgress').textContent=sideNeighbors.seen.length+'/'+window.RoncadorSecondaryNeighbors.RESIDENTS.length+' conhecidos';
  $('streetResidentsCount').textContent=number+' vizinhos pelas ruas';
  $('streetResidentsHint').textContent=community?community.icon+' '+community.title:encounter?encounter.icon+' '+encounter.title:number?out.concat(other).map(p=>p.def.name.replace('Seu ','').replace('Dona ','')).join(' · '):'Noite de descanso e boas lembranças';
  $('streetPulse').setAttribute('aria-label',number+' pessoas pela cidade. Abrir o caderno de rotinas fictícias.');
@@ -6187,7 +6236,7 @@ function renderCareChoices(){
 }
 function renderSideJournal(){
  const library=window.RoncadorSecondaryNeighbors,grid=$('sideJournalList');grid.replaceChildren();
- $('sideJournalProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos'+(sideNeighbors.seen.length===3?' · álbum ✓':'');
+ $('sideJournalProgress').textContent=sideNeighbors.seen.length+'/'+library.RESIDENTS.length+' conhecidos'+(library.coreProgress(sideNeighbors)===3?' · álbum ✓':'');
  for(const def of library.RESIDENTS){
   const duty=library.agenda(living,def),found=sideNeighbors.seen.includes(def.id),position=secondaryInStreets().find(p=>p.id===def.id),recollection=affectionSnapshot(def.id);
   const row=document.createElement('div');row.className='side-journal-entry';
@@ -6212,12 +6261,12 @@ function renderSecondaryDialog(def,feedback){
  const portrait=document.createElement('canvas');portrait.width=110;portrait.height=107;portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Ilustração original de '+def.name);
  const c=portrait.getContext('2d');c.fillStyle='#edf0e5';c.fillRect(0,0,110,107);c.save();c.translate(55,82);c.scale(1.7,1.7);drawSecondaryWalker(c,{x:0,y:0,id:def.id,def,walking:false,variant:def.variant},.3);c.restore();wrap.append(portrait);
  const options=$('secondaryChoices');options.replaceChildren();
- for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters})){
+ for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters,luciaGarden,sideNeighbors})){
   const button=document.createElement('button');button.type='button';button.disabled=already;button.textContent=choice.label;
   button.onclick=()=>{
    const position=secondaryInStreets().find(p=>p.id===def.id);
    if(!position||Math.hypot(player.x-position.x,player.y-position.y)>=44){renderSecondaryDialog(def,'Caminhe até '+def.name+' novamente para continuar.');return;}
-   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters});
+   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters,luciaGarden,sideNeighbors});
    renderSecondaryDialog(def,result.ok?result.reply:result.reason);
    if(result.ok){note(590,0,.12);note(740,.09,.14);save();if(result.unlocked&&result.first)notify('♡ Três novos vizinhos conhecidos! Uma lembrança apareceu no álbum.');}
   };options.append(button);

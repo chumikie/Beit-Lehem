@@ -18,7 +18,7 @@
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function choose(person,elapsed,world){
   const config=GESTURES[person?.id];
-  if(!config||person.meeting||person.travel||person.arriving||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
+  if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
   // An occasional fictional doorstep gesture at the cooler end of the day.
   // It changes only the resident's pose on an existing mapped path.
   const nearPorch=Number.isFinite(person.x)&&Number.isFinite(person.y)&&
@@ -30,10 +30,20 @@
     return{kind,strength:smooth(Math.min(1,porchPhase/.55,(3.2-porchPhase)/.55)),phase:porchPhase,nearPorch:true};
    }
   }
+  const minute=world.minute,hub=person.hub;
+  const morning=minute>=8*60&&minute<11*60;
+  const afternoon=minute>=14*60&&minute<17*60;
+  // The established fictional destinations shape the pose; no new stops,
+  // schedules, shopfronts or geographic claims are introduced.
+  const commerce=['mercado','sonho_doce','bar_prosa'].includes(hub);
+  const waiting=hub==='rodoviaria';
+  const kind=commerce&&morning?'look':waiting&&afternoon?'rest':
+   hub==='igreja'&&afternoon?'flower':config.kind;
+  const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
-  if(phase>=DURATION)return null;
-  const strength=smooth(Math.min(1,phase/.65,(DURATION-phase)/.65));
-  return{kind:config.kind,strength,phase};
+  if(phase>=duration)return null;
+  const strength=smooth(Math.min(1,phase/.65,(duration-phase)/.65));
+  return{kind,strength,phase,hubRoutine:commerce&&morning||waiting&&afternoon};
  }
  return{GESTURES,CYCLE,DURATION,choose,setHouses};
 });

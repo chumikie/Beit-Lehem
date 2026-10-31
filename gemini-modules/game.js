@@ -570,7 +570,7 @@ function residentsInStreets(){
    if(point)point.walking=false;
   }else point=walkingPoint(def.id,schedule.hub,i);
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel};
-  const moment=window.RoncadorStreetMoments.choose({...behavior,x:point?.x,y:point?.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -585,7 +585,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    const next=roadPath?.length?window.RoncadorStreetLife.sample(roadPath,elapsed*(.72+def.variant*.07)+def.variant*12+63):null;
    if(next&&primary.every(p=>Math.hypot(p.x-next.x,p.y-next.y)>21))at=next;
   }
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel,x:at?.x,y:at?.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at?.x,y:at?.y},elapsed,living);
   return at?[residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
