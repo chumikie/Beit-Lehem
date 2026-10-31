@@ -9,6 +9,9 @@ assert(modules.length>=30,'large Gemini HTML should expose its separate inline s
 assert.equal(new Set(modules.map(m=>m.name)).size,modules.length,'stable unique module names');
 assert(modules.some(m=>m.name==='game'),'the main game module must have a recognizable name');
 assert(modules.some(m=>m.name==='facade-studio'),'facade edits must be isolatable');
+for(const [line,name] of [[726,'market-scene'],[808,'street-moments'],[831,'street-greetings'],[904,'pathfinding'],[999,'landmarks']]){
+ assert.equal(modules.find(m=>m.line===line)?.name,name,'script must resolve its exact starting range');
+}
 const example='<script type="application/json">{"map":true}</script><script>window.ok=true;</script>';
 const sample=inspect(example);
 assert.equal(sample.length,1,'embedded map JSON must never be treated as executable JS');

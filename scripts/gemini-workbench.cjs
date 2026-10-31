@@ -21,7 +21,11 @@ function inspect(source){
   const attrs=match[1]||'';
   if(/\bsrc\s*=|\btype\s*=\s*['"]application\/json/i.test(attrs))continue;
   const line=source.slice(0,match.index).split('\n').length;
-  const candidates=refs.filter(r=>line>=r.from-3&&line<=r.to+1);
+  // Prefer the exact script start range. Nearby fallback is only for references
+  // whose line numbering drifted; it must not steal the next module.
+  const exact=refs.filter(r=>line>=r.from&&line<=r.to);
+  const nearby=refs.filter(r=>line>=r.from-3&&line<=r.to+1);
+  const candidates=(exact.length?exact:nearby).sort((a,b)=>Math.abs(a.from-line)-Math.abs(b.from-line));
   const name=candidates[0]?.name||'inline-'+String(out.length+1).padStart(2,'0');
   out.push({name,line,bytes:Buffer.byteLength(match[2]),body:match[2],start:match.index,full:match[0],attrs});
  }

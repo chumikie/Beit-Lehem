@@ -4,8 +4,8 @@ Consultar `experimento-anonimizado.html.txt` por intervalos de linhas. Este arqu
 
 | Bloco | Linhas inicial–final | Estado |
 | --- | --- | --- |
-| market-scene | 726–808 | módulo Gemini; extrair antes de editar |
-| street-moments | 808–831 | módulo Gemini; extrair antes de editar |
+| market-scene | 726–807 | módulo Gemini; extrair antes de editar |
+| street-moments | 808–830 | módulo Gemini; extrair antes de editar |
 | street-greetings | 831–884 | módulo Gemini; extrair antes de editar |
 | mapa | 901–901 | módulo Gemini; extrair antes de editar |
 | geologia | 902–902 | módulo Gemini; extrair antes de editar |
