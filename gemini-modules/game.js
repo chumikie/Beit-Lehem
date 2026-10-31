@@ -2237,7 +2237,7 @@ function clickWorld(e){
    window.RoncadorCrowdFlow.greet(visitor.id,elapsed);
    spawnEmojiBurst(visitor.x,visitor.y-18,['🌷','💛','✨'],4);
    note(659,0,.10);
-   notify('Oi, vizinhança! ♡ '+(visitor.activity||'Um encontro feliz pelo caminho')+'.');
+   notify(window.RoncadorCrowdFlow.say(visitor,living)||'Oi, vizinhança! ♡');
   }else setRoute(visitor.x,visitor.y,26);
   return;
  }
