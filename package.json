@@ -7,6 +7,8 @@
     "test": "node scripts/project.cjs test",
     "build": "node scripts/project.cjs build",
     "play": "node scripts/project.cjs play",
+    "build:gemini": "node scripts/build-gemini-preview.cjs",
+    "play:gemini": "node scripts/project.cjs play:gemini",
     "verify:baseline": "node scripts/project.cjs verify-baseline"
   },
   "engines": {
