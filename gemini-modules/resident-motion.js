@@ -63,11 +63,14 @@
   function present(person,now,reduce){
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
    let v=visuals.get(person.id);
-   if(!v||now<v.last||now-v.last>10){v={gaze:desired,last:now};visuals.set(person.id,v);}
+   if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now};visuals.set(person.id,v);}
    const dt=Math.max(0,Math.min(.09,now-v.last));v.last=now;
    v.gaze=reduce?desired:v.gaze+(desired-v.gaze)*(1-Math.exp(-dt*10));
    person.gaze=v.gaze;
-   person.lean=reduce?0:Math.cos(person.heading||0)*.025*(person.walkBlend??Number(!!person.walking));
+   // Ease the body's slight lean as the walker slows, turns, or greets someone.
+   const targetLean=reduce?0:Math.cos(person.heading||0)*.025*(person.walkBlend??Number(!!person.walking));
+   v.lean=reduce?0:(v.lean||0)+(targetLean-(v.lean||0))*(1-Math.exp(-dt*7));
+   person.lean=v.lean;
    return person;
   }
   return{resolve,present,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
