@@ -110,3 +110,30 @@ test('personagens secundários reservam espaço uns para os outros na rua',()=>{
  assert.match(game,/const offsets=\[63,90,117,145\]/);
  assert.match(game,/if\(!duty\.meeting&&occupied\.some\(/);
 });
+
+test('três vizinhos que chegam à mesma calçada recebem espaço separado na própria rota',()=>{
+ const fs=require('node:fs'),vm=require('node:vm');
+ const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ const start=source.indexOf('function secondaryInStreets(');
+ const end=source.indexOf('\nfunction drawSocialGesture',start);
+ assert.ok(start>=0&&end>start,'função de distribuição encontrada');
+ const definitions=['rosa','zeca','mila'].map((id,i)=>({id,hub:'mercado',variant:10+i}));
+ const context={
+  living:{day:1},elapsed:0,
+  window:{
+   RoncadorSecondaryNeighbors:{RESIDENTS:definitions,agenda:()=>({present:true,hub:'mercado',walking:false})},
+   RoncadorStreetLife:{sample:(_path,offset)=>({x:offset/2,y:0,walking:false})},
+   RoncadorStreetMoments:{choose:()=>null}
+  },
+  communityMeetingPoint:()=>null,encounterRoadPoint:()=>null,
+  walkingPoint:()=>({x:0,y:0,walking:false}),
+  streetPaths:new Map([['zeca:mercado',[1]],['mila:mercado',[1]]]),
+  residentMotion:{resolve:person=>person}
+ };
+ const distribute=vm.runInNewContext('('+source.slice(start,end)+')',context);
+ const residents=distribute([]);
+ assert.equal(residents.length,3);
+ for(let i=0;i<residents.length;i++)for(let j=i+1;j<residents.length;j++)
+  assert.ok(Math.hypot(residents[i].x-residents[j].x,residents[i].y-residents[j].y)>23,
+   residents[i].id+' e '+residents[j].id+' separados');
+});
