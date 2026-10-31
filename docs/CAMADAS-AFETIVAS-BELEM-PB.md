@@ -36,3 +36,24 @@ Links de fotos privadas e endereços de residência recebidos do autor não deve
 - **Save:** manter chave experimental e dados atuais; falas não são persistidas.
 - **Mobile:** medir FPS e colisões visuais antes de somar mais NPCs.
 - **Publicação:** não ativar GitHub Pages ou serviço externo sem decisão específica do autor.
+
+## Complemento do Gemini — 31/10/2026 (resumo sem dados pessoais)
+
+O autor trouxe uma transferência de conhecimento mais extensa de outra IA. **O documento bruto NÃO foi versionado**, pois inclui endereço residencial preciso, coordenadas pessoais e informações de convivência familiar. Não reproduzir esses dados em prévia pública ou arquivos de distribuição.
+
+Referências artísticas não sensíveis aproveitáveis:
+
+- **Pisos:** contraste entre eixo asfaltado mais comercial, ruas de paralelepípedo, pequenos batentes e meios-fios caiados.
+- **Arquitetura:** platibandas, barras de parede em tons contrastantes, portões metálicos, numeração em azulejo, caixas d'água e plantas nos terraços.
+- **Vegetação:** gradiente do Agreste para o Brejo; árvores frutíferas, três-marias e vasos, sem afirmar espécies ou declives em pontos não verificados.
+- **Ritmos de rua:** manhã de feira e escola; intervalo mais calmo depois do almoço; cadeiras e conversas ao fim da tarde; iluminação e encontros noturnos.
+- **Falas regionais:** gentilezas e convites simples, evitando estereótipos. Exemplos para inspiração, não falas documentadas: “Vá por sombra”, “Tem pressa não”, “Chegue pra cá”, “Arrume um banquinho aí”.
+- **Cultura:** Sorda de João de Deus, feira, São Pedro e parque artesanal; conferir cada novo detalhe com fonte ou com o autor.
+
+### Cuidado com alegações de implementação
+
+O documento externo apresenta uma tabela classificando muitos lugares e efeitos como “100% implementados”. Essas classificações são **afirmações da outra IA, não testes desta versão**. Antes de criar tarefas ou dizer que algo funciona, conferir `gemini-modules/`, as prévias e uma inspeção visual.
+
+Há inclusive descrições de uma residência e de um animal pessoal que **não devem ser reintroduzidos a partir dessa transferência**, porque a fonte Gemini versionada foi anonimizada. A versão pública deve permanecer sem identificadores residenciais.
+
+A prioridade permanece: preservar o mapa Gemini, corrigir problemas verificáveis, trabalhar em módulos pequenos e registrar o que passou por testes reais.
