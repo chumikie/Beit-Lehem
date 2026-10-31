@@ -102,3 +102,11 @@ test('sete dias de rotina preservam descanso noturno e encontros definidos',()=>
   }
  }
 });
+
+test('personagens secundários reservam espaço uns para os outros na rua',()=>{
+ const fs=require('node:fs');
+ const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+ assert.match(game,/const occupied=primary\.concat\(placed\)/);
+ assert.match(game,/const offsets=\[63,90,117,145\]/);
+ assert.match(game,/if\(!duty\.meeting&&occupied\.some\(/);
+});
