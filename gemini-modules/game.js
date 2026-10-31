@@ -17,9 +17,14 @@ let skyMode='sol',rainCare=0;
 let floraLayer={greenPolygons:0,points:[]},showGroundedFlora=true,momentsSeen=[],roadDetails=null,terrainData=null,terrainLayer=null,showTerrain=true;
 let centralBlocks=[],detailedFacades=true,careResidentId=null,nearSecondary=null,selectedSecondaryId=null,facadeSketches=[],communitySeen=[];
 let sideNeighbors=window.RoncadorSecondaryNeighbors.fresh();
-let belemContacts=window.RoncadorBelemContacts.fresh();kawaiiState=window.RoncadorKawaiiMoto.fresh();
+let belemContacts=window.RoncadorBelemContacts.fresh();
 let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;
 const treeCache=new Map();
+// Optional transport/time controls must not cover the opening action on phones.
+// These controls remain fully available as soon as the expedition begins.
+const openingHudStyle=document.createElement('style');
+openingHudStyle.textContent='@media (max-width:800px){.game:has(#welcome:not([hidden])) .kawaii-hud-bar{display:none!important}}';
+document.head.appendChild(openingHudStyle);
 let saved=null;try{saved=JSON.parse(localStorage.getItem(STORE)||'null');}catch{storageWarning=true;}
 const hash=(x,y=0)=>{let n=Math.imul((x|0)^0x9e3779b9,0x85ebca6b)^Math.imul((y|0)^0x7f4a7c15,0xc2b2ae35);n^=n>>>16;return(n>>>0)/4294967295;};
 function affectionSnapshot(id){return window.RoncadorAffectionMemory.snapshot({living,communitySeen,sideNeighbors,marketMorning,luciaGarden,biaLetters,marketWitnessed},id);}
