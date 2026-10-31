@@ -18,10 +18,10 @@ test('hábitos variam por hora e preservam âncoras existentes',()=>{
  }
 });
 test('pausa espontânea é determinística sem bloquear o restante do mapa',()=>{
- const world={day:1,minute:8*60};
+ const world={day:1,minute:8*60+12};
  const first=plan(world,false,0),second=plan(world,false,0);
  assert.deepEqual(first,second);
- assert.ok(first.some(x=>x.pause||x.moment)||plan({day:1,minute:8*60+7},false,0).some(x=>x.pause||x.moment));
+ assert.ok(first.some(x=>x.pause&&x.moment));
 });
 test('toque produz aceno temporário e não altera o relógio nem o mundo',()=>{
  const world={day:1,minute:9*60},before=JSON.stringify(world);
