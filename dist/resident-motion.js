@@ -19,6 +19,7 @@
    const dt=Math.min(.09,Math.max(0,now-s.last));s.last=now;
    const held=holds.has(person.id)&&!person.meeting&&!person.travel;
    const from={x:s.x,y:s.y},gap=distance(from,target);
+   let blocked=false;
    if(!held&&!s.bridge&&gap>11&&graph?.route){
     const route=graph.route([s.x,s.y],[target.x,target.y]);
     // In disconnected OSM components there is no verified pedestrian route;
@@ -26,11 +27,15 @@
     if(route?.points?.length&&route.distance<1600){
      s.bridge=[{x:s.x,y:s.y},...route.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))];
      s.bridgeIndex=1;
-    }else{s.x=target.x;s.y=target.y;}
+    }else{
+     // A disconnected or invalid route must not teleport the resident.
+     // Keep the last visible position and retry if the graph/target changes.
+     blocked=true;
+    }
    }
    // A short, optional roadside gesture holds the *same* mapped location.
    // Never interrupt a resident already following a bridging road route.
-   const resting=(!!person.pause||held)&&!s.bridge;
+   const resting=(!!person.pause||held||blocked)&&!s.bridge;
    const intent=!resting&&(!!s.bridge||gap>.035);
    s.pace+=(Number(intent)-s.pace)*(1-Math.exp(-dt*(intent?5.5:7)));
    let remaining=resting?0:dt*(person.meeting?37:person.travel?82:43)*(.38+.62*s.pace);
