@@ -76,8 +76,16 @@
       c.strokeStyle='#fff5dc';c.lineWidth=.65;for(let i=2;i<home.w;i+=4){c.beginPath();c.moveTo(left+i,base-2.2);c.lineTo(left+i,base+1);c.stroke();}
     }
     if(block==='matriz'){
+      // Quiet stucco reveals and eave shadows on existing illustrative houses.
+      // These are material studies, not claims about any photographed private facade.
+      c.fillStyle='#5d58451f';c.fillRect(left+.8,base+1.2,home.w-1.6,1.4);
       c.strokeStyle='#756d63';c.lineWidth=.65;c.strokeRect(left+.8,base-.2,home.w-1.6,home.h*.36+.2);
       c.fillStyle='#efeee0';c.fillRect(left+home.w*.55,base+1.5,1.2,home.h*.29);
+      c.fillStyle='#fff9eb82';c.fillRect(left+home.w*.55+1.2,base+1.5,.6,home.h*.29);
+      if(seed%3===0){
+        c.fillStyle='#b6a68f';c.fillRect(left+home.w*.59,base+home.h*.25,home.w*.3,.7);
+        c.fillStyle='#625b4b24';c.fillRect(left+home.w*.59,base+home.h*.25+.7,home.w*.3,.55);
+      }
     }
     if(block==='joao'&&seed%3===0){
       c.fillStyle='#d3a895';c.fillRect(left+home.w*.48,base+1,1.3,home.h*.34);
