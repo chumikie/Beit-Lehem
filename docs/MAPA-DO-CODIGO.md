@@ -2,7 +2,7 @@
 
 | Sistema | Arquivos principais | Integração a consultar |
 | --- | --- | --- |
-| Ruas e geografia | `dist/map.json`, `dist/local-road-references.js`, `source/belem-osm-2026.geojson`, `prepare_map.py` | `game.js`: `preprocess`, `drawRoads`, `nearestRoad`; `road-details.js`: piso local separado de tags OSM |
+| Ruas e geografia | `dist/map.json`, `dist/local-road-references.js`, `source/belem-osm-2026.geojson`, `prepare_map.py` | `game.js`: `preprocess`, `drawRoads`, `nearestRoad`; `road-details.js`: piso descrito na fonte; propostas locais permanecem inativas até validação |
 | Movimento do jogador e câmera | `dist/game.js` | `move`, `frame`, `clickWorld`, `setRoute`, `resize` |
 | Caminhos | `dist/pathfinding.js`, `dist/street-life.js` | `walkingPoint`, `encounterRoadPoint` |
 | Movimento dos moradores | `dist/resident-motion.js`, `dist/crowd-flow.js` | `residentsInStreets`, `secondaryInStreets`, `drawStreetLife` |

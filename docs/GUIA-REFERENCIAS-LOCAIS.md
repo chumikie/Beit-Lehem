@@ -96,10 +96,10 @@ Os sistemas de contatos e moto ficam preservados como ideias e código de consul
 Ao concluir cada etapa, registrar o que mudou ao jogar, como foi testado e quais dúvidas persistem. A PR pode crescer com esses passos; o merge depende de autorização expressa.
 
 
-## Integração da primeira camada de rua e fachada
+## Estado atual da integração
 
-A primeira integração preserva integralmente a malha OSM: os 462 trechos e seus pontos continuam iguais, assim como os limites, áreas, terreno e geologia. As 17 propostas viárias do catálogo são usadas pela camada local `dist/local-road-references.js`. Ela acrescenta nomes de exibição e superfícies propostas sem editar `road.tags`; nomes marcados como "a confirmar" não são exibidos. A contagem visível passa a 91 nomes distintos (86 da fonte OSM + 5 referências locais).
+O arquivo `dist/local-road-references.js` conserva as 17 propostas viárias do material Gemini, mas todas permanecem desativadas. Nomes e superfícies precisam de validação local antes de aparecerem no jogo. A fonte OSM continua exibindo seus 86 nomes confirmados e preserva os 462 trechos e suas geometrias.
 
-O estudo de fachadas agora considera seis áreas: Matriz, Feira, Rua João Pessoa, Rua Clóvis Bezerra, eixo da Feliciano Pedrosa e Rua Vicente Cado. Os três novos centros de estudo são calculados ao longo das geometrias públicas das vias existentes. Não criam pontos cadastrais, endereços, novas ruas ou fachadas individualizadas. Os detalhes de portões, vãos, toldos, beirais e vegetação são composições artísticas inspiradas pelas referências recebidas.
+O estudo de fachadas agora considera seis áreas visuais: três referências centrais do jogo e três setores preliminares posicionados ao longo de geometrias candidatas existentes. Esses três setores não confirmam nomes de ruas, limites cadastrais, endereços ou fachadas individuais. A arte é interpretativa.
 
-A V2.27 permanece a base oficial. A prévia Gemini é material de referência; o jogo em desenvolvimento é gerado em `previews/beit-lehem-development.html` a partir dos módulos editáveis de `dist/`.
+A V2.27 continua sendo a base oficial. O experimento Gemini é a referência informativa mais rica; a versão de desenvolvimento é gerada a partir dos módulos editáveis de `dist/` e publicada como HTML independente em `previews/beit-lehem-development.html` e `previews/beit-lehem-development-mobile.html`.

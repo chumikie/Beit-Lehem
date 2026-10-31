@@ -6,7 +6,8 @@ Beit Lehem é uma experiência local e offline ambientada em Belém/PB, Rua Nova
 
 - **Base oficial de referência — V2.27:** [`baseline/Belem-Viva-V2-27.html`](baseline/Belem-Viva-V2-27.html). É a melhor versão estável até aqui: ampla, jogável e a base que deve crescer. Sua cópia congelada não deve ser editada.
 - **Referência enriquecida do Gemini:** [`previews/gemini-preview.html`](previews/gemini-preview.html). Reúne mais referências e detalhes locais do que a base oficial. Serve como fonte de informação e comparação; não é uma substituição da V2.27.
-- **Jogo em desenvolvimento:** [`previews/beit-lehem-development.html`](previews/beit-lehem-development.html). É o HTML autônomo gerado a partir da V2.27 e dos aprimoramentos já integrados aos módulos de `dist/`. Este é o snapshot que deve crescer a cada etapa.
+- **Jogo em desenvolvimento — desktop:** [`previews/beit-lehem-development.html`](previews/beit-lehem-development.html). HTML autônomo da V2.27 com os aprimoramentos integrados.
+- **Jogo em desenvolvimento — celular:** [`previews/beit-lehem-development-mobile.html`](previews/beit-lehem-development-mobile.html). A mesma versão, adaptada para telas pequenas. Os dois snapshots devem crescer juntos.
 
 ## Como funciona o código
 
