@@ -46,7 +46,8 @@
     else if(raw?.biaLetters?.claimed)memory=['Voltei a ler a carta que escrevemos. A saudade cabe inteira numa página.','a carta que escrevemos','warm'];
     break;
    case 'cica':
-    if(raw?.marketMorning?.claimed&&raw?.marketWitnessed)memory=[known('fitas-de-bom-dia')?'Meu laço e a arrumação de vocês deixaram a banca uma graça!':'Vi como você e Damião ajeitaram a banca. Ficou uma graça!','a banca que arrumaram','warm'];
+    if(neighbors.choices?.cica==='banca'&&raw?.marketMorning?.claimed)memory=['Separei uma fita para a banca de Damião. Aquela ajuda de vocês merecia um laço!','a fita da banca','joy'];
+    else if(raw?.marketMorning?.claimed&&raw?.marketWitnessed)memory=[known('fitas-de-bom-dia')?'Meu laço e a arrumação de vocês deixaram a banca uma graça!':'Vi como você e Damião ajeitaram a banca. Ficou uma graça!','a banca que arrumaram','warm'];
     else if(known('fitas-de-bom-dia'))memory=['Damião sorriu quando viu o laço. Acho que escolhi a cor certa!','o laço de Damião','joy'];
     else if(neighbors.choices?.cica==='fitas')memory=['Lembra como organizamos as fitas? Ainda separo as cores daquele jeito.','as fitas que arrumamos','warm'];
     else if(neighbors.choices?.cica==='cores')memory=['Ainda guardo a dupla de cores que escolhemos.','as cores que escolhemos','warm'];
