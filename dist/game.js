@@ -773,7 +773,7 @@ function setRoute(x,y,stopRadius=0){
  const route=pathfinder?.route([player.x,player.y],end);
  if(!route){notify('Ainda não encontramos um caminho conectado até esse lugar.');return false;}
  waypoint={points:route.points,index:0,x:end[0],y:end[1],stopRadius};
- notify('Caminho marcado pelas ruas · '+Math.round(route.distance)+' m aproximadamente.');
+ notify(route.usedSharedComponentFallback?'Caminho aproximado por uma via conectada · aproximação de '+Math.round(route.fromRoadMetres)+' m e chegada de '+Math.round(route.toRoadMetres)+' m.':'Caminho marcado pelas ruas · '+Math.round(route.distance)+' m aproximadamente.');
  return true;
 }
 function blockedByHouse(x,y){
