@@ -73,6 +73,22 @@
   const mood=Number(person.fatigue)>75?'sleepy':memory?.[2]||((close||bond>=1)?'warm':'curious');
   return {id,name:NAMES[id],line,short:memory?.[1]||friendly||null,expression:mood,remembered:!!memory,close,kind:memory?.[1]||null};
  }
- return{snapshot,collection,collectionProgress};
+ function appendSocialKeepsakes(grid,raw,doc){
+  if(!grid||!doc?.createElement)return 0;
+  let added=0;
+  for(const memory of collection(raw).filter(item=>!['manha-mercado','muda-matriz','carta-caminhos'].includes(item.id))){
+   if(grid.querySelector?.('[data-keepake="'+memory.id+'"]'))continue;
+   const article=doc.createElement('article');article.className='album-card community-keepsake';
+   article.setAttribute('data-keepake',memory.id);
+   const thumbnail=doc.createElement('div');thumbnail.className='fair-memory-thumbnail';
+   thumbnail.textContent=memory.icon;thumbnail.setAttribute('aria-label','Lembrança ilustrativa: '+memory.title);
+   const content=doc.createElement('div');content.className='album-card-content';
+   const title=doc.createElement('strong');title.textContent=memory.title;
+   const caption=doc.createElement('span');caption.textContent=memory.caption;
+   content.append(title,caption);article.append(thumbnail,content);grid.append(article);added++;
+  }
+  return added;
+ }
+ return{snapshot,collection,collectionProgress,appendSocialKeepsakes};
 });
 
