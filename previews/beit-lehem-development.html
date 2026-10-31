@@ -4506,7 +4506,21 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b28';c.lineWidth=width+2;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
  if(major&&!simple){c.strokeStyle='#f2edcf88';c.lineWidth=.65;c.setLineDash([7,8]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c99';c.lineWidth=.85;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
-function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
+function drawMappedPlaces(c,viewport){
+ if(zoom<1.1)return;
+ const market=data.landmarks?.find(l=>l.id==='mercado');
+ for(const place of data.points){
+  if(data.landmarks?.some(l=>l.name===place.tags.name))continue;
+  const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;
+  c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();
+  c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();
+  // Keep the real mapped POI, but reserve lettering for closer inspection in
+  // the busy market. Its precise coordinate and click target are unchanged.
+  const busyMarket=market&&Math.hypot(x-market.p[0],y-market.p[1])<115;
+  const mayLabel=zoom>(busyMarket?1.9:1.45)&&(!busyMarket||Math.hypot(player.x-x,player.y-y)<85);
+  if(mayLabel){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}
+ }
+}
 function drawPin(c,m,i,time,miniMode=false,subtle=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
  c.save();c.translate(p[0],p[1]);if(subtle){c.globalAlpha*=.68;c.scale(.72,.72);}const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done&&!subtle){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
 function spawnEmojiBurst(x,y,list=['✨','🌸','💖','⭐'],count=5){
@@ -4979,12 +4993,17 @@ function residentDrawScale(base){return characterDrawScale(base)*.88;}
 // Screen-space clutter is planned in world units so zoom changes cannot move
 // a label across another resident's face. A label may move sideways or vanish.
 function layoutResidentNameplates(people,playerPosition,scale,phone){
- const limit=phone?2:3,placed=[],used=[];
+ const market=typeof data==='undefined'?null:data?.landmarks?.find(place=>place.id==='mercado');
+ const marketCrowd=!!market&&Math.hypot(playerPosition.x-market.p[0],playerPosition.y-market.p[1])<145;
+ // The market has stalls, POIs and interaction icons: show only the closest
+ // resident's name there. The full cast is still available in the diary.
+ const limit=marketCrowd?1:phone?2:3,placed=[],used=[];
  const nearby=people.filter(p=>p.def&&!p.meeting&&!p.greeting&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)<105)
   .sort((a,b)=>Math.hypot(playerPosition.x-a.x,playerPosition.y-a.y)-Math.hypot(playerPosition.x-b.x,playerPosition.y-b.y));
  const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
  for(const p of nearby){
-  if(placed.length>=limit||scale<1.3)break;
+  if(placed.length>=limit||scale<(marketCrowd?1.65:1.3))break;
+  if(marketCrowd&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)>65)continue;
   const width=p.def.name.length*5.6+14;
   for(const shift of [0,-24,24]){
    const x=p.x+shift,y=p.y-34;
@@ -5172,7 +5191,9 @@ function drawStreetEncounter(c,time,residents,view){
  if(guests.length===3)c.fillText('✧',(guests[1].x+guests[2].x)/2,Math.min(guests[1].y,guests[2].y)-36-floating);
  // Distant conversations are visible as a small social signal; the full
  // text appears only when Lia can actually overhear the people on that street.
- if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105){c.restore();return;}
+ // A full speech card belongs to a close conversation, not to the entire
+ // market skyline. The encounter continues normally when its card is hidden.
+ if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76){c.restore();return;}
  const phrase=window.RoncadorStreetEncounters.line(living,encounter),colon=phrase.indexOf(':');
  const who=colon<0?'Encontro':phrase.slice(0,colon),spoken=colon<0?phrase:phrase.slice(colon+1).trim();
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(spoken,phone?21:28);
@@ -5202,7 +5223,7 @@ function drawCommunityEncounter(c,time,people,view){
  c.font='14px system-ui';c.textAlign='center';c.textBaseline='middle';
  c.fillText(event.icon,cx,cy-33+bounce);
  c.fillStyle='#e8bc83';for(let i=0;i<3;i++){const ox=(i-1)*9;c.beginPath();c.arc(cx+ox,cy-46+(i%2)*4+bounce,.8+(i%2)*.4,0,7);c.fill();}
- if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105){c.restore();return;}
+ if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76){c.restore();return;}
  const phrase=window.RoncadorStreetCommunity.line(living,event),separator=phrase.indexOf(':');
  const speaker=separator>=0?phrase.slice(0,separator):'Amigos',speech=separator>=0?phrase.slice(separator+1).trim():phrase;
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(speech,phone?20:26);
