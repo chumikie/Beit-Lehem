@@ -2,7 +2,7 @@
 
 ## Base e direção aprovadas
 
-- A V2.27 é a melhor base estável e deve continuar crescendo; não substituí-la pelo experimento Gemini.
+- A V2.27 é a referência estável congelada; **a base atual do jogo em desenvolvimento passa a ser o Gemini**, conforme decisão posterior do autor.
 - O Gemini é uma referência mais rica em informações e precisão local. Aproveitar dados, descrições de ruas e estudos visuais em melhorias graduais.
 - O mundo deve continuar amplo e conectado entre Belém, Rua Nova e o entorno rural/serrano. Não reduzir os limites de exploração.
 - Prioridades atuais: mapa, escala, navegação, fachadas e personagens. Novas atividades, moto e contatos ficam pausados.
@@ -11,7 +11,7 @@
 
 1. As 17 propostas viárias do Gemini continuam pendentes de validação. Nenhum nome ou piso novo é exibido como confirmado; a fonte OSM mantém seus 86 nomes e 462 geometrias sem alteração.
 2. O estudo ilustrativo de fachadas cresce de três para seis áreas: três referências centrais e três setores visuais preliminares ancorados em geometrias existentes. Nomes e limites exatos dos três novos setores continuam pendentes.
-3. O snapshot `previews/beit-lehem-development.html` é gerado a partir dos módulos de `dist/` e da V2.27; ele é a versão de desenvolvimento, não a prévia Gemini.
+3. O snapshot `previews/beit-lehem-development.html` agora é gerado a partir da fonte Gemini. A prévia móvel, por enquanto, usa o mesmo HTML responsivo. `dist/` é a linha V2.27 preservada para transportar correções.
 
 ## Integração Gemini já realizada na PR #1
 
@@ -30,3 +30,11 @@
 4. Depois das revisões de espaço, aprimorar navegação e transições de câmera, mantendo o caminho nas vias reais do mapa. Os personagens que caminham pelas ruas usam o mesmo roteador conectado, sem atalhos inventados.
 
 Não integrar novas missões, sistema de moto ou contatos nesta etapa. Cada avanço deve registrar o que mudou, como foi testado e o que ainda é hipótese.
+
+## Próximo trabalho após a troca de base
+
+1. Validar no navegador a prévia Gemini como jogo principal (mapa amplo, lugares pessoais autorizados, efeitos e navegação). Não afirmar que isso já ocorreu.
+2. Corrigir o álbum de seis setores, contadores, desenho próprio do hospital e exportação de HTML sem duplicação de interface.
+3. Projetar migração explícita de diário entre a chave Gemini e a chave V2.27, sempre com backup e opção reversível.
+4. Extrair partes do monólito Gemini para módulos pequenos e testáveis, mantendo seus recursos e o visual cozy intactos.
+5. Refinar a edição de celular sem diminuir mapa ou eliminar recursos. Contatos e moto continuam no Gemini experimental e exigem revisão antes de serem aprovados como sistemas estáveis.
