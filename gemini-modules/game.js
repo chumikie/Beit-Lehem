@@ -199,8 +199,8 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  if(major&&!simple){c.strokeStyle='#f2edcfb0';c.lineWidth=.8;c.setLineDash([7,7]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c';c.lineWidth=1;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
 function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
-function drawPin(c,m,i,time,miniMode=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
- c.save();c.translate(p[0],p[1]);const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
+function drawPin(c,m,i,time,miniMode=false,subtle=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
+ c.save();c.translate(p[0],p[1]);if(subtle){c.globalAlpha*=.68;c.scale(.72,.72);}const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done&&!subtle){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
 function spawnEmojiBurst(x,y,list=['✨','🌸','💖','⭐'],count=5){
  if(reduce)count=Math.min(2,count);
  for(let i=0;i<count;i++){
@@ -663,8 +663,29 @@ function drawDailyGesture(c,person,time){
 // Keep characters in proportion to the tiny mapped houses even at maximum zoom.
 // The same local transform holds faces, limbs and carried props together.
 function characterDrawScale(base){return base*(zoom<=2?1:1-.12*Math.min(1,(zoom-2)/1.5));}
-// NPCs share a smaller visual scale; the player and their vehicle remain unchanged.
+// NPCs share a smaller visual scale; their accessories follow the same transform.
 function residentDrawScale(base){return characterDrawScale(base)*.88;}
+// Screen-space clutter is planned in world units so zoom changes cannot move
+// a label across another resident's face. A label may move sideways or vanish.
+function layoutResidentNameplates(people,playerPosition,scale,phone){
+ const limit=phone?2:3,placed=[],used=[];
+ const nearby=people.filter(p=>p.def&&!p.meeting&&!p.greeting&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)<105)
+  .sort((a,b)=>Math.hypot(playerPosition.x-a.x,playerPosition.y-a.y)-Math.hypot(playerPosition.x-b.x,playerPosition.y-b.y));
+ const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
+ for(const p of nearby){
+  if(placed.length>=limit||scale<1.3)break;
+  const width=p.def.name.length*5.6+14;
+  for(const shift of [0,-24,24]){
+   const x=p.x+shift,y=p.y-34;
+   const box={left:x-width/2-2,right:x+width/2+2,top:y-7,bottom:y+7};
+   // All nearby faces reserve space, not only those with names.
+   if(people.some(other=>other.id!==p.id&&overlaps(box,{left:other.x-12,right:other.x+12,top:other.y-34,bottom:other.y-6})))continue;
+   if(used.some(other=>overlaps(box,other)))continue;
+   placed.push({id:p.id,name:p.def.name,x,y,width});used.push(box);break;
+  }
+ }
+ return placed;
+}
 function drawDistantResident(c,person){
  // A tiny connected silhouette for the town-wide view, keeping the street legible.
  c.save();c.translate(person.x,person.y);
@@ -882,6 +903,19 @@ function drawCommunityEncounter(c,time,people,view){
  c.fillStyle='#5a6655';c.font='7px system-ui';rows.forEach((row,i)=>c.fillText(row,cx,top+21+i*9));
  c.restore();
 }
+function chooseConversationLayer(streetEvent,communityEvent,people,playerPosition){
+ if(!streetEvent||streetEvent.phase!=='visit')return 'community';
+ if(!communityEvent||communityEvent.phase!=='visit')return 'street';
+ const distanceToEvent=(event)=>{
+  const ids=event.cast||[event.host,event.visitor];
+  const cast=ids.map(id=>people.find(p=>p.id===id));
+  if(cast.some(p=>!p||p.arriving))return Infinity;
+  const x=cast.reduce((sum,p)=>sum+p.x,0)/cast.length;
+  const y=cast.reduce((sum,p)=>sum+p.y,0)/cast.length;
+  return Math.hypot(playerPosition.x-x,playerPosition.y-y);
+ };
+ return distanceToEvent(streetEvent)<=distanceToEvent(communityEvent)?'street':'community';
+}
 function drawStreetLife(c,time,view){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
  const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere(),elapsed);
@@ -905,11 +939,7 @@ function drawStreetLife(c,time,view){
  ambientHitTargets=ambientPeople;
  const people=[...ambientPeople,...residents,...secondaries].sort((a,b)=>a.y-b.y);
  // Labels are a proximity aid, not a second layer of billboards over the town.
- const labelLimit=matchMedia('(max-width:800px)').matches?2:3;
- const nameDistance=105;
- const visibleNames=new Set(people.filter(p=>p.def&&!p.meeting&&Math.hypot(player.x-p.x,player.y-p.y)<nameDistance)
-  .sort((a,b)=>Math.hypot(player.x-a.x,player.y-a.y)-Math.hypot(player.x-b.x,player.y-b.y))
-  .slice(0,labelLimit).map(p=>p.id));
+ const nameplates=layoutResidentNameplates(people,player,zoom,matchMedia('(max-width:800px)').matches);
  for(const person of people){
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
    const age=elapsed-(marketReaction.until-5.5);
@@ -971,11 +1001,12 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Damião!',person.x,person.y-71);
   }
-  if(person.def&&visibleNames.has(person.id)&&zoom>=1.3){
-   const width=person.def.name.length*5.6+14;
-   roundRect(c,person.x-width/2,person.y-(person.secondary?54:58),width,13,5,'#fffcf1ee','#b4c2a1');
-   c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(person.def.name,person.x,person.y-(person.secondary?47.5:51.5));
-  }
+ }
+ // Labels are the last resident layer: another passing sprite cannot cut them
+ // in half, and the higher-priority conversation overlay comes after them.
+ for(const label of nameplates){
+  roundRect(c,label.x-label.width/2,label.y-6.5,label.width,13,5,'#fffcf1ed','#b4c2a1');
+  c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(label.name,label.x,label.y);
  }
 }
 let boltMarketRoad=null;
@@ -1184,7 +1215,8 @@ function render(time){
  // exact mapped coordinate but draw it behind the sprite instead of across a
  // face. Pins away from characters keep their usual foreground contrast.
  const castNow=residentsInStreets(),pinsBehind=new Set();
- for(let i=0;i<missions.length;i++)if(castNow.some(p=>Math.hypot(missions[i].p[0]-p.x,missions[i].p[1]-p.y)<28)){drawPin(ctx,missions[i],i,time);pinsBehind.add(i);}
+ const peopleNearPins=[...castNow,...secondaryInStreets(castNow),player,guide];
+ for(let i=0;i<missions.length;i++)if(peopleNearPins.some(p=>Math.hypot(missions[i].p[0]-p.x,missions[i].p[1]-p.y)<35)){drawPin(ctx,missions[i],i,time,false,true);pinsBehind.add(i);}
  drawStreetLife(ctx,time,{left,right,top,bottom});
  drawStreetPets(ctx,time,{left,right,top,bottom});
  for(let i=0;i<missions.length;i++)if(!pinsBehind.has(i))drawPin(ctx,missions[i],i,time);
@@ -1206,7 +1238,11 @@ function render(time){
  }
  // Conversation lettering stays above the pets, quest pins and player so none
  // of those animated objects can cover the words mid-sentence.
- drawStreetEncounter(ctx,time,castNow,{left,right,top,bottom});drawCommunityEncounter(ctx,time,castNow.concat(secondaryInStreets()),{left,right,top,bottom});ctx.restore();
+ const speakers=castNow.concat(secondaryInStreets(castNow));
+ const conversationLayer=chooseConversationLayer(window.RoncadorStreetEncounters.current(living),window.RoncadorStreetCommunity.current(living),speakers,player);
+ if(conversationLayer==='street')drawStreetEncounter(ctx,time,castNow,{left,right,top,bottom});
+ else drawCommunityEncounter(ctx,time,speakers,{left,right,top,bottom});
+ ctx.restore();
  // Purely pictorial daylight: no claim about the current sky, climate or lamp coordinates.
  if(lightPhase==='tarde'){
   const gold=ctx.createLinearGradient(0,0,w,h);gold.addColorStop(0,'#f9df9c3d');gold.addColorStop(.58,'#f9c89c22');gold.addColorStop(1,'#ba926519');
