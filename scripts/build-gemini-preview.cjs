@@ -28,6 +28,14 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   let html = fs.readFileSync(sourcePath, 'utf8');
   const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
   html=workbench.html;
+  // Extend the existing album, after its original cards, without editing the
+  // archived Gemini file or adding a second album interface.
+  html=replaceExactlyOnce(
+    html,
+    "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n}\nfunction observe()",
+    "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n window.RoncadorAffectionMemory.appendSocialKeepsakes(grid,{marketMorning,luciaGarden,biaLetters,communitySeen},document);\n}\nfunction observe()",
+    'Cartões afetivos no álbum existente'
+  );
   // The author's Bolt tribute replaces the old provisional dog name in legacy scenery.
   html=html.replace(/\bPingo\b/g,'Bolt').replace(/\bpingo\b/g,'bolt');
   if (!html.startsWith('<!-- ARQUIVO DE REFERÊNCIA DE BEIT LEHEM')) {
