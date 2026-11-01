@@ -34,7 +34,7 @@ test('C8: os extremos girados das casas participam da ordenação e do recorte',
 test('C8: limites de zoom e malha viária não são reescritos por desenho de casas',()=>{
  assert.match(game,/zoom=Math\.max\(\.65,Math\.min\(3\.5,/);
  assert.match(game,/zoom=Math\.max\(\.65,zoom\/1\.2\)/);
- assert.match(game,/sortY:bounds\.bottom/);
+ assert.match(game,/sortY:houseGroundDepth\(b\)/);
  assert.match(game,/bounds\.right<=left\|\|bounds\.left>=right/);
  assert.doesNotMatch(source,/data\.roads\s*=|houses\.push|localStorage|pathfinder\.route/);
 });

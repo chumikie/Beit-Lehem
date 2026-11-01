@@ -497,6 +497,11 @@ function houseVisualBounds(b){
  const halfY=Math.max((b.w*sin+b.h*cos)/2,b.h/2)+9;
  return {left:b.x-halfX,right:b.x+halfX,top:b.y-halfY,bottom:b.y+halfY};
 }
+function houseGroundDepth(b){
+ // A rotated lot enlarges culling bounds, but the house itself is drawn
+ // screen-upright. Depth must follow the drawn frontage's contact with soil.
+ return b.y+b.h*.13+7+(b.seed%4);
+}
 function streetLabelBlocked(l,width,height,visibleHouses,people){
  // Test the actual oriented text rectangle against upright facade/actor boxes.
  // The former axis-aligned envelope rejected safe names on diagonal streets.
@@ -1897,7 +1902,7 @@ function render(time){
   const bounds=houseVisualBounds(b);
   if(bounds.right<=left||bounds.left>=right||bounds.bottom<=top||bounds.top>=bottom)continue;
   visibleHouses.push(b);
-  renderables.push({sortY:bounds.bottom,draw:()=>house(ctx,b)});
+  renderables.push({sortY:houseGroundDepth(b),draw:()=>house(ctx,b)});
  }
  drawGroundedFlora(ctx,{left,right,top,bottom},time,renderables);
  // Trees are illustrative scenery. Keep roads, the field and homes clear.
