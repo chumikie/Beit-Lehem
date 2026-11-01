@@ -194,6 +194,7 @@ let belemContacts=window.RoncadorBelemContacts.fresh();
 let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;
 const treeCache=new Map();
 let treeRoadIndex=null;
+let nearestRoadIndex=null;
 // Optional transport/time controls must not cover the opening action on phones.
 // These controls remain fully available as soon as the expedition begins.
 const openingHudStyle=document.createElement('style');
@@ -230,7 +231,49 @@ function save(){if(!loaded)return;try{localStorage.setItem(STORE,JSON.stringify(
 function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('toast').classList.add('visible');toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3500);}
 function note(freq=440,delay=0,length=.12,volume=.045){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let t=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+Math.min(.012,length*.35));g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+length);}catch{}}
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
-function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
+function nearestRoadExhaustive(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
+function nearestRoad(x,y){return nearestRoadIndexed(x,y,typeof nearestRoadIndex==='undefined'?null:nearestRoadIndex);}
+function prepareNearestRoadIndex(roadSegments){
+ const size=64,cells=new Map();
+ roadSegments.forEach((s,i)=>{
+  const x0=Math.floor(Math.min(s.ax,s.ax+s.dx)/size),x1=Math.floor(Math.max(s.ax,s.ax+s.dx)/size);
+  const y0=Math.floor(Math.min(s.ay,s.ay+s.dy)/size),y1=Math.floor(Math.max(s.ay,s.ay+s.dy)/size);
+  for(let gx=x0;gx<=x1;gx++)for(let gy=y0;gy<=y1;gy++){
+   const key=gx+','+gy;
+   if(!cells.has(key))cells.set(key,[]);
+   cells.get(key).push(i);
+  }
+ });
+ return {size,cells,segments:roadSegments};
+}
+function nearestRoadIndexed(x,y,index){
+ if(!index||index.segments!==segments)return nearestRoadExhaustive(x,y);
+ const size=index.size,cx=Math.floor(x/size),cy=Math.floor(y/size),seen=new Set();
+ let best={d:Infinity,s:null},bestIndex=Infinity;
+ for(let radius=0;radius<=8;radius++){
+  const candidates=[];
+  for(let gx=cx-radius;gx<=cx+radius;gx++)for(let gy=cy-radius;gy<=cy+radius;gy++){
+   if(radius&&gx!==cx-radius&&gx!==cx+radius&&gy!==cy-radius&&gy!==cy+radius)continue;
+   for(const i of index.cells.get(gx+','+gy)||[]){
+    if(seen.has(i))continue;
+    seen.add(i);candidates.push(i);
+   }
+  }
+  candidates.sort((a,b)=>a-b);
+  for(const i of candidates){
+   const s=segments[i],p=pointSegment(x,y,s);
+   if(p.d<best.d||(p.d===best.d&&i<bestIndex)){
+    best={...p,s};bestIndex=i;
+   }
+  }
+  const left=(cx-radius)*size,right=(cx+radius+1)*size;
+  const top=(cy-radius)*size,bottom=(cy+radius+1)*size;
+  const boundary=Math.min(x-left,right-x,y-top,bottom-y);
+  // Strict inequality preserves original segment order even at exact ties.
+  if(best.d<boundary)return best;
+ }
+ return nearestRoadExhaustive(x,y);
+}
 function prepareTreeRoadIndex(roadSegments){
  // Segment bounding boxes are padded by the largest clearance used by
  // houses/trees. Any segment within that radius must share the query cell.
@@ -385,6 +428,7 @@ function preprocess(){
  if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
  treeRoadIndex=prepareTreeRoadIndex(segments);
+ nearestRoadIndex=prepareNearestRoadIndex(segments);
  const center=data.urbanCenter||data.start;
  const candidates=generateHouseCandidates(segments,center,scenicScenes,areas,treeRoadIndex);
  houses.push(...selectHouseCandidates(candidates,data));
