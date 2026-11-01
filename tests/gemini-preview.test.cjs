@@ -53,6 +53,17 @@ test('gera uma prévia separada, corrige somente a inicialização e preserva o 
   assert.ok(preview.includes("const STORE='roncador-expedition-v2-referencias-gemini',keys="));
 });
 
+test('pode gerar o HTML principal em destino explícito sem criar outra prévia',t=>{
+ const source=fixture(),project=createProject(t,source);
+ const canonical=path.join('previews','beit-lehem-development.html');
+ const result=buildGeminiPreview(project.root,canonical);
+ assert.equal(result.outputPath,path.join(project.root,canonical));
+ assert.ok(fs.existsSync(result.outputPath));
+ assert.equal(fs.existsSync(project.outputPath),false);
+ assert.equal(fs.readFileSync(project.sourcePath,'utf8'),source);
+ assert.match(fs.readFileSync(result.outputPath,'utf8'),/roncador-expedition-v2-referencias-gemini/);
+});
+
 function alterGame(project,search,replacement){
  const file=path.join(project.root,'gemini-modules','game.js');
  const before=fs.readFileSync(file,'utf8');
