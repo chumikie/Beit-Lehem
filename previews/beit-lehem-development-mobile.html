@@ -4242,13 +4242,13 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   if(hour<6||hour>=22)return[];
   const busy=hour>=8&&hour<12||hour>=16&&hour<20;
   const number=isFair?16:busy?14:hour>=20?7:hour<8?6:11;
-  // Rotate locations across the real, already verified Gemini POI anchors:
-  // neighbourhoods, schools, shops and quieter outer streets. Fixed IDs and
-  // anchor assignment within a day prevent flicker or mid-walk teleportation.
-  const hubs=['escola_anita','bar_prosa','rodoviaria','capela_luz',
-   'mercado','parque_sao_luis','hospital_santa_lucia','xaviezao',
-   'sagrada_familia','sonho_doce','igreja','prefeitura',
-   'pedra_cordeiro','missao:5','missao:2','missao:1'];
+  // Only loaded landmark IDs or streets present in the OSM road graph may
+  // anchor a walker. Former unregistered POI IDs silently hid most passers.
+  // Fixed IDs/anchors within each day prevent flicker or mid-walk teleportation.
+  const hubs=['rua:Rua Clovis Bezerra','rua:Rua Nunes','rodoviaria','rua:Rua Antônio Borges de Lima',
+   'mercado','rua:Rua Feliciano Pedrosa','rua:Rua Deputado Antônio Davila Lins','rua:Rua Joaquim Rodrigues',
+   'rua:Rua Flávio Ribeiro','rua:Rua Brasiliana da Costa','igreja','rua:Rua Severino Ismael',
+   'rua:Rua Abdias Machado','rua:Rua São Sebastião','rua:Rua Luiz Gomes','rua:Rua São Joaquim'];
   const rotation=(day-1)%hubs.length;
   return Array.from({length:number},(_,i)=>{
    const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];

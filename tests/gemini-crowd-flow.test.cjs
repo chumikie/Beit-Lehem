@@ -27,7 +27,7 @@ test('distribui mais gente por horários e por marcos existentes do mapa',()=>{
  const begin=raw.indexOf(open),end=raw.indexOf('</script>',begin+open.length);
  assert.ok(begin>=0&&end>begin,'mapa original disponível');
  const map=JSON.parse(raw.slice(begin+open.length,end));
- const valid=new Set([...map.landmarks.map(p=>p.id),...map.missions.map((_,i)=>'missao:'+i)]);
+ const valid=new Set([...map.landmarks.map(p=>p.id),...map.missions.map((_,i)=>'missao:'+i),...map.roads.filter(r=>r.tags?.name).map(r=>'rua:'+r.tags.name)]);
  const {plan}=require('../gemini-modules/crowd-flow.js');
  for(const hour of [6,9,13,18,21]){
   const walkers=plan({day:1,minute:hour*60},false);

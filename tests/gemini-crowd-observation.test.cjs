@@ -18,7 +18,7 @@ test('um passante comum observa brevemente e retoma sem novo personagem',()=>{
  assert.equal(later.pause,false);
  assert.equal(later.moment,null);
  assert.equal(later.activity,'caminhando pelo bairro');
- assert.deepEqual([earlier.hub,watching.hub,later.hub],Array(3).fill('bar_prosa'));
+ assert.deepEqual([earlier.hub,watching.hub,later.hub],Array(3).fill('rua:Rua Nunes'));
  assert.equal(before.length,pause.length);
  assert.equal(pause.length,after.length);
 });
