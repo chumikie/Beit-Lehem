@@ -58,7 +58,32 @@
    morning:'organiza no caderno nomes de lugares que gostaria de conhecer',afternoon:'descansa e pensa nos caminhos de volta',
    greeting:'Viajar pode começar com uma pergunta: para onde você gostaria de passear?',
    options:[{id:'destino',label:'🧳 Imaginar um passeio',reply:'Noel desenha um caminho fictício no caderno: “Um dia a gente inventa outras paradas.”'},
-    {id:'volta',label:'🏡 Conversar sobre voltar para casa',reply:'“Às vezes o melhor da viagem é reconhecer o caminho de volta”, diz Noel.'}]}
+    {id:'volta',label:'🏡 Conversar sobre voltar para casa',reply:'“Às vezes o melhor da viagem é reconhecer o caminho de volta”, diz Noel.'}]},
+  {id:'breno',name:'Breno',hub:'missao:0',variant:21,tone:'#85a99a',icon:'👟',role:'Companheiro de caminhadas',
+   morning:'caminha com calma e conta os passos',afternoon:'faz uma pausa para alongar os braços',
+   greeting:'Uma voltinha já muda meu dia. E você, gosta mais de andar cedo ou à tardinha?',
+   options:[{id:'passos',label:'👟 Conversar sobre caminhadas',reply:'Breno sorri: “O importante é encontrar um ritmo bom para a gente.”'},
+    {id:'pausa',label:'🌿 Fazer uma pausa no passeio',reply:'Vocês param por um instante no caminho mapeado, sem sair da rua.'}]},
+  {id:'amelia',name:'Amélia',hub:'missao:1',variant:22,tone:'#c19b9a',icon:'📚',role:'Leitora de palavras bonitas',
+   morning:'lê algumas linhas do próprio caderno',afternoon:'imagina pequenos versos sobre a cidade',
+   greeting:'Gosto de inventar versos. Nenhum precisa ser perfeito para guardar um sentimento.',
+   options:[{id:'verso',label:'📚 Inventar um versinho',reply:'Amélia inventa uma frase sobre o vento: “Essa fica no nosso caderno imaginário!”'},
+    {id:'palavra',label:'✿ Escolher uma palavra para hoje',reply:'“Acolhimento”, escolhe Amélia. “É uma palavra que dá vontade de voltar.”'}]},
+  {id:'nina',name:'Nina',hub:'missao:2',variant:23,tone:'#9fadd0',icon:'🐦',role:'Observadora de passarinhos ilustrativos',
+   morning:'observa o céu e escuta pássaros imaginados',afternoon:'anota as cores que percebe no horizonte',
+   greeting:'Eu gosto de olhar para cima, mas sempre fico no caminho. O céu muda sem avisar.',
+   options:[{id:'ceu',label:'🐦 Contemplar o céu',reply:'Nina observa as nuvens ilustrativas: “Cada dia tem um desenho diferente!”'},
+    {id:'cores',label:'🎨 Imaginar cores de pássaros',reply:'Vocês inventam cores para um passarinho de papel, sem identificar espécies reais.'}]},
+  {id:'otavio',name:'Otávio',hub:'missao:0',variant:25,tone:'#ada185',icon:'♟️',role:'Amigo dos jogos de raciocínio',
+   morning:'inventa desafios de lógica enquanto caminha',afternoon:'imagina movimentos de um jogo de tabuleiro',
+   greeting:'Gosto de pensar nas escolhas, mas não precisa ter pressa para acertar.',
+   options:[{id:'jogo',label:'♟️ Imaginar uma jogada',reply:'Otávio pensa um instante: “Essa jogada foi esperta, hein?”'},
+    {id:'escolha',label:'◇ Conversar sobre decisões',reply:'“Às vezes mudar de ideia faz parte do jogo”, comenta Otávio.'}]},
+  {id:'rute',name:'Rute',hub:'missao:1',variant:26,tone:'#b1a0c6',icon:'📷',role:'Colecionadora de enquadramentos imaginados',
+   morning:'observa ângulos e sombras das ruas',afternoon:'descreve imagens que gostaria de desenhar',
+   greeting:'Gosto de reparar nos pequenos detalhes. Eles cabem numa fotografia imaginada.',
+   options:[{id:'quadro',label:'📷 Imaginar um enquadramento',reply:'Rute escolhe um recorte da paisagem sem afirmar que tirou uma foto real.'},
+    {id:'detalhe',label:'👀 Escolher um detalhe para observar',reply:'“Olha como a luz muda a cor desse caminho”, diz Rute.'}]}
  ]);
  const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{},recados:{stage:0},connections:{damiaoTeo:false,biaTeo:false,zecaLucia:false,zecaLuciaDay:0},marketLegacy:{kind:null,day:0}});
@@ -150,6 +175,11 @@
    def.id==='davi'?(minute>=9*60&&minute<12*60||minute>=16*60&&minute<19*60):
    def.id==='iris'?(minute>=7*60&&minute<10*60||minute>=15*60&&minute<18*60):
    def.id==='noel'?(minute>=10*60&&minute<12*60||minute>=16*60&&minute<20*60):
+   def.id==='breno'?(minute>=7*60&&minute<10*60+30||minute>=16*60&&minute<18*60):
+   def.id==='amelia'?(minute>=9*60&&minute<12*60||minute>=15*60&&minute<18*60):
+   def.id==='nina'?(minute>=7*60+30&&minute<11*60||minute>=15*60&&minute<17*60):
+   def.id==='otavio'?(minute>=10*60&&minute<12*60||minute>=17*60&&minute<20*60):
+   def.id==='rute'?(minute>=8*60&&minute<11*60||minute>=14*60&&minute<17*60):
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;

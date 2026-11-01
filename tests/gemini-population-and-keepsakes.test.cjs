@@ -8,8 +8,8 @@ const moments=require('../gemini-modules/street-moments.js');
 
 test('nove moradores nomeados, sem perder o álbum dos três vizinhos originais',()=>{
  const ids=neighbors.RESIDENTS.map(x=>x.id);
- assert.equal(ids.length,10);
- assert.equal(new Set(ids).size,10);
+ assert.equal(ids.length,15);
+ assert.equal(new Set(ids).size,15);
  assert.deepEqual(['cica','nara','teo'].map(x=>ids.includes(x)),[true,true,true]);
  const old=neighbors.restore({seen:['cica','nara','teo'],choices:{cica:'fitas',nara:'desenho',teo:'recado'}});
  assert.equal(neighbors.coreProgress(old),3);

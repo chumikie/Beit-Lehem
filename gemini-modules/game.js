@@ -1026,7 +1026,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    const next=roadPath?.length?offsets.map(delta=>window.RoncadorStreetLife.sample(roadPath,base+delta))
     .find(candidate=>candidate&&occupied.every(p=>Math.hypot(p.x-candidate.x,p.y-candidate.y)>23)):null;
    if(next)at=next;
-   else if(['celina','davi','iris','noel'].includes(def.id))continue;
+   else if(def.variant>=14)continue; // Newcomers yield to established walkers on a crowded stretch.
   }
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living,skyMode);
@@ -3877,7 +3877,7 @@ function renderSideJournal(){
   const text=document.createElement('div'),name=document.createElement('strong'),status=document.createElement('small');
   name.textContent=def.icon+' '+def.name+(found?' ♡':'');status.textContent=(duty.present?duty.activity:'descansando · volte de manhã ou à tarde')+(recollection?.remembered?' · lembra '+recollection.short:'');
   text.append(name,status);
-  const button=document.createElement('button');button.type='button';button.textContent=duty.present?'⌖ Encontrar':'☾ Descansando';button.disabled=!duty.present||!active;
+  const button=document.createElement('button');button.type='button';button.textContent=position?'⌖ Encontrar':duty.present?'☾ Trecho ocupado':'☾ Descansando';button.disabled=!position||!active;
   button.onclick=()=>{if(!position)return;$('lifeDialog').close();setRoute(position.x,position.y,27);};
   row.append(text,button);grid.append(row);
  }
