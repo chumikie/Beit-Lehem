@@ -50,7 +50,7 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
   fill(){},stroke(){},arc(){},moveTo(){},lineTo(){},quadraticCurveTo(){},bezierCurveTo(){},closePath(){},
   roundRect(){},fillText(){}
  };
- const scope={Math,zoom:2.35,reduce:false,living:{minute:600},skyMode:'sol',player:{x:100,y:100},
+ const scope={Math,zoom:20,reduce:false,living:{minute:600},skyMode:'sol',player:{x:100,y:100},
   boltCityPoint:()=>({x:10,y:20}),walkingPoint:()=>({x:10,y:20}),boltRestingByGreen:()=>false,
   streetPetBehavior:()=>({resting:false,bounce:.78,tailRate:3.2,curious:false,observing:false}),
   streetPetVisualOffset:()=>({x:0,y:0}),streetPetCrowdVisible:()=>true,
