@@ -8872,6 +8872,7 @@ function start(){if(!loaded)return;active=true;$('welcome').hidden=true;canvas.f
 function reset(){if(!loaded)return;playerPresenceGestures.clear();smallWalksSeen=[];smallWalkReports=[];for(const d of document.querySelectorAll('dialog[open]'))d.close();collected.clear();target=0;elapsed=0;waypoint=null;friendship=0;chapter=0;observations.clear();photos={};cultureNotes={};gardenStep=0;gardenHarvests=0;fairQuest=window.RoncadorCozyQuests.fresh();marketMorning=window.RoncadorMarketMorning.fresh();marketFruitSlots=Array(6).fill(null);marketWitnessed=false;marketReaction=null;marketScene?.close();luciaGarden=window.RoncadorLuciaGarden.fresh();biaLetters=window.RoncadorBiaLetters.fresh();sideNeighbors=window.RoncadorSecondaryNeighbors.fresh();ruaNovaPaths=[];ruaNovaShared=false;ruaNovaDays={};cityKnowledge={};cityLinks=[];cityConsequences=[];cityReports=[];weeklyVisitsSeen=[];friendshipTraditions=[];storyEndings=[];microStories=[];lastJournalDay=1;worldMoments=[];streetVignettes=[];everydayMemories=[];saoPedroTales=[];breadStories=[];morningEncounters=[];waterMemories=[];waterTalks=[];seasonalMemories=[];camucaStories=[];worldPause=null;belemContacts=window.RoncadorBelemContacts.fresh();facadeSketches=[];communitySeen=[];marketDay=false;living=window.RoncadorLivingWorld.fresh();showWildlife=true;festivalCelebrated=false;lightPhase='manha';skyMode='sol';rainCare=0;showGroundedFlora=true;momentsSeen=[];syncLightButton();syncSkyButton();player.x=data.start[0];player.y=data.start[1];camera.x=player.x;camera.y=player.y;particles=[];active=true;$('welcome').hidden=true;saved=null;renderMissions();updateUI();save();canvas.focus({preventScroll:true});notify('Um novo começo! Lia e os caminhos estão esperando por você.');}
 function anyDialog(){return !!document.querySelector('dialog[open]')||$('sidebar').classList.contains('open');}
 function showDialog(id){keys.clear();touches.clear();$(id).showModal();if(id==='mapDialog')requestAnimationFrame(drawBig);updateUI();}
+function cameraFollowBlend(dt,reduce,blocked){return blocked?0:reduce?1:1-Math.exp(-7*dt);}
 let ambientSoundSeconds=0;
 function move(dt,time){
  const dialog=anyDialog();
@@ -8976,7 +8977,8 @@ function move(dt,time){
    }
   }
  }else{walkVelocity={x:0,y:0};player.moving=false;}
- const lerp=reduce?1:1-Math.exp(-7*dt);
+ // Keep the exact camera view while a conversation, postcard or menu is open.
+ const lerp=cameraFollowBlend(dt,reduce,dialog||document.hidden);
  // A restrained look-ahead reveals the street ahead without changing the map scale.
  const lead=reduce?0:Math.min(9,Math.hypot(walkVelocity.x,walkVelocity.y)*.08);
  const heading=Math.hypot(walkVelocity.x,walkVelocity.y)||1;
