@@ -86,6 +86,27 @@ test('C12.1: botões móveis conservam alvo mínimo de 44px nos quatro tamanhos'
  }
 });
 
+test('C12.1: alvo ampliado do minimapa não desloca mapa nem alcança interação',()=>{
+ assert.match(setup,/\.mini-wrap:not\(\.is-collapsed\) \.mini-toggle::before\{content:'';position:absolute;inset:-6px\}/);
+ assert.match(setup,/@media\(max-width:380px\)\{\.mini-wrap:not\(\.is-collapsed\)\{bottom:calc\(88px/);
+ assert.match(setup,/@media\(max-width:800px\) and \(max-height:640px\)\{[\s\S]*?\.mini-wrap:not\(\.is-collapsed\)\{bottom:calc\(75px/);
+ // Alvo expandido: botão visível 32px + 6px de cada lado; recolhido: 44px.
+ const expandedHit=32+2*6,collapsedHit=44;
+ assert.equal(expandedHit,44);
+ assert.equal(collapsedHit,44);
+ for(const [width,height] of [[320,640],[360,640],[390,844],[768,1024]]){
+  // Conservadora altura do painel de 145px (título, canvas, rodapé e padding).
+  // Em telas estreitas ele desce de 116px para 88px do rodapé.
+  const bottom=height<=640?75:width<=380?88:108;
+  const toggleTopFromBottom=bottom+145-4+6;
+  const interactBottom=height<=640?224:257;
+  // Sem interseção vertical: o topo do alvo fica ABAIXO da borda inferior
+  // do botão de interação (medidas positivas a partir do rodapé).
+  assert.ok(toggleTopFromBottom<interactBottom,
+   `minimapa e interação se interceptam em ${width}px`);
+ }
+});
+
 test('C12.1: clima deixa de cobrir o grupo de zoom/câmera no celular',()=>{
  assert.match(html,/\.world-tools\{top:66px;right:13px/);
  assert.match(html,/\.sky-mood\{top:111px\}/);

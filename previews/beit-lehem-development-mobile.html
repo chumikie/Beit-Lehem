@@ -4725,9 +4725,12 @@ function setupMobileWalkingHud(){
   @media(max-width:800px){
    .mini-wrap{transition:width .2s ease,padding .2s ease}
    .mini-toggle{display:grid;place-items:center;position:absolute;right:5px;top:4px;width:32px;height:32px;border:1px solid #c9d4b9;border-radius:10px;background:#fffaf0;color:#476b53;font:700 20px system-ui;cursor:pointer;z-index:2}
+   /* Preserve the compact title layout while giving its toggle a 44px hit area. */
+   .mini-wrap:not(.is-collapsed) .mini-toggle::before{content:'';position:absolute;inset:-6px}
    .mini-title{padding-right:30px;min-height:27px;align-items:center}
    .mini-title>span{display:none}
    .mini-wrap.is-collapsed{width:58px;height:58px;padding:6px}
+   @media(max-width:380px){.mini-wrap:not(.is-collapsed){bottom:calc(88px + env(safe-area-inset-bottom,0px))}}
    .mini-wrap.is-collapsed .mini-toggle{position:relative;top:auto;right:auto;width:44px;height:44px}
    .mini-wrap.is-collapsed .mini-title,.mini-wrap.is-collapsed #minimap,.mini-wrap.is-collapsed .mini-footer{display:none}
    .world-tools button{width:44px;height:44px}
@@ -4737,6 +4740,7 @@ function setupMobileWalkingHud(){
   }
   @media(max-width:800px) and (max-height:640px){
    .touch-pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}
+   .mini-wrap:not(.is-collapsed){bottom:calc(75px + env(safe-area-inset-bottom,0px))}
   }`;
  document.head.append(style);
 }
