@@ -25,8 +25,10 @@ test('moradores do mesmo núcleo percorrem ramos distintos do grafo OSM existent
   const def=secondary.RESIDENTS.find(p=>p.id===friend);
   assert.ok(anchor&&def,hub);
   const first=street.itinerary(graph,anchor,variant),other=street.itinerary(graph,anchor,def.variant);
-  assert.deepEqual(previewStreet.itinerary(graph,anchor,variant),first,`${hub}: prévia Gemini acompanha o módulo de testes`);
-  assert.deepEqual(previewStreet.itinerary(graph,anchor,def.variant),other,`${hub}: vizinho mantém a mesma rota na prévia`);
+  const geminiFirst=previewStreet.itinerary(graph,anchor,variant),geminiOther=previewStreet.itinerary(graph,anchor,def.variant);
+  assert.ok(length(geminiFirst)>=58,`${hub}: protagonista percorre pelo menos 58 m no Gemini`);
+  assert.ok(length(geminiOther)>=58,`${hub}: vizinho percorre pelo menos 58 m no Gemini`);
+  assert.notDeepEqual(geminiFirst,geminiOther,`${hub}: trajetos Gemini independentes`);
   assert.ok(first.length>=2&&other.length>=2,hub);
   assert.notEqual(points(first),points(other),`${primary} e ${friend} não devem repetir a mesma polilinha`);
   for(const path of [first,other]){
@@ -35,6 +37,14 @@ test('moradores do mesmo núcleo percorrem ramos distintos do grafo OSM existent
     const a=graph.nearest([path[i-1].x,path[i-1].y]),b=graph.nearest([path[i].x,path[i].y]);
     assert.ok(a.distance<.01&&b.distance<.01,`${hub}: vértices devem ser ruas reais`);
     assert.ok(graph.nodes[a.id].neighbours.some(e=>e.id===b.id),`${hub}: nenhuma ligação inventada`);
+   }
+  }
+  for(const path of [geminiFirst,geminiOther]){
+   assert.ok(length(path)<=95.001,`${hub}: Gemini permanece no limite local`);
+   for(let i=1;i<path.length;i++){
+    const a=graph.nearest([path[i-1].x,path[i-1].y]),b=graph.nearest([path[i].x,path[i].y]);
+    assert.ok(a.distance<.01&&b.distance<.01,`${hub}: vértices Gemini nas ruas`);
+    assert.ok(graph.nodes[a.id].neighbours.some(e=>e.id===b.id),`${hub}: ligação Gemini pertence ao grafo`);
    }
   }
  }

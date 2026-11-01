@@ -217,7 +217,7 @@
     if(id==='damiao')return hour<13||hour>=16&&hour<18?{present:true,hub:'mercado',activity:morningDeparture(s,id)?.activity||(weekday===0?'organizando a feira':'conversando no mercado')}:{present:false,hub:null,activity:'fazendo uma pausa e almoçando'};
     // Fictional half-past-eight start keeps the Matriz chapter accessible just
     // after the Mercado morning; it does not claim a real local resident schedule.
-    if(id==='lucia')return hour>=8.5&&hour<12||hour>=15&&hour<17?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||(hour<12?'observando os jardins':'trocando histórias e cuidando das flores')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
+    if(id==='lucia')return hour>=8.5&&hour<12||hour>=14.5&&hour<18.5?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||(hour<12?'observando os jardins':'trocando histórias e cuidando das flores')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
     if(id==='bia')return hour>=8&&hour<11||hour>=15&&hour<19?{present:true,hub:'rodoviaria',activity:morningDeparture(s,id)?.activity||(hour<11?'lendo enquanto espera':'estudando e planejando novos caminhos')}:{present:false,hub:null,activity:'em casa, lendo e fazendo uma pausa'};
     return{present:false,hub:null,activity:'em sua rotina'};
   }

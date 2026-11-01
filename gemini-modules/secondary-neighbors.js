@@ -109,12 +109,14 @@
   if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
-  const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
+  const open=def.id==='cica'?(minute>=8*60&&minute<18*60):
+   def.id==='nara'?(minute>=8*60&&minute<18*60):
+   def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
    def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
-  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
+  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%30<22};
  }
  // Mila occasionally follows a longer stretch of her EXISTING road itinerary,
  // pauses to observe, then rejoins her usual walk. No new POI, path or save key.

@@ -28,6 +28,26 @@
       // The validated graph and the existing `limit` already bound the walk.
       // Cutting at 32 m made several neighbors trace identical short segments.
     }
+    // A short dead-end should not confine a resident when another continuous
+    // route on the same mapped block reaches a proper walking distance.
+    if (total < 58) {
+      const alternatives = [];
+      const search = (id, distance, ids) => {
+        if (distance >= 58) { alternatives.push({ distance, ids }); return; }
+        if (ids.length >= 12) return;
+        for (const edge of nodes[id].neighbours) {
+          if (ids.includes(edge.id) || distance + edge.metres >= limit ||
+              Math.hypot(nodes[edge.id].x-anchor[0], nodes[edge.id].y-anchor[1]) >= limit) continue;
+          search(edge.id, distance + edge.metres, [...ids, edge.id]);
+        }
+      };
+      search(nearest.id, 0, [nearest.id]);
+      if (alternatives.length) {
+        alternatives.sort((a,b) => a.distance-b.distance || a.ids.join(',').localeCompare(b.ids.join(',')));
+        const selected = alternatives[Math.abs(variant) % alternatives.length];
+        return selected.ids.map(id => ({x:nodes[id].x,y:nodes[id].y}));
+      }
+    }
     if (path.length === 1) {
       const neighbor = nodes[cursor].neighbours.find(e => e.metres > 0 && e.metres < limit);
       if (neighbor) path.push({ x: nodes[neighbor.id].x, y: nodes[neighbor.id].y });

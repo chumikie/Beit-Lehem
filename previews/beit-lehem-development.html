@@ -2492,7 +2492,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     if(id==='damiao')return hour<13||hour>=16&&hour<18?{present:true,hub:'mercado',activity:morningDeparture(s,id)?.activity||(weekday===0?'organizando a feira':'conversando no mercado')}:{present:false,hub:null,activity:'fazendo uma pausa e almoçando'};
     // Fictional half-past-eight start keeps the Matriz chapter accessible just
     // after the Mercado morning; it does not claim a real local resident schedule.
-    if(id==='lucia')return hour>=8.5&&hour<12||hour>=15&&hour<17?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||(hour<12?'observando os jardins':'trocando histórias e cuidando das flores')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
+    if(id==='lucia')return hour>=8.5&&hour<12||hour>=14.5&&hour<18.5?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||(hour<12?'observando os jardins':'trocando histórias e cuidando das flores')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
     if(id==='bia')return hour>=8&&hour<11||hour>=15&&hour<19?{present:true,hub:'rodoviaria',activity:morningDeparture(s,id)?.activity||(hour<11?'lendo enquanto espera':'estudando e planejando novos caminhos')}:{present:false,hub:null,activity:'em casa, lendo e fazendo uma pausa'};
     return{present:false,hub:null,activity:'em sua rotina'};
   }
@@ -2603,6 +2603,26 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       path.push({ x: nodes[cursor].x, y: nodes[cursor].y });
       // The validated graph and the existing `limit` already bound the walk.
       // Cutting at 32 m made several neighbors trace identical short segments.
+    }
+    // A short dead-end should not confine a resident when another continuous
+    // route on the same mapped block reaches a proper walking distance.
+    if (total < 58) {
+      const alternatives = [];
+      const search = (id, distance, ids) => {
+        if (distance >= 58) { alternatives.push({ distance, ids }); return; }
+        if (ids.length >= 12) return;
+        for (const edge of nodes[id].neighbours) {
+          if (ids.includes(edge.id) || distance + edge.metres >= limit ||
+              Math.hypot(nodes[edge.id].x-anchor[0], nodes[edge.id].y-anchor[1]) >= limit) continue;
+          search(edge.id, distance + edge.metres, [...ids, edge.id]);
+        }
+      };
+      search(nearest.id, 0, [nearest.id]);
+      if (alternatives.length) {
+        alternatives.sort((a,b) => a.distance-b.distance || a.ids.join(',').localeCompare(b.ids.join(',')));
+        const selected = alternatives[Math.abs(variant) % alternatives.length];
+        return selected.ids.map(id => ({x:nodes[id].x,y:nodes[id].y}));
+      }
     }
     if (path.length === 1) {
       const neighbor = nodes[cursor].neighbours.find(e => e.metres > 0 && e.metres < limit);
@@ -3282,12 +3302,14 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
-  const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
+  const open=def.id==='cica'?(minute>=8*60&&minute<18*60):
+   def.id==='nara'?(minute>=8*60&&minute<18*60):
+   def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
    def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
-  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
+  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%30<22};
  }
  // Mila occasionally follows a longer stretch of her EXISTING road itinerary,
  // pauses to observe, then rejoins her usual walk. No new POI, path or save key.
