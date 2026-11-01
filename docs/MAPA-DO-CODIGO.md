@@ -3,10 +3,11 @@
 ## Fluxo geral
 
 ```text
-fontes geográficas + validações locais
+source/belem-osm-2026.geojson + mapa-base revisado
                 │
                 ▼
-       preparação / dados de mapa
+   scripts/current-geodata.cjs
+   (OSM + aparência + aliases locais)
                 │
                 ▼
         gemini-modules/
@@ -24,7 +25,7 @@ fontes geográficas + validações locais
           navegador local
 ```
 
-**Atenção:** a preparação OSM que gera dados em `dist/` pertence à linha antiga. A prévia atual também contém dados de mapa embutidos na fonte Gemini e no processo de build. Esses fluxos ainda precisam ser consolidados; não presumir que editar o GeoJSON atualiza automaticamente o mapa que o jogo exibe.
+**Fluxo atual:** o build lê `source/belem-osm-2026.geojson`, compõe o mapa por `scripts/current-geodata.cjs` e injeta o resultado no JSON offline durante a geração. Um guard exige que IDs, contagem e geometria das vias e áreas continuem iguais à base visual revisada; divergências exigem revisão antes de gerar.
 
 ## Sistemas ativos
 
@@ -49,17 +50,18 @@ O arquivo `gemini-modules/game.js` ainda é grande e concentra áreas demais. A 
 
 ## Dados geográficos
 
-- `source/belem-osm-2026.geojson`: fonte geográfica OSM usada pelo pipeline de preparação antigo.
-- `import_belem_osm.py` e `prepare_map.py`: importação/preparação para a linha antiga.
-- Mapa embutido na base Gemini: fluxo atual consumido pela prévia; precisa ser ligado a uma fonte canônica para evitar deriva.
-- Política de nomes: nomes de ruas preservados exatamente; POIs podem ter alias de exibição separado da origem; ilustração não é cadastro de lote.
+- `source/belem-osm-2026.geojson`: fonte OSM canônica do mapa atual (captura consultada em 2026-10-31).
+- `scripts/current-geodata.cjs`: projeta as feições, valida a geometria revisada, preserva aparência em `roadAppearance`, separa POIs em `localPlaces` e guarda propostas de nomes em `unverifiedRoadLabels`.
+- `import_belem_osm.py` e `prepare_map.py`: reconstroem o extrato e o mapa projetado de apoio; `dist/map.json` não é mais o ponto de entrada do build ativo.
+- Política de nomes: `roads[].tags.name` é exclusivamente OSM e literal; POIs locais usam `displayName` separado de `sourceName`; ilustração não é cadastro de lote.
 
 ## Build e artefatos
 
 | Caminho | Papel |
 | --- | --- |
 | `gemini-modules/` | Fonte editável dos sistemas atuais |
-| `scripts/build-gemini-preview.cjs` | Compõe os módulos na prévia Gemini |
+| `scripts/current-geodata.cjs` | Compõe OSM, aparência visual e POIs locais com validação de geometria |
+| `scripts/build-gemini-preview.cjs` | Compõe os módulos e injeta o mapa OSM na prévia offline |
 | `scripts/build-development-preview.cjs` | Gera o HTML principal e as duas cópias de compatibilidade |
 | `previews/beit-lehem-development.html` | HTML principal gerado |
 | `previews/beit-lehem-development-mobile.html` | Cópia de compatibilidade atual, ainda idêntica ao principal |
