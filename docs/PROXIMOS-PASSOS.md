@@ -27,18 +27,14 @@
 
 **Próxima validação necessária:** executar `npm test` e `npm run build` em ambiente com Node.js, abrir a prévia gerada e comparar visualmente nomes de ruas, POIs, rotas, fachadas e salvamento. O HTML versionado ainda não foi regenerado nesta etapa. Mudanças futuras na geometria OSM exigem revisão explícita e atualização deliberada da referência geométrica; não desativar o guard para aprová-las automaticamente.
 
-### 3. Reduzir o custo de geração de casas
+### 3. Geração de casas — índices espaciais implementados; validação local pendente
 
-O pré-processamento atual pode repetir buscas por segmentos de rua e casas já aceitas. O caminho proposto é acelerar a consulta sem alterar o resultado visual:
+- O índice de segmentos viários agora é construído antes da geração de casas e é reutilizado na reserva de espaço de árvores. A grade de ruas usa caixas delimitadoras expandidas em 22 unidades; a consulta continua executando a distância ponto-segmento exata e os limites estritos originais (11,5; 14,5; 22).
+- A ocupação de casas agora usa uma grade de 32 unidades. A consulta visita as células vizinhas necessárias e mantém `Math.hypot` e os limites estritos originais (14,5; 18).
+- O laço de candidatos, a ordem das vias/lados, o incremento de IDs, os `seeds`, os filtros de cenário/campo e a seleção final de até 1.350 casas foram mantidos. As funções de geração/seleção foram isoladas para permitir comparação direta entre busca exaustiva e indexada.
+- Novo teste C17 compara, sobre a malha de ruas de referência, a lista ordenada de todos os candidatos e a lista final selecionada entre os dois caminhos; também verifica coordenadas negativas, limites de célula e distâncias exatamente no limiar. O teste mede contagens de comparações geométricas, sem depender de benchmark temporal.
 
-1. Generalizar o índice espacial de ruas hoje usado para afastamento de árvores.
-2. Construí-lo imediatamente após gerar os segmentos viários, antes do laço de candidatos de casas.
-3. Consultar as células próximas e manter a mesma distância exata ponto-segmento e os limites atuais de cada tipo de casa.
-4. Criar um índice de ocupação de casas por célula para substituir a varredura completa de casas já aceitas; manter a distância euclidiana exata como verificação final.
-5. Preservar ordem dos candidatos, seeds e desempates para que a lista final de casas e suas coordenadas não mudem.
-
-**Critério de aceitação:** comparar antes/depois com os mesmos dados e seeds e provar igualdade dos candidatos aceitos/coordenadas. Adicionar testes de borda, células vizinhas, coordenadas negativas e distâncias exatamente no limite. Medir também a redução de comparações geométricas; não depender de teste de tempo frágil.
-
+**Validação ainda necessária neste ambiente:** executar o teste C17 e a suíte `npm test` com Node.js; confirmar que as comparações diminuem e que as listas são idênticas. Não gerar nem atualizar HTMLs versionados nesta etapa.
 ### 4. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
