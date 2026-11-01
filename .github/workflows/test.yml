@@ -29,3 +29,36 @@ jobs:
 
       - name: Run complete test suite
         run: npm test
+
+      - name: Build current preview outside the repository
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { buildGeminiPreview } = require('./scripts/build-gemini-preview.cjs');
+          const { extractEmbeddedMap } = require('./scripts/current-geodata.cjs');
+
+          const temporaryOutput = path.relative(
+            process.cwd(),
+            path.join(os.tmpdir(), 'beit-lehem-build-validation.html')
+          );
+          const result = buildGeminiPreview(process.cwd(), temporaryOutput);
+          const html = fs.readFileSync(result.outputPath, 'utf8');
+          const map = extractEmbeddedMap(html);
+
+          if (map.roads.length !== 462 || map.areas.length !== 20 ||
+              map.points.length !== 9 || map.localPlaces.length !== 9 ||
+              map.streetNameCount !== 86) {
+            throw new Error('O build temporário não contém as camadas geográficas esperadas.');
+          }
+          if (!map.unverifiedRoadLabels.every(label => label.displayedAsStreetName === false)) {
+            throw new Error('Rótulos viários não verificados não podem aparecer como ruas reais.');
+          }
+          console.log(
+            'Build temporário OK: ' + result.bytes + ' bytes; ' +
+            map.roads.length + ' vias, ' + map.areas.length + ' áreas, ' +
+            map.points.length + ' pontos OSM e ' + map.localPlaces.length +
+            ' POIs locais. Nenhum preview versionado foi escrito.'
+          );
+          NODE
