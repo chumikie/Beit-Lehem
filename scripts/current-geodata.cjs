@@ -187,7 +187,7 @@ function composeCurrentMap(osm, templateMap) {
     localPlaces,
     roadAppearance,
     unverifiedRoadLabels,
-    source: 'source/belem-osm-2026.geojson',
+    source: 'belem-osm-2026.geojson',
     featureCount: osm.features.length,
     streetNameCount: osmStreetNames.size,
     sourceMetadata: osm.metadata,
