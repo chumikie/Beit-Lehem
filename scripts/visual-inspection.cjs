@@ -18,7 +18,13 @@ fs.mkdirSync(outputDir, { recursive: true });
 
 const htmlPath = path.join(os.tmpdir(), 'beit-lehem-visual-temporary.html');
 const result = buildGeminiPreview(root, path.relative(root, htmlPath));
-const html = fs.readFileSync(result.outputPath, 'utf8');
+const builtHtml = fs.readFileSync(result.outputPath, 'utf8');
+// CI-only probe: measure the actual render() call without changing shipped game modules.
+const renderCall = 'move(dt,t/1000);render(t/1000);renderedFrames++;';
+assert.equal(builtHtml.split(renderCall).length, 2, 'render probe insertion point changed');
+const html = builtHtml.replace(renderCall,
+  'move(dt,t/1000);{const p=performance.now();render(t/1000);'+
+  'window.__ciRenderSamples?.push({at:p,ms:performance.now()-p});}renderedFrames++;');
 const map = extractEmbeddedMap(html);
 
 assert.equal(map.roads.length, 462);
@@ -144,6 +150,54 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     colorScheme: 'light'
   });
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    window.__ciRenderSamples = [];
+    window.__ciLongTasks = [];
+    try {
+      new PerformanceObserver(list => {
+        for (const entry of list.getEntries())
+          window.__ciLongTasks.push({ at: entry.startTime, ms: entry.duration });
+      }).observe({ type: 'longtask', buffered: true });
+    } catch { /* Chromium without Long Tasks support: report unavailable. */ }
+  });
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('Performance.enable');
+  async function samplePerformance(phase, durationMs = 850) {
+    const start = await page.evaluate(() => performance.now());
+    const before = await cdp.send('Performance.getMetrics');
+    await page.waitForTimeout(durationMs);
+    const end = await page.evaluate(() => performance.now());
+    const after = await cdp.send('Performance.getMetrics');
+    const observed = await page.evaluate(({ start, end }) => {
+      const canvas = document.querySelector('#world');
+      const css = canvas?.getBoundingClientRect();
+      return {
+        dpr: devicePixelRatio,
+        canvas: canvas ? { width: canvas.width, height: canvas.height,
+          cssWidth: +css.width.toFixed(2), cssHeight: +css.height.toFixed(2) } : null,
+        frames: window.__ciRenderSamples.filter(s => s.at >= start && s.at < end),
+        longTasks: window.__ciLongTasks.filter(s => s.at >= start && s.at < end),
+      };
+    }, { start, end });
+    const values = metrics => Object.fromEntries(metrics.metrics.map(m => [m.name, m.value]));
+    const a = values(before), b = values(after);
+    const durations = observed.frames.map(s => s.ms).sort((a, b) => a - b);
+    const intervals = observed.frames.slice(1).map((s, i) => s.at - observed.frames[i].at)
+      .sort((a, b) => a - b);
+    const pct = (arr, q) => arr.length ? +arr[Math.min(arr.length - 1, Math.ceil(arr.length*q)-1)].toFixed(2) : null;
+    const summary = { phase, elapsedMs: +(end-start).toFixed(1), dpr: observed.dpr,
+      canvas: observed.canvas, frames: durations.length,
+      renderMs: { p50: pct(durations,.5), p95: pct(durations,.95), max: pct(durations,1),
+        over33ms: durations.filter(n => n > 1000/30).length },
+      frameIntervalMs: { p50: pct(intervals,.5), p95: pct(intervals,.95), max: pct(intervals,1) },
+      longTasks: { count: observed.longTasks.length,
+        maxMs: Math.max(0,...observed.longTasks.map(s => s.ms)) },
+      scriptMs: +((b.ScriptDuration-a.ScriptDuration)*1000).toFixed(2),
+      layoutMs: +((b.LayoutDuration-a.LayoutDuration)*1000).toFixed(2),
+      paintMs: +((b.PaintDuration-a.PaintDuration)*1000).toFixed(2) };
+    assert.ok(summary.canvas?.width > 0 && summary.canvas?.height > 0);
+    return summary;
+  }
   page.on('pageerror', error => pageErrors.push(name + ': ' + error.message));
   page.on('console', message => {
     if (message.type() === 'error') consoleErrors.push(name + ': ' + message.text());
@@ -151,6 +205,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   await page.route('https://**/*', route => route.abort());
   await page.goto(baseUrl, { waitUntil: 'load', timeout: 60000 });
   await page.locator('#world').waitFor({ state: 'visible', timeout: 20000 });
+  const performanceAudit = { welcome: await samplePerformance('welcome') };
   const welcomeBegin = await page.evaluate(() => ({ at: performance.now(), count: expeditionState.renderedFrames }));
   await page.waitForTimeout(900);
   const welcomeEnd = await page.evaluate(() => ({ at: performance.now(), count: expeditionState.renderedFrames }));
@@ -174,6 +229,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     gameplay: { frames: gameEnd.count - gameBegin.count, seconds: +(gameEnd.at - gameBegin.at).toFixed(1) / 1000 },
     intervalMs: gameEnd.interval
   };
+  performanceAudit.gameplay = await samplePerformance('gameplay');
   if (mobile) {
     assert.ok(renderMetrics.welcome.frames <= Math.ceil(renderMetrics.welcome.seconds * 8) + 3, name + ': welcome excedeu orçamento de 8 fps');
     assert.ok(renderMetrics.gameplay.frames <= Math.ceil(renderMetrics.gameplay.seconds * 30) + 3, name + ': jogo excedeu orçamento de 30 fps');
@@ -192,6 +248,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       .evaluateAll(nodes => nodes.find(dialog => dialog.open)?.id || null);
     conversation.opened = !!conversation.dialog;
     if (conversation.opened) {
+      performanceAudit.dialogue = await samplePerformance('dialogue', 550);
       assert.equal(await page.locator('dialog[open]').count(), 1,
         name + ': conversa real não deve sobrepor outras janelas');
       await page.keyboard.press('Escape');
@@ -283,6 +340,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     await zoomIn.click();
     await page.waitForTimeout(200);
   }
+  performanceAudit.zoom = await samplePerformance('zoom', 650);
 
   const gameplay = await collectLayout(page, name + '-game');
   await page.screenshot({
@@ -378,6 +436,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     }
     assert.ok(routeSelection.selected,
       name + ': selecionar um trecho do mapa deve marcar uma rota pelas ruas');
+    performanceAudit.walking = await samplePerformance('walking', 650);
   }
 
   // C19: verify real control transitions and recovery before resumed walking.
@@ -579,7 +638,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters, cameraAudit, renderMetrics
+    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters, cameraAudit, renderMetrics,
+    performanceAudit
   };
   report.viewports[name] = result;
 
