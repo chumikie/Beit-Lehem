@@ -3450,7 +3450,14 @@ function renderStoryTracker(){
  const mornings=document.createElement('small');mornings.textContent='☀ Bons-dias vividos · '+morningEncounters.length+' conversa(s) de manhã registradas; os moradores seguem seus trajetos habituais.';
  const water=document.createElement('small');water.textContent='💧 Águas contempladas · '+waterMemories.length+'/'+verifiedWater.length+' açude(s) com margens mapeadas; nenhum trajeto sobre a água.';
  const sharedWater=document.createElement('small');sharedWater.textContent='💬 Relatos da paisagem · '+waterTalks.filter(r=>r.step==='shared').length+' morador(es) conheceram sua história; '+waterTalks.filter(r=>r.step==='remembered').length+' lembraram dela dias depois.';
- const walks=document.createElement('small');walks.textContent='🌳 Pequenos Passeios · '+smallWalksSeen.length+' encontro(s) presenciado(s), '+smallWalkReports.length+' novidade(s) contada(s) por moradores. Visitas discretas nos caminhos existentes, sem tarefas obrigatórias.';
+ const walks=document.createElement('small');
+ let nextWalk=null;
+ for(let day=living.day;day<=living.day+28;day++){
+  const candidate=window.RoncadorLivingWorld.smallWalkForDay(day);
+  if(candidate&&(day>living.day||living.minute<candidate.start)){nextWalk=candidate;break;}
+ }
+ const nextWalkHint=nextWalk?' Próxima possibilidade: dia '+nextWalk.day+', '+String(Math.floor(nextWalk.start/60)).padStart(2,'0')+':'+String(nextWalk.start%60).padStart(2,'0')+' — '+nextWalk.title+'. Outros acontecimentos podem alterar a rotina.':' Os encontros seguem o calendário fictício.';
+ walks.textContent='🌳 Pequenos Passeios · '+smallWalksSeen.length+' encontro(s) presenciado(s), '+smallWalkReports.length+' novidade(s) contada(s) por moradores.'+nextWalkHint+' Sem tarefas obrigatórias.';
  const camuca=document.createElement('small');camuca.textContent='🌿 Os caminhos do Camucá (preparação, sem acesso à serra) · '+camucaStories.length+'/5 acontecimentos vividos · '+(camucaStories.length?camucaStories.map(r=>CAMUCA_STAGES.includes(r.stage)?r.stage:'').join(' → '):'observe a área verde existente num dia de chuvisco');
  panel.replaceChildren(title,summary,finished,pauses,scenes,neighborhood,music,bread,mornings,water,sharedWater,walks,camuca,season);
  const groups=[

@@ -28,6 +28,12 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   let html = fs.readFileSync(sourcePath, 'utf8');
   const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
   html=workbench.html;
+  // Static markup is not part of game.js overrides. Keep the initial DOM
+  // consistent with the current fictional character name from the first paint.
+  html=replaceExactlyOnce(html,'<h3>A manhã de Damião</h3>',
+    '<h3>A manhã de Francisco</h3>','Cabeçalho inicial do capítulo da feira');
+  html=replaceExactlyOnce(html,'🧺 A manhã de Damião · começar →',
+    '🧺 A manhã de Francisco · começar →','Atalho inicial da feira');
   // Geographic overlay is compiled into the offline preview, not fetched by
   // the browser. The archived Gemini source and V2.27 remain untouched.
   const hydroFile=path.join(projectRoot,'source','belem-aguas-osm-2026-11-01.geojson');
