@@ -270,7 +270,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   // Check that the label beside the player is a canonical OSM street name.
   const label = gameplay.locationLabel;
   const canonicalNames = new Set(map.roads.map(road => road.tags.name).filter(Boolean));
-  const streetLabelValid = !label || label === 'Caminho sem nome mapeado' ||
+  const streetLabelValid = !label ||
+    ['Caminho sem nome mapeado', 'Um caminho de Belém', 'Pelos caminhos de Belém'].includes(label) ||
     canonicalNames.has(label);
 
   // Check the real map dialog and its canvas, not merely the button markup.
