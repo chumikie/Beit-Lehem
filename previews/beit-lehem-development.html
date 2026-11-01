@@ -5957,7 +5957,7 @@ function drawPedraLandscape(c,x,y){
  c.restore();
 }
 function scenicCaptionFitsHud(canvasWidth,canvasHeight,x,y,textWidth,mobile){
- const edge=12,top=mobile?110:12,bottom=mobile?Math.min(116,canvasHeight*.21):22;
+ const edge=12,top=mobile?Math.min(300,canvasHeight*.42):12,bottom=mobile?Math.min(116,canvasHeight*.21):22;
  return x-textWidth/2>=edge&&x+textWidth/2<=canvasWidth-edge&&y>=top&&y<=canvasHeight-bottom;
 }
 function drawScenicLayer(c,viewport,details=false){
@@ -6408,7 +6408,7 @@ function wrapEncounterSpeech(speech,limit,maxRows=3){
 // close camera may enlarge the characters, but should not enlarge their text
 // beyond the mobile viewport or compete with the touch controls.
 function speechCardRect(anchorX,anchorY,cardWidth,cardHeight,canvasWidth,canvasHeight,mobile){
- const margin=12,topSafe=mobile?Math.min(150,canvasHeight*.25):12;
+ const margin=12,topSafe=mobile?Math.min(310,canvasHeight*.44):12;
  const bottomSafe=mobile?Math.min(116,canvasHeight*.21):20;
  const left=Math.max(margin,Math.min(canvasWidth-margin-cardWidth,anchorX-cardWidth/2));
  const lowerLimit=Math.max(topSafe,canvasHeight-bottomSafe-cardHeight);
