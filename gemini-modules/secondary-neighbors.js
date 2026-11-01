@@ -38,7 +38,27 @@
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
    options:[{id:'envelope',label:'Ajudar a separar envelopes',reply:'Téo alinha os envelopes e coloca um coração no de cima. “Pronto, ninguém se perde!”'},
-    {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]}
+    {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]},
+  {id:'celina',name:'Celina',hub:'mercado',variant:14,tone:'#b88f74',icon:'🍊',role:'A curiosa dos sabores',
+   morning:'observa as frutas e imagina combinações de sabores',afternoon:'anota receitas inventadas num bloquinho',
+   greeting:'Uma receita também pode ser uma lembrança. Hoje estou inventando uma bem colorida!',
+   options:[{id:'sabores',label:'🍊 Imaginar uma combinação de frutas',reply:'Celina imagina uma mistura de frutas e ri: “Essa merece um nome bem bonito!”'},
+    {id:'receita',label:'📒 Conversar sobre receitas de família',reply:'“Cada família tem seu jeitinho”, diz Celina. Vocês trocam ideias sem atribuir receitas a ninguém da cidade.'}]},
+  {id:'davi',name:'Davi',hub:'igreja',variant:15,tone:'#89a6b8',icon:'🎵',role:'Amigo dos sons da rua',
+   morning:'escuta os sons tranquilos do começo do dia',afternoon:'marca ritmos leves com as mãos',
+   greeting:'Às vezes a rua parece ter uma música só dela. Você já parou para escutar?',
+   options:[{id:'ritmo',label:'🎵 Inventar um ritmo suave',reply:'Davi acompanha duas batidas baixinho: “Pronto, uma música só nossa!”'},
+    {id:'escuta',label:'👂 Prestar atenção aos sons ao redor',reply:'Vocês ficam em silêncio por um instante, percebendo os passos ilustrativos da cidade.'}]},
+  {id:'iris',name:'Íris',hub:'igreja',variant:17,tone:'#b4a0c4',icon:'🍃',role:'Observadora da luz e do vento',
+   morning:'repara na brisa e na claridade das ruas',afternoon:'observa as mudanças de sombra no passeio',
+   greeting:'Tem dia que a mesma rua parece outra só porque a luz mudou.',
+   options:[{id:'vento',label:'🍃 Fazer uma pausa para sentir a brisa',reply:'Íris sorri: “É bom ter um minuto sem pressa.”'},
+    {id:'luz',label:'☀ Observar a claridade do caminho',reply:'Vocês observam o desenho da luz sobre o chão, sem registrar um acontecimento inventado.'}]},
+  {id:'noel',name:'Noel',hub:'rodoviaria',variant:19,tone:'#9caa79',icon:'🧳',role:'Colecionador de caminhos imaginados',
+   morning:'organiza no caderno nomes de lugares que gostaria de conhecer',afternoon:'descansa e pensa nos caminhos de volta',
+   greeting:'Viajar pode começar com uma pergunta: para onde você gostaria de passear?',
+   options:[{id:'destino',label:'🧳 Imaginar um passeio',reply:'Noel desenha um caminho fictício no caderno: “Um dia a gente inventa outras paradas.”'},
+    {id:'volta',label:'🏡 Conversar sobre voltar para casa',reply:'“Às vezes o melhor da viagem é reconhecer o caminho de volta”, diz Noel.'}]}
  ]);
  const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{},recados:{stage:0},connections:{damiaoTeo:false,biaTeo:false,zecaLucia:false,zecaLuciaDay:0},marketLegacy:{kind:null,day:0}});
@@ -126,6 +146,10 @@
    def.id==='nara'?(minute>=8*60&&minute<18*60):
    def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
    def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
+   def.id==='celina'?(minute>=7*60+30&&minute<11*60||minute>=15*60&&minute<17*60):
+   def.id==='davi'?(minute>=9*60&&minute<12*60||minute>=16*60&&minute<19*60):
+   def.id==='iris'?(minute>=7*60&&minute<10*60||minute>=15*60&&minute<18*60):
+   def.id==='noel'?(minute>=10*60&&minute<12*60||minute>=16*60&&minute<20*60):
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;

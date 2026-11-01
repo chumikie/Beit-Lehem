@@ -1022,10 +1022,11 @@ function secondaryInStreets(primary=residentsInStreets()){
   if(at&&!duty.meeting&&occupied.some(p=>Math.hypot(p.x-at.x,p.y-at.y)<30)){
    const roadPath=streetPaths.get(def.id+':'+def.hub);
    const base=elapsed*(.72+def.variant*.07)+def.variant*12;
-   const offsets=[63,90,117,145];
+   const offsets=[63,90,117,145,180,220];
    const next=roadPath?.length?offsets.map(delta=>window.RoncadorStreetLife.sample(roadPath,base+delta))
     .find(candidate=>candidate&&occupied.every(p=>Math.hypot(p.x-candidate.x,p.y-candidate.y)>23)):null;
    if(next)at=next;
+   else if(['celina','davi','iris','noel'].includes(def.id))continue;
   }
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living,skyMode);

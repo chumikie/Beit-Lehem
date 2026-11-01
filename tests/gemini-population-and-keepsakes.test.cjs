@@ -8,8 +8,8 @@ const moments=require('../gemini-modules/street-moments.js');
 
 test('nove moradores nomeados, sem perder o álbum dos três vizinhos originais',()=>{
  const ids=neighbors.RESIDENTS.map(x=>x.id);
- assert.equal(ids.length,6);
- assert.equal(new Set(ids).size,6);
+ assert.equal(ids.length,10);
+ assert.equal(new Set(ids).size,10);
  assert.deepEqual(['cica','nara','teo'].map(x=>ids.includes(x)),[true,true,true]);
  const old=neighbors.restore({seen:['cica','nara','teo'],choices:{cica:'fitas',nara:'desenho',teo:'recado'}});
  assert.equal(neighbors.coreProgress(old),3);
@@ -107,7 +107,7 @@ test('personagens secundários reservam espaço uns para os outros na rua',()=>{
  const fs=require('node:fs');
  const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
  assert.match(game,/const occupied=primary\.concat\(placed\)/);
- assert.match(game,/const offsets=\[63,90,117,145\]/);
+ assert.match(game,/const offsets=\[63,90,117,145,180,220\]/);
  assert.match(game,/person\.crowded=!duty\.meeting&&occupied\.some\(/);
  assert.match(game,/residentMotion\.appearance\(person\.id,!person\.crowded,elapsed\)/);
 });
