@@ -40,3 +40,25 @@ test('C14: a conectividade OSM dos quatro setores não depende do desenho',()=>{
  assert.ok(vertices>=2);
  assert.doesNotMatch(source,/\.p\s*=|\.bounds\s*=|pathfinder|route\(/);
 });
+
+test('C14.1: zooms, curvas, larguras e materiais mantêm o pavimento sobre as bordas',()=>{
+ const roads=[
+  {tags:{highway:'primary',surface:'asphalt'},p:[[-20,0],[0,0],[20,4]],bounds:[-20,0,20,4]},
+  {tags:{highway:'residential',surface:'paved'},p:[[0,-20],[0,0],[0,20]],bounds:[0,-20,0,20]},
+  {tags:{highway:'footway'},p:[[-12,-12],[0,0]],bounds:[-12,-12,0,0]},
+  {tags:{highway:'track',surface:'unpaved'},p:[[0,0],[12,12]],bounds:[0,0,12,12]}
+ ];
+ const draw=vm.runInNewContext(source+';drawRoads',{roads,path:(ctx,points)=>{ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));}});
+ for(const zoom of [.65,1.25,1.85,2.35,2.85])for(const simple of [false,true]){
+  const strokes=[];
+  const c={beginPath(){},moveTo(){},lineTo(){},save(){},restore(){},translate(){},setLineDash(){},stroke(){strokes.push({color:this.strokeStyle,width:this.lineWidth});}};
+  draw(c,zoom,simple,{left:-30,right:30,top:-30,bottom:30});
+  const surfaces=simple?['#e6ddbc']:['#cecfc1','#e2d9be','#e6ddbc','#d0c39a'];
+  const first=strokes.findIndex(s=>surfaces.includes(s.color));
+  assert.ok(first>=0,`sem pavimento no zoom ${zoom}`);
+  const curbs=simple?['#91a079']:['#b8ab90','#eadcc3','#9d9c7950','#c8ba96a8'];
+  assert.ok(strokes.slice(0,first).length>0);
+  assert.ok(strokes.slice(first).every(s=>!curbs.includes(s.color)),`borda cobre via no zoom ${zoom}, simple=${simple}`);
+  assert.ok(strokes.some(s=>s.width===15*(simple?1:1.2)),`largura primária alterada em ${zoom}`);
+ }
+});
