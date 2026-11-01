@@ -816,7 +816,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21},
   rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8},
   celina:{kind:'look',offset:11},davi:{kind:'rest',offset:19},iris:{kind:'look',offset:24},noel:{kind:'read',offset:3},
-  breno:{kind:'rest',offset:7},amelia:{kind:'read',offset:16},nina:{kind:'look',offset:29},otavio:{kind:'look',offset:2},rute:{kind:'sketch',offset:22}
+  breno:{kind:'rest',offset:7},amelia:{kind:'read',offset:16},nina:{kind:'look',offset:29},otavio:{kind:'look',offset:2},rute:{kind:'sketch',offset:22},
+  luma:{kind:'sketch',offset:10},tobias:{kind:'look',offset:20},marta:{kind:'sketch',offset:27},gil:{kind:'rest',offset:4}
  };
  const CYCLE=33,DURATION=3.4;
  let porches=[];
@@ -3308,7 +3309,27 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    morning:'observa ângulos e sombras das ruas',afternoon:'descreve imagens que gostaria de desenhar',
    greeting:'Gosto de reparar nos pequenos detalhes. Eles cabem numa fotografia imaginada.',
    options:[{id:'quadro',label:'📷 Imaginar um enquadramento',reply:'Rute escolhe um recorte da paisagem sem afirmar que tirou uma foto real.'},
-    {id:'detalhe',label:'👀 Escolher um detalhe para observar',reply:'“Olha como a luz muda a cor desse caminho”, diz Rute.'}]}
+    {id:'detalhe',label:'👀 Escolher um detalhe para observar',reply:'“Olha como a luz muda a cor desse caminho”, diz Rute.'}]},
+  {id:'luma',name:'Luma',hub:'rua:Rua Clovis Bezerra',variant:28,tone:'#9b9acb',icon:'🌙',role:'Curiosa do céu noturno ilustrativo',
+   morning:'imagina desenhos de estrelas no caderno',afternoon:'observa as cores do céu ao entardecer',
+   greeting:'Gosto de inventar constelações no papel. O céu de verdade tem muito mais mistérios.',
+   options:[{id:'estrelas',label:'🌙 Imaginar uma constelação',reply:'Luma liga pontinhos num desenho fictício: “Parece um caminho para casa!”'},
+    {id:'tarde',label:'🌅 Conversar sobre o anoitecer',reply:'“A luz muda devagar e a gente quase não percebe”, comenta Luma.'}]},
+  {id:'tobias',name:'Tobias',hub:'rua:Rua Nunes',variant:29,tone:'#8fb2a0',icon:'🪁',role:'Inventor de pipas de papel',
+   morning:'imagina formas de pipas no caderno',afternoon:'observa a direção da brisa na rua',
+   greeting:'Uma pipa de papel começa com uma boa ideia. Nem precisa levantar voo de verdade.',
+   options:[{id:'pipa',label:'🪁 Imaginar uma pipa colorida',reply:'Tobias desenha uma pipa fictícia e escolhe duas cores bem alegres.'},
+    {id:'vento',label:'🍃 Conversar sobre o vento',reply:'“Melhor observar a brisa daqui mesmo”, diz Tobias, permanecendo no caminho.'}]},
+  {id:'marta',name:'Marta',hub:'rua:Rua Antônio Borges de Lima',variant:30,tone:'#bf9f87',icon:'🧩',role:'Criadora de pequenos quebra-cabeças',
+   morning:'imagina jogos de encaixar formas',afternoon:'desenha peças geométricas no bloquinho',
+   greeting:'Quando duas peças se encontram, parece que uma história ficou completa.',
+   options:[{id:'pecas',label:'🧩 Imaginar duas peças',reply:'Marta desenha duas formas que se encaixam: “Pronto, uma descoberta pequenininha!”'},
+    {id:'formas',label:'◇ Procurar formas na paisagem',reply:'Vocês reparam em linhas e círculos das ilustrações, sem alterar as construções.'}]},
+  {id:'gil',name:'Gil',hub:'rua:Rua Feliciano Pedrosa',variant:31,tone:'#a6ad7d',icon:'🕺',role:'Amigo das danças discretas',
+   morning:'marca passos suaves enquanto passeia',afternoon:'imagina uma coreografia curta',
+   greeting:'Dois passinhos e um sorriso já fazem meu dia ficar mais leve.',
+   options:[{id:'passos',label:'🕺 Inventar dois passinhos',reply:'Gil marca um ritmo baixinho no lugar: “Sem atrapalhar quem está passando!”'},
+    {id:'pausa',label:'♡ Conversar sobre dançar com calma',reply:'“Não precisa de palco; às vezes a alegria cabe num gesto”, diz Gil.'}]}
  ]);
  const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{},recados:{stage:0},connections:{damiaoTeo:false,biaTeo:false,zecaLucia:false,zecaLuciaDay:0},marketLegacy:{kind:null,day:0}});
@@ -3405,6 +3426,10 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    def.id==='nina'?(minute>=7*60+30&&minute<11*60||minute>=15*60&&minute<17*60):
    def.id==='otavio'?(minute>=10*60&&minute<12*60||minute>=17*60&&minute<20*60):
    def.id==='rute'?(minute>=8*60&&minute<11*60||minute>=14*60&&minute<17*60):
+   def.id==='luma'?(minute>=9*60&&minute<11*60||minute>=17*60&&minute<21*60):
+   def.id==='tobias'?(minute>=8*60&&minute<11*60||minute>=15*60&&minute<18*60):
+   def.id==='marta'?(minute>=10*60&&minute<12*60||minute>=15*60&&minute<19*60):
+   def.id==='gil'?(minute>=7*60+30&&minute<10*60||minute>=16*60&&minute<19*60):
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
@@ -5591,8 +5616,16 @@ function drawScenicLayer(c,viewport,details=false){
   c.restore();
  }
 }
+function mappedStreetResidentAnchor(roads,hub){
+ if(!hub.startsWith('rua:'))return null;
+ const name=hub.slice(4),sections=roads.filter(road=>road.tags?.name===name&&road.p?.length>=2);
+ if(!sections.length)return null;
+ const length=road=>road.p.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p[0]-road.p[i][0],p[1]-road.p[i][1]),0);
+ const section=sections.reduce((longest,road)=>length(road)>length(longest)?road:longest);
+ return section.p[Math.floor(section.p.length/2)];
+}
 function walkingPoint(id,hub,variant,shift=0){
- const place=hub==='inicio'?{p:data.start}:hub.startsWith('missao:')?{p:missions[Number(hub.slice(7))]?.p}:data.landmarks.find(l=>l.id===hub);
+ const place=hub==='inicio'?{p:data.start}:hub.startsWith('missao:')?{p:missions[Number(hub.slice(7))]?.p}:hub.startsWith('rua:')?{p:mappedStreetResidentAnchor(roads,hub)}:data.landmarks.find(l=>l.id===hub);
  if(!place?.p)return null;
  const key=id+':'+hub;
  if(!streetPaths.has(key))streetPaths.set(key,window.RoncadorStreetLife.itinerary(pathfinder,place.p,variant));

@@ -914,8 +914,16 @@ function drawScenicLayer(c,viewport,details=false){
   c.restore();
  }
 }
+function mappedStreetResidentAnchor(roads,hub){
+ if(!hub.startsWith('rua:'))return null;
+ const name=hub.slice(4),sections=roads.filter(road=>road.tags?.name===name&&road.p?.length>=2);
+ if(!sections.length)return null;
+ const length=road=>road.p.slice(1).reduce((sum,p,i)=>sum+Math.hypot(p[0]-road.p[i][0],p[1]-road.p[i][1]),0);
+ const section=sections.reduce((longest,road)=>length(road)>length(longest)?road:longest);
+ return section.p[Math.floor(section.p.length/2)];
+}
 function walkingPoint(id,hub,variant,shift=0){
- const place=hub==='inicio'?{p:data.start}:hub.startsWith('missao:')?{p:missions[Number(hub.slice(7))]?.p}:data.landmarks.find(l=>l.id===hub);
+ const place=hub==='inicio'?{p:data.start}:hub.startsWith('missao:')?{p:missions[Number(hub.slice(7))]?.p}:hub.startsWith('rua:')?{p:mappedStreetResidentAnchor(roads,hub)}:data.landmarks.find(l=>l.id===hub);
  if(!place?.p)return null;
  const key=id+':'+hub;
  if(!streetPaths.has(key))streetPaths.set(key,window.RoncadorStreetLife.itinerary(pathfinder,place.p,variant));

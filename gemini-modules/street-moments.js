@@ -9,7 +9,8 @@
   nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21},
   rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8},
   celina:{kind:'look',offset:11},davi:{kind:'rest',offset:19},iris:{kind:'look',offset:24},noel:{kind:'read',offset:3},
-  breno:{kind:'rest',offset:7},amelia:{kind:'read',offset:16},nina:{kind:'look',offset:29},otavio:{kind:'look',offset:2},rute:{kind:'sketch',offset:22}
+  breno:{kind:'rest',offset:7},amelia:{kind:'read',offset:16},nina:{kind:'look',offset:29},otavio:{kind:'look',offset:2},rute:{kind:'sketch',offset:22},
+  luma:{kind:'sketch',offset:10},tobias:{kind:'look',offset:20},marta:{kind:'sketch',offset:27},gil:{kind:'rest',offset:4}
  };
  const CYCLE=33,DURATION=3.4;
  let porches=[];

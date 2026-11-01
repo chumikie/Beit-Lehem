@@ -11,10 +11,10 @@ const ids=['celina','davi','iris','noel'];
 const graph=buildGraph(map.roads);
 
 test('C1 acrescenta quatro identidades fictícias aos seis vizinhos preservados',()=>{
- assert.equal(neighbors.RESIDENTS.length,15);
+ assert.equal(neighbors.RESIDENTS.length,19);
  assert.deepEqual(neighbors.RESIDENTS.slice(0,6).map(p=>p.id),['cica','nara','rosa','zeca','mila','teo']);
  assert.deepEqual(neighbors.RESIDENTS.slice(6,10).map(p=>p.id),ids);
- assert.equal(new Set(neighbors.RESIDENTS.map(p=>p.variant)).size,15);
+ assert.equal(new Set(neighbors.RESIDENTS.map(p=>p.variant)).size,19);
  for(const id of ids){
   const def=neighbors.RESIDENTS.find(person=>person.id===id);
   assert.ok(def.name&&def.role&&def.greeting&&def.options.length===2&&moments.GESTURES[id]);

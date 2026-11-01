@@ -35,7 +35,7 @@ test('novos moradores têm horários e percursos existentes',()=>{
  const api=global.RoncadorSecondaryNeighbors;
  assert.equal(api.RESIDENTS.length>=6,true);
  for(const def of api.RESIDENTS){
-  const place=def.hub.startsWith('missao:')?data.missions[Number(def.hub.slice(7))]:data.landmarks.find(p=>p.id===def.hub);
+  const place=def.hub.startsWith('missao:')?data.missions[Number(def.hub.slice(7))]:def.hub.startsWith('rua:')?{p:data.roads.find(r=>r.tags?.name===def.hub.slice(4))?.p?.[0]}:data.landmarks.find(p=>p.id===def.hub);
   assert.ok(place,'lugar de '+def.name);
   assert.ok(graph.route(data.start,place.p),'rota até '+def.name);
  }

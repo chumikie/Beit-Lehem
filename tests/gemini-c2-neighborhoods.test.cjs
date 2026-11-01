@@ -13,10 +13,10 @@ const graph=buildGraph(map.roads);
 const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
 
 test('C2 acrescenta cinco personagens a regiões já documentadas, sem mover os 10 anteriores',()=>{
- assert.equal(neighbors.RESIDENTS.length,15);
+ assert.equal(neighbors.RESIDENTS.length,19);
  assert.deepEqual(neighbors.RESIDENTS.slice(0,10).map(r=>r.id),['cica','nara','rosa','zeca','mila','teo','celina','davi','iris','noel']);
- assert.deepEqual(neighbors.RESIDENTS.slice(10).map(r=>r.id),added);
- assert.equal(new Set(neighbors.RESIDENTS.map(r=>r.id)).size,15);
+ assert.deepEqual(neighbors.RESIDENTS.slice(10,15).map(r=>r.id),added);
+ assert.equal(new Set(neighbors.RESIDENTS.map(r=>r.id)).size,19);
  for(const id of added){
   const def=neighbors.RESIDENTS.find(p=>p.id===id);
   assert.ok(def.name&&def.role&&def.greeting&&def.options.length>=2&&moments.GESTURES[id]);
