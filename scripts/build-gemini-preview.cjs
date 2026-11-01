@@ -108,6 +108,20 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     html = replaceExactlyOnce(html, before, after, 'Identidade visual Beit Lehem');
   }
 
+  // Fictional in-world presentation: keep research in the archived source,
+  // but exclude documentary controls and the two photo payloads from play.
+  html=replaceExactlyOnce(html,'▦ <span>Quadras</span>','✎ <span>Ateliê</span>','Nome do ateliê');
+  html=replaceExactlyOnce(html,'▦ ATELIÊ DAS RUAS · BELÉM/PB','▦ ATELIÊ DE BEIT LEHEM','Título do ateliê');
+  const photoIds=['archiveChurch','archiveMarket'];
+  for(const id of photoIds){
+    const pattern=new RegExp('(<img id="'+id+'" src=")data:image/jpeg;base64,[A-Za-z0-9+/=]+(")');
+    if(!pattern.test(html))throw new Error('Fotografia histórica inesperada: '+id);
+    html=html.replace(pattern,'$1data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=$2');
+  }
+  if(/data:image\/jpeg;base64,/i.test(html))throw new Error('Fotografia real permaneceu na prévia');
+  html=replaceExactlyOnce(html,'</head>',
+    '<style id="fictional-world-ui">#realCity,#realCityDialog,#cultureEvidence,#cultureSource{display:none!important}</style></head>',
+    'Interface ficcional sem guia externo');
   if (html.includes(brokenInitialization)) {
     throw new Error('A inicialização incorreta de kawaiiState permaneceu na cópia gerada.');
   }
