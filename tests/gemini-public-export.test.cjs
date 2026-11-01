@@ -9,6 +9,15 @@ function mapData(html){
  assert.ok(i>=0&&j>i);
  return html.slice(i+start.length,j);
 }
+
+const {auditPublicContent}=require('../scripts/build-public-preview.cjs');
+test('a edição pública permite contatos fictícios revisados e bloqueia referências residenciais',()=>{
+ assert.doesNotThrow(()=>auditPublicContent(source));
+ for(const sensitive of ['Casa 849','[136.5,578]','// PRIVATE: residencial']){
+  assert.throws(()=>auditPublicContent(source+'\n'+sensitive),/Cópia pública bloqueada/);
+ }
+ assert.throws(()=>auditPublicContent(source.replace("id: 'familia_varanda'","id: 'pessoa_nao_revisada'")),/revisão de contatos/);
+});
 test('export público remove metadados e mantém jogo sem externos obrigatórios',()=>{
  assert.ok(!publicHtml.startsWith('<!--'));
  assert.ok(!publicHtml.includes('fonts.googleapis.com'));
