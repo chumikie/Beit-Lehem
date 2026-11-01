@@ -12,8 +12,8 @@ function projectCoordinate(lonLat, projection) {
   }
   const [lon, lat] = lonLat;
   return [
-    Number(((lon - projection.originLon) * projection.metersPerDegreeLon).toFixed(2)),
-    Number(((projection.originLat - lat) * projection.metersPerDegreeLat).toFixed(2))
+    Math.round((lon - projection.originLon) * projection.metersPerDegreeLon * 100) / 100,
+    Math.round((projection.originLat - lat) * projection.metersPerDegreeLat * 100) / 100
   ];
 }
 
