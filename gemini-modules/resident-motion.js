@@ -4,7 +4,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorResidentMotion=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
  function create(graph){
-  const states=new Map(),visuals=new Map();
+  const states=new Map(),visuals=new Map(),visibility=new Map();
   let holds=new Set();
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const safe=n=>Number.isFinite(n)?n:0;
@@ -12,7 +12,9 @@
    const target={x:person.x,y:person.y},now=safe(elapsed);
    if(!Number.isFinite(target.x)||!Number.isFinite(target.y))return person;
    let s=states.get(person.id);
-   if(!s||day!==s.day||now<s.last-.001||now-s.last>18){
+   // Resuming a background tab must not snap a resident to a new scheduled
+   // destination. The next frames reconnect along the mapped street route.
+   if(!s||day!==s.day||now<s.last-.001){
     s={x:target.x,y:target.y,day,last:now,heading:0,stride:0,pace:0,bridge:null,bridgeIndex:1,blockedUntil:0};states.set(person.id,s);
     return{...person,heading:0,stridePhase:0,arriving:false};
    }
@@ -93,7 +95,15 @@
    person.lean=v.lean;
    return person;
   }
-  return{resolve,present,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
+  function appearance(id,clear,now){
+   const previous=visibility.get(id);
+   if(!previous||now<previous.last){const alpha=clear?1:0;visibility.set(id,{alpha,last:now});return alpha;}
+   const dt=Math.min(.12,Math.max(0,now-previous.last));previous.last=now;
+   const desired=clear?1:0;
+   previous.alpha+=(desired-previous.alpha)*(1-Math.exp(-dt*(clear?5:10)));
+   return previous.alpha;
+  }
+  return{resolve,present,appearance,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();visibility.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
  }
  return{create};
 });
