@@ -161,6 +161,7 @@ let pauseVisualZoom=zoom;
 let belemContacts=window.RoncadorBelemContacts.fresh();
 let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;
 const treeCache=new Map();
+let treeRoadIndex=null;
 // Optional transport/time controls must not cover the opening action on phones.
 // These controls remain fully available as soon as the expedition begins.
 const openingHudStyle=document.createElement('style');
@@ -191,6 +192,24 @@ function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('to
 function note(freq=440,delay=0,length=.12,volume=.045){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let t=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+Math.min(.012,length*.35));g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+length);}catch{}}
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
+function prepareTreeRoadIndex(roadSegments){
+ // Tree placement needs only the existing 22-unit clearance, not the closest
+ // road's identity. A padded grid gives the exact same yes/no decision.
+ const size=64,pad=22,cells=new Map();
+ for(const s of roadSegments){
+  const x0=Math.floor((Math.min(s.ax,s.ax+s.dx)-pad)/size),x1=Math.floor((Math.max(s.ax,s.ax+s.dx)+pad)/size);
+  const y0=Math.floor((Math.min(s.ay,s.ay+s.dy)-pad)/size),y1=Math.floor((Math.max(s.ay,s.ay+s.dy)+pad)/size);
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){
+   const key=x+','+y;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(s);
+  }
+ }
+ return {size,cells};
+}
+function treeRoadTooClose(x,y,index=treeRoadIndex){
+ if(!index)return nearestRoad(x,y).d<22;
+ const list=index.cells.get(Math.floor(x/index.size)+','+Math.floor(y/index.size))||[];
+ return list.some(s=>pointSegment(x,y,s).d<22);
+}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 function applyUserPublicPlaceCorrections(){
  // Positions supplied by the author, checked against existing road/park geometry.
@@ -254,6 +273,7 @@ function preprocess(){
  candidates.forEach((b,i)=>{if(!covered.has(cell(b)))take(b,i);});
  candidates.forEach(take);
  houses.push(...candidates.filter((b,i)=>selected.has(i)));
+ treeRoadIndex=prepareTreeRoadIndex(segments);
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
  fairStalls=window.RoncadorFairStreets.layout(data,scenicScenes,houses);
  marketStall=window.RoncadorFairStreets.featured(fairStalls,data.landmarks.find(p=>p.id==='mercado')?.p);
@@ -1848,7 +1868,7 @@ function render(time){
    let seed=Math.floor(hash(gx*7,gy*11)*10000),x=gx*45+hash(gx,gy)*32,y=gy*45+hash(gy+30,gx+2)*32;
    const village=areas.some(a=>a.tags.landuse==='residential'&&inside(x,y,a.p[0]));
    tree=null;
-   if((seed%10)>=(village?8:2)&&nearestRoad(x,y).d>=22&&(!marketStall||Math.hypot(x-marketStall.p[0],y-marketStall.p[1])>=22)&&!houses.some(b=>Math.hypot(x-b.x,y-b.y)<20)&&!scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,12),x,y))&&!areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0]))&&!verifiedWater.some(w=>inside(x,y,w.p)))tree={x,y,seed,r:10+seed%8,rural:!village};
+   if((seed%10)>=(village?8:2)&&!treeRoadTooClose(x,y)&&(!marketStall||Math.hypot(x-marketStall.p[0],y-marketStall.p[1])>=22)&&!houses.some(b=>Math.hypot(x-b.x,y-b.y)<20)&&!scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,12),x,y))&&!areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0]))&&!verifiedWater.some(w=>inside(x,y,w.p)))tree={x,y,seed,r:10+seed%8,rural:!village};
    treeCache.set(key,tree);
   }
   if(tree){

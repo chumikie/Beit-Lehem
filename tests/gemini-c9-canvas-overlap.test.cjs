@@ -20,7 +20,7 @@ const start=game.indexOf('function preprocess(){'),end=game.indexOf(' centralBlo
 assert.ok(start>=0&&end>start);
 const context={Math,data:map,roads:[],areas:[],missions:[],segments,houses,labels,hash,inside,nearestRoad,
  scenicScenes:[],verifiedWater:[],VERIFIED_HYDRO_GEOJSON:null,projectVerifiedWater:()=>[],
- window:{RoncadorScenicPlacement:scenic}};
+ prepareTreeRoadIndex:()=>({}),treeRoadIndex:null,window:{RoncadorScenicPlacement:scenic}};
 vm.runInNewContext(game.slice(start,end)+'}\npreprocess();',context);
 const houseBounds=vm.runInNewContext(game.slice(game.indexOf('function houseVisualBounds('),game.indexOf('function region('))+';houseVisualBounds',{Math});
 
