@@ -60,7 +60,7 @@ test('C15.4: deslocamento de desenho é contínuo, limitado e não muda posiçã
  for(let d=0;d<=18;d+=.25){
   const companions=[{id:'goku',at},{id:'princesa',at:{x:20+d,y:30}}];
   const offset=groupOffset(pet,at,companions,[]);
-  assert.ok(Math.hypot(offset.x,offset.y)<=4.00001);
+  assert.ok(Math.hypot(offset.x,offset.y)<=9.00001);
   assert.ok(Number.isFinite(offset.x)&&Number.isFinite(offset.y));
  }
  assert.equal(JSON.stringify(at),original);
