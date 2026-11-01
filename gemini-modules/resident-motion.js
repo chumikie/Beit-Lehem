@@ -63,7 +63,7 @@
   }
   function present(person,now,reduce){
    // A subtle reach uses the existing gesture renderer and carried props:
-   // Damião's basket, Lúcia's flower and Bia's notebook. Never move their feet.
+   // Francisco's basket, Lúcia's flower and Bia's notebook. Never move their feet.
    const gestures={damiao:{kind:'rest',pose:'offer',facing:1},
     lucia:{kind:'flower',pose:'receive',facing:1},
     bia:{kind:'read',pose:'receive',facing:-1}};

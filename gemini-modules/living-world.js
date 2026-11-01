@@ -8,12 +8,12 @@
   'use strict';
   const DAYS = ['segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
   const RESIDENTS = [
-    {id:'damiao',name:'Seu Damião',role:'Feirante fictício',likes:'conversa, comércio e café',hub:'mercado',icon:'🧺',tone:'#b47b5d',topic:'Como anda a feira?',reply:'A feira tem seu próprio ritmo. Gosto de ouvir as histórias de quem chega por aqui.'},
+    {id:'damiao',name:'Seu Francisco',role:'Feirante fictício',likes:'conversa, comércio e café',hub:'mercado',icon:'🧺',tone:'#b47b5d',topic:'Como anda a feira?',reply:'A feira tem seu próprio ritmo. Gosto de ouvir as histórias de quem chega por aqui.'},
     {id:'lucia',name:'Dona Lúcia',role:'Vizinha fictícia',likes:'plantas, visitas e costura',hub:'igreja',icon:'🌷',tone:'#9a83af',topic:'Conversar sobre memórias',reply:'Eu gosto de guardar coisas pequenas: uma conversa, uma flor, uma tarde tranquila.'},
     {id:'bia',name:'Bia',role:'Jovem estudante fictícia',likes:'leitura, música e amizades',hub:'rodoviaria',icon:'📚',tone:'#d8a35c',topic:'Falar sobre sonhos',reply:'Às vezes viajar faz parte de aprender. Depois a gente volta cheio de novas histórias.'}
   ];
   const CARE = {
-    damiao:[{id:'cestos',label:'🧺 Ajudar com os cestos',effect:'Um gesto simples tornou o trabalho mais leve. Damião agradece e guarda uma fruta para o intervalo.',fatigue:-14,company:-9},{id:'historias',label:'☕ Ouvir histórias da feira',effect:'Entre uma conversa e outra, Damião compartilha uma história inventada sobre os dias de feira.',fatigue:-5,company:-17}],
+    damiao:[{id:'cestos',label:'🧺 Ajudar com os cestos',effect:'Um gesto simples tornou o trabalho mais leve. Francisco agradece e guarda uma fruta para o intervalo.',fatigue:-14,company:-9},{id:'historias',label:'☕ Ouvir histórias da feira',effect:'Entre uma conversa e outra, Francisco compartilha uma história inventada sobre os dias de feira.',fatigue:-5,company:-17}],
     lucia:[{id:'mudas',label:'🌿 Cuidar das mudinhas',effect:'Vocês ajeitam um pequeno vaso ilustrativo. Lúcia sorri ao ver as folhas se levantarem.',fatigue:-12,company:-10},{id:'lembrancas',label:'📮 Trocar uma lembrança',effect:'Lúcia conta por que guarda pequenas coisas no caderno: cada uma lembra alguém querido.',fatigue:-4,company:-18}],
     bia:[{id:'caderno',label:'📚 Revisar o caderno',effect:'Bia encontra uma ideia nova depois de vocês organizarem juntos suas anotações.',fatigue:-12,company:-9},{id:'planos',label:'✨ Conversar sobre sonhos',effect:'Vocês desenham planos imaginários e concordam em contar mais novidades num próximo encontro.',fatigue:-4,company:-18}]
   };
@@ -46,12 +46,12 @@
       {friend:'bia',kind:'caderno',text:'Bia disse que vocês organizaram o caderno dela. Esses planos merecem todo apoio.'}
     ],
     lucia:[
-      {friend:'damiao',kind:'cestos',text:'Damião comentou que você ajudou com os cestos. A feira fica mais bonita com essa atenção.'},
+      {friend:'damiao',kind:'cestos',text:'Francisco comentou que você ajudou com os cestos. A feira fica mais bonita com essa atenção.'},
       {friend:'bia',kind:'planos',text:'Bia me falou dos planos que vocês imaginaram. É bonito ver alguém sonhar com carinho.'}
     ],
     bia:[
       {friend:'lucia',kind:'mudas',text:'Lúcia me contou da mudinha que vocês cuidaram. Queria desenhar como ela vai ficar.'},
-      {friend:'damiao',kind:'historias',text:'Damião disse que você parou para ouvir suas histórias. Também quero escutar uma delas.'}
+      {friend:'damiao',kind:'historias',text:'Francisco disse que você parou para ouvir suas histórias. Também quero escutar uma delas.'}
     ]
   };
   function neighborFollowUp(s,id){
@@ -64,8 +64,8 @@
   // They are fictional descriptions of player actions, not real local testimony.
   const CARE_DIARY={
     damiao:{
-      cestos:'Na feira, você organizou os cestos com Damião e deixou a passagem mais acolhedora.',
-      historias:'Você parou para ouvir as histórias de Damião, sem pressa de seguir caminho.'
+      cestos:'Na feira, você organizou os cestos com Francisco e deixou a passagem mais acolhedora.',
+      historias:'Você parou para ouvir as histórias de Francisco, sem pressa de seguir caminho.'
     },
     lucia:{
       mudas:'Perto da Matriz, você cuidou de uma pequena muda com Lúcia.',
@@ -77,7 +77,7 @@
     }
   };
   const REUNION_DIARY={
-    damiao:'Damião se lembrou de uma gentileza sua. Uma conversa de ontem virou amizade hoje.',
+    damiao:'Francisco se lembrou de uma gentileza sua. Uma conversa de ontem virou amizade hoje.',
     lucia:'Lúcia retomou um cuidado compartilhado. Pequenas coisas continuam crescendo entre amigos.',
     bia:'Bia lembrou de algo que vocês fizeram juntos. Até os planos guardam memórias.'
   };

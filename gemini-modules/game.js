@@ -37,7 +37,7 @@ function syncLightButton(){const b=$('lightButton'),labels={manha:'☀ Manhã �
 function syncSkyButton(){const b=$('skyMood');b.textContent=window.RoncadorAtmosphere.LABELS[skyMode]+' ↻';b.dataset.sky=skyMode;b.setAttribute('aria-label','Céu fictício: '+window.RoncadorAtmosphere.LABELS[skyMode]+'. Mudar a atmosfera do jogo.');b.title='O céu é uma simulação artística, não uma previsão real.';}
 function isMarketMorning(){return window.RoncadorLivingWorld.isMarketMorning(living);}
 function fairAtmosphere(){return marketDay||isMarketMorning();}
-function syncFairUI(){const automatic=isMarketMorning(),note=$('fairDayNote');note.textContent='🧺 '+(marketMorning.claimed?'Manhã de Damião completa ✓':'A manhã de Damião · '+window.RoncadorMarketMorning.progress(marketMorning)+'/3')+' ↗';const status=$('fairStatus');status.textContent=automatic?'✿ Segunda de feira! Barracas ilustrativas aparecem nas ruas do entorno do mercado.':marketDay?'✿ Feira ilustrativa ativada por você, fora do calendário fictício.':'✿ Na manhã de segunda, a feira imaginada transforma o entorno do mercado.';}
+function syncFairUI(){const automatic=isMarketMorning(),note=$('fairDayNote');note.textContent='🧺 '+(marketMorning.claimed?'Manhã de Francisco completa ✓':'A manhã de Francisco · '+window.RoncadorMarketMorning.progress(marketMorning)+'/3')+' ↗';const status=$('fairStatus');status.textContent=automatic?'✿ Segunda de feira! Barracas ilustrativas aparecem nas ruas do entorno do mercado.':marketDay?'✿ Feira ilustrativa ativada por você, fora do calendário fictício.':'✿ Na manhã de segunda, a feira imaginada transforma o entorno do mercado.';}
 function save(){if(!loaded)return;try{localStorage.setItem(STORE,JSON.stringify({v:3,mapSource:data.source,collected:[...collected],player:{x:player.x,y:player.y},elapsed,target,friendship,chapter,observations:[...observations],photos,marketDay,cultureNotes,gardenStep,gardenHarvests,showScenery,festivalCelebrated,lightPhase,showWildlife,showGeology,living,fairQuest,marketMorning,luciaGarden,biaLetters,skyMode,rainCare,showGroundedFlora,showTerrain,momentsSeen,detailedFacades,sideNeighbors,facadeSketches,communitySeen,marketFruitSlots,marketWitnessed,belemContacts,kawaiiState}));}catch{storageWarning=true;}}
 function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('toast').classList.add('visible');toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3500);}
 function note(freq=440,delay=0,length=.12){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let t=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.045,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+length);}catch{}}
@@ -69,6 +69,15 @@ function applyUserPublicPlaceCorrections(){
     point.p=corrected.slice();
    }
   }
+ }
+ // A segunda escola tem um ponto OSM público. A posição marca apenas a referência,
+ // não certifica o contorno, a fachada nem a entrada do prédio.
+ if(!data.landmarks.some(place=>place.id==='escola_felinto')){
+  const projection=data.projection;
+  data.landmarks.push({id:'escola_felinto',name:'Escola Felinto Elizio',kind:'school',
+   p:[(-35.5373344-projection.originLon)*projection.metersPerDegreeLon,
+      (-6.6984949-projection.originLat)*projection.metersPerDegreeLat],
+   positionStatus:'osm_public_school_point',artStatus:'marcador ilustrativo; edifício e entrada não verificados'});
  }
  const plaza=data.cultureReferences?.find(p=>p.id==='praca_6_setembro');
  if(plaza){
@@ -1089,7 +1098,7 @@ function drawStreetLife(c,time,view){
    c.restore();
   }
   if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
-   roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Damião!',person.x,person.y-71);
+   roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Francisco!',person.x,person.y-71);
   }
  }
  // Labels are the last resident layer: another passing sprite cannot cut them
@@ -1421,7 +1430,7 @@ function marketWorkerAvailable(){const schedule=window.RoncadorLivingWorld.agend
 function observeMarketArrival(){
  if(!active||marketMorning.arrived||!nearMarket(85))return;
  if(window.RoncadorMarketMorning.arrive(marketMorning)){
-  notify('☼ Você chegou ao Mercado! Procure Seu Damião pelas ruas e diga bom dia.');
+  notify('☼ Você chegou ao Mercado! Procure Seu Francisco pelas ruas e diga bom dia.');
   note(523,0,.12);save();
  }
 }
@@ -1430,18 +1439,18 @@ function renderMarketChapter(){
  $('marketChapterBar').style.width=count/3*100+'%';
  $('marketChapterProgress').textContent=marketMorning.claimed?'Lembrança guardada ✓':count+'/3 momentos';
  $('marketChapterClock').textContent=window.RoncadorLivingWorld.label(living);
- const steps=[['marketArriveStep',marketMorning.arrived,'Chegar ao entorno da feira'],['marketTalkStep',marketMorning.talked,'Conversar com Damião'],['marketWorkStep',marketMorning.claimed,'Preparar a banca juntos']];
+ const steps=[['marketArriveStep',marketMorning.arrived,'Chegar ao entorno da feira'],['marketTalkStep',marketMorning.talked,'Conversar com Francisco'],['marketWorkStep',marketMorning.claimed,'Preparar a banca juntos']];
  for(const [id,done,label] of steps){$(id).classList.toggle('done',done);$(id).textContent=(done?'✓ ':'○ ')+label;}
- const descriptions={arrival:'Siga as ruas mapeadas até o Mercado Público. A banca e os personagens são ilustrações.',talk:'Você chegou! Damião caminha pelo entorno. Aproxime-se para ouvir o pedido dele.',work:'Damião pediu ajuda: estenda o toldo, separe as frutas e empilhe os cestos.',thank:'A banca está pronta! Falta ouvir o agradecimento e guardar esta manhã no álbum.',next:'Uma lembrança nova entrou no álbum. O caminho da Matriz e Dona Lúcia esperam por você.'};
- $('marketChapterDescription').textContent=(next==='work'||next==='thank')&&!marketWorkerAvailable()?'Damião já encerrou a manhã. As tarefas ficam guardadas; volte pela manhã do próximo dia imaginário.':descriptions[next];
+ const descriptions={arrival:'Siga as ruas mapeadas até o Mercado Público. A banca e os personagens são ilustrações.',talk:'Você chegou! Francisco caminha pelo entorno. Aproxime-se para ouvir o pedido dele.',work:'Francisco pediu ajuda: estenda o toldo, separe as frutas e empilhe os cestos.',thank:'A banca está pronta! Falta ouvir o agradecimento e guardar esta manhã no álbum.',next:'Uma lembrança nova entrou no álbum. O caminho da Matriz e Dona Lúcia esperam por você.'};
+ $('marketChapterDescription').textContent=(next==='work'||next==='thank')&&!marketWorkerAvailable()?'Francisco já encerrou a manhã. As tarefas ficam guardadas; volte pela manhã do próximo dia imaginário.':descriptions[next];
  const action=$('marketChapterAction');
  action.disabled=!active;
- action.textContent=!active?'Comece a expedição ↗':({arrival:'⌖ Caminhar até o Mercado ↗',talk:'♡ Encontrar Seu Damião ↗',work:'🧺 Preparar a banca ↗',thank:'♡ Ouvir o agradecimento ↗',next:'🌷 Próxima descoberta: Matriz ↗'})[next];
+ action.textContent=!active?'Comece a expedição ↗':({arrival:'⌖ Caminhar até o Mercado ↗',talk:'♡ Encontrar Seu Francisco ↗',work:'🧺 Preparar a banca ↗',thank:'♡ Ouvir o agradecimento ↗',next:'🌷 Próxima descoberta: Matriz ↗'})[next];
  $('marketChapter').classList.toggle('complete',marketMorning.claimed);
  $('marketReturnStreet').hidden=!marketMorning.work.length||!marketStall;
  $('marketReturnStreet').disabled=!active;
  $('marketStreetResult').hidden=!marketMorning.work.length;
- $('marketStreetResult').textContent=marketWitnessed?'Ciça também reparou na banca! Essa manhã ganhou mais uma história.':marketMorning.work.length?'Sua arrumação também aparece na banca de Damião durante as manhãs no Mercado.':'';
+ $('marketStreetResult').textContent=marketWitnessed?'Ciça também reparou na banca! Essa manhã ganhou mais uma história.':marketMorning.work.length?'Sua arrumação também aparece na banca de Francisco durante as manhãs no Mercado.':'';
 }
 function focusMarketChapter(){
  if(matchMedia('(max-width:800px)').matches)$('sidebar').classList.add('open');
@@ -1459,16 +1468,16 @@ function marketChapterAction(){
   return;
  }
  if(next==='work'||next==='thank'){
-  if(!marketWorkerAvailable()){notify('☾ Damião não está organizando a banca agora. Volte numa manhã do calendário do jogo.');return;}
+  if(!marketWorkerAvailable()){notify('☾ Francisco não está organizando a banca agora. Volte numa manhã do calendário do jogo.');return;}
   if(nearMarket(95)){showMarketWork();return;}
   const place=marketReference();if(place?.p)setRoute(...place.p);
-  notify('Volte ao entorno do Mercado para preparar a banca com Damião.');return;
+  notify('Volte ao entorno do Mercado para preparar a banca com Francisco.');return;
  }
  if(next==='talk'){
   const resident=residentsInStreets().find(p=>p.id==='damiao');
   if(resident&&Math.hypot(player.x-resident.x,player.y-resident.y)<43){talkResident('damiao');return;}
-  if(resident){setRoute(resident.x,resident.y);notify('Siga Damião pelas ruas. Aproxime-se e toque em conversar.');return;}
-  notify('Damião está descansando. O caderno dos moradores mostra sua próxima rotina.');return;
+  if(resident){setRoute(resident.x,resident.y);notify('Siga Francisco pelas ruas. Aproxime-se e toque em conversar.');return;}
+  notify('Francisco está descansando. O caderno dos moradores mostra sua próxima rotina.');return;
  }
  const place=marketReference();if(place?.p){setRoute(...place.p);notify('Caminhe pelo trajeto verde até o entorno do Mercado Público.');}
 }
@@ -1477,14 +1486,14 @@ function visitMarketStall(){
  if(!active)return;
  $('sidebar').classList.remove('open');syncRoute();
  const place=marketReference();if(!place)return;
- setRoute(...place.p);notify(marketStallVisible()?'Volte ao Mercado e procure a pequena placa “Damião”. Sua arrumação aparece na banca.':'A banca de Damião aparece nas manhãs de trabalho. O trajeto leva ao entorno do Mercado.');
+ setRoute(...place.p);notify(marketStallVisible()?'Volte ao Mercado e procure a pequena placa “Francisco”. Sua arrumação aparece na banca.':'A banca de Francisco aparece nas manhãs de trabalho. O trajeto leva ao entorno do Mercado.');
 }
 function observeMarketChange(people){
  if(!active||anyDialog())return;
  const reaction=window.RoncadorFairStreets.witness({state:marketMorning,witnessed:marketWitnessed,stall:marketStall,player,people,visible:marketStallVisible(),route:(a,b)=>pathfinder.route(a,b)});
  if(!reaction)return;
  marketWitnessed=true;marketReaction={id:reaction.id,until:elapsed+5.5};
- living.notes.unshift({day:living.day,text:'Ciça reparou na banca que você e Damião organizaram.'});living.notes=living.notes.slice(0,12);
+ living.notes.unshift({day:living.day,text:'Ciça reparou na banca que você e Francisco organizaram.'});living.notes=living.notes.slice(0,12);
  save();notify(reaction.line);
 }
 function marketActivityAllowed(){return active&&marketMorning.talked&&nearMarket(95)&&marketWorkerAvailable();}
@@ -1517,17 +1526,17 @@ function setupMarketScene(){
 function renderMarketWork(line){
  const logic=window.RoncadorMarketMorning;
  $('marketWorkProgress').textContent=marketMorning.work.length+'/3 detalhes arrumados';
- $('marketWorkLine').textContent=line||(marketMorning.claimed?'Sua ajuda está guardada no álbum.':logic.ready(marketMorning)?'Tudo em ordem! Damião espera para agradecer.':'Estenda o toldo, organize as frutas e ajeite os cestos, sem pressa.');
+ $('marketWorkLine').textContent=line||(marketMorning.claimed?'Sua ajuda está guardada no álbum.':logic.ready(marketMorning)?'Tudo em ordem! Francisco espera para agradecer.':'Estenda o toldo, organize as frutas e ajeite os cestos, sem pressa.');
  $('marketThanks').hidden=!marketMorning.claimed;
  $('marketSaveWarning').hidden=!storageWarning;
- $('marketWorkerSpeech').textContent=marketMorning.claimed?'Damião: “Pronto, ficou bonito demais! Obrigado pela companhia.”':'Damião: “Vamos ajeitar essa banca juntos? As frutas podem ficar do seu jeito.”';
+ $('marketWorkerSpeech').textContent=marketMorning.claimed?'Francisco: “Pronto, ficou bonito demais! Obrigado pela companhia.”':'Francisco: “Vamos ajeitar essa banca juntos? As frutas podem ficar do seu jeito.”';
  $('marketFinish').disabled=!logic.ready(marketMorning);
- $('marketFinish').textContent=marketMorning.claimed?'◫ Ver a lembrança no álbum ↗':logic.ready(marketMorning)?'♡ Ouvir Damião e guardar a memória':'Arrume os três detalhes primeiro';
+ $('marketFinish').textContent=marketMorning.claimed?'◫ Ver a lembrança no álbum ↗':logic.ready(marketMorning)?'♡ Ouvir Francisco e guardar a memória':'Arrume os três detalhes primeiro';
  marketScene?.sync();
 }
 function showMarketWork(){
- if(!active||!marketMorning.talked||!nearMarket(95)){notify('Converse com Damião perto do Mercado primeiro.');return;}
- if(!marketWorkerAvailable()){notify('☾ Damião descansa agora. Continue essa ajuda numa manhã do jogo.');return;}
+ if(!active||!marketMorning.talked||!nearMarket(95)){notify('Converse com Francisco perto do Mercado primeiro.');return;}
+ if(!marketWorkerAvailable()){notify('☾ Francisco descansa agora. Continue essa ajuda numa manhã do jogo.');return;}
  const damiao=window.RoncadorLivingWorld.RESIDENTS.find(p=>p.id==='damiao');
  $('marketWorkerPortrait').replaceChildren(drawResidentPortrait(damiao,0));
  setupMarketScene();showDialog('marketWorkDialog');renderMarketWork();
@@ -1536,12 +1545,12 @@ function claimMarketMorning(){
  if(!active)return;
  if(marketMorning.claimed){$('marketWorkDialog').close();renderAlbum();showDialog('albumDialog');return;}
  if(!marketActivityAllowed()||!$('marketWorkDialog').open||!window.RoncadorMarketMorning.claim(marketMorning))return;
- living.notes.unshift({day:living.day,text:'Você ajudou Damião a preparar a banca imaginária do Mercado.'});
+ living.notes.unshift({day:living.day,text:'Você ajudou Francisco a preparar a banca imaginária do Mercado.'});
  living.notes=living.notes.slice(0,12);
  for(let i=0;i<16;i++){const a=i*Math.PI/8;particles.push({x:player.x,y:player.y-12,vx:Math.cos(a)*15,vy:Math.sin(a)*17-12,life:1.5,r:1.7,color:i%2?'#e8c878':'#91b98b'});}
  note(587,0,.13);note(784,.15,.17);note(988,.31,.21);
  save();renderMarketWork('Sua ajuda virou um cartão no álbum. O caminho da Matriz ficou ainda mais convidativo.');marketScene?.react();renderMarketChapter();
- notify('♡ Manhã com Damião concluída! Seu álbum ganhou uma lembrança.');
+ notify('♡ Manhã com Francisco concluída! Seu álbum ganhou uma lembrança.');
 }
 // Chapter 02 is unlocked by the Mercado conclusion. The church OSM POI anchors
 // walking; Lúcia's movable flowerpot and imagined garden are not mapped plots.
@@ -1655,7 +1664,7 @@ function renderBiaChapter(){
  for(const [id,done,label] of [['biaArriveStep',biaLetters.arrived,'Chegar à Rodoviária'],['biaTalkStep',biaLetters.talked,'Conversar sobre ir e voltar'],['biaLetterStep',biaLetters.claimed,'Escrever e selar uma carta']]){
   $(id).classList.toggle('done',done);$(id).textContent=(done?'✓ ':'○ ')+label;
  }
- const descriptions={arrival:'Depois do jardim, vá pela malha de ruas até a Rodoviária e procure Bia.',talk:'Bia lê por perto. Aproxime-se dela para falar sobre saudade e novos caminhos.',open:'Bia convidou você a abrir um caderno ilustrado e escrever com calma.',theme:'O caderno está aberto. Escolha uma mensagem de saudade, planos ou reencontro.',seal:'Sua mensagem está escrita. Falta fechar o envelope com um selo.',thank:'A carta está pronta. Ouça Bia e guarde esta lembrança no álbum.',next:'A carta de Bia se juntou às memórias de Damião e Lúcia. Três histórias do mesmo lugar.'};
+ const descriptions={arrival:'Depois do jardim, vá pela malha de ruas até a Rodoviária e procure Bia.',talk:'Bia lê por perto. Aproxime-se dela para falar sobre saudade e novos caminhos.',open:'Bia convidou você a abrir um caderno ilustrado e escrever com calma.',theme:'O caderno está aberto. Escolha uma mensagem de saudade, planos ou reencontro.',seal:'Sua mensagem está escrita. Falta fechar o envelope com um selo.',thank:'A carta está pronta. Ouça Bia e guarde esta lembrança no álbum.',next:'A carta de Bia se juntou às memórias de Francisco e Lúcia. Três histórias do mesmo lugar.'};
  $('biaChapterDescription').textContent=['open','theme','seal','thank'].includes(next)&&!biaAvailable()?'Bia saiu para outra atividade. Sua carta continua salva; retome quando ela voltar à Rodoviária.':descriptions[next];
  const action=$('biaChapterAction');action.disabled=!active;
  action.textContent=!active?'Comece a expedição ↗':({arrival:'⌖ Caminhar até a Rodoviária ↗',talk:'♡ Encontrar Bia ↗',open:'📖 Abrir o caderno ↗',theme:'✎ Escolher uma mensagem ↗',seal:'✉ Selar a carta ↗',thank:'♡ Ouvir o agradecimento ↗',next:'◫ Rever as três memórias ↗'})[next];
@@ -1718,12 +1727,12 @@ function claimBiaLetter(){
 }
 function renderFairQuest(){
  const logic=window.RoncadorCozyQuests,count=logic.progress(fairQuest);
- const markers=[['fairQuestDamiao','damiao','♡ Conversar com Seu Damião'],['fairQuestMercado','mercado','◇ Guardar uma memória do Mercado'],['fairQuestColheita','colheita','✿ Fazer uma colheita no canteiro']];
+ const markers=[['fairQuestDamiao','damiao','♡ Conversar com Seu Francisco'],['fairQuestMercado','mercado','◇ Guardar uma memória do Mercado'],['fairQuestColheita','colheita','✿ Fazer uma colheita no canteiro']];
  for(const [id,step,label] of markers){const item=$(id);item.textContent=(fairQuest[step]?'✓ ':'○ ')+label.slice(2);item.classList.toggle('done',fairQuest[step]);}
  $('fairQuestBar').style.width=count/3*100+'%';
  $('fairQuestProgress').textContent=fairQuest.claimed?'Cesta concluída · lembrança no álbum ✓':count+'/3 pequenas histórias';
  const next=logic.next(fairQuest),action=$('fairQuestAction');
- action.textContent=!active?'Comece a expedição ↗':fairQuest.claimed?'✿ Lembrança guardada ✓':next==='damiao'?'Encontrar Seu Damião ↗':next==='mercado'?'Ir ao Mercado Público ↗':next==='colheita'?'Cuidar do canteiro ↗':'Guardar a cesta no álbum ✦';
+ action.textContent=!active?'Comece a expedição ↗':fairQuest.claimed?'✿ Lembrança guardada ✓':next==='damiao'?'Encontrar Seu Francisco ↗':next==='mercado'?'Ir ao Mercado Público ↗':next==='colheita'?'Cuidar do canteiro ↗':'Guardar a cesta no álbum ✦';
  action.disabled=!active||fairQuest.claimed;
  $('fairQuestCard').classList.toggle('complete',fairQuest.claimed);
 }
@@ -1741,8 +1750,8 @@ function fairQuestNext(){
  if(next==='damiao'){
   const person=residentsInStreets().find(p=>p.id==='damiao');
   if(person&&Math.hypot(player.x-person.x,player.y-person.y)<43)talkResident('damiao');
-  else if(person){setRoute(person.x,person.y);notify('Siga pelas ruas para conversar com Seu Damião.');}
-  else notify('Damião está em outra atividade. Descanse até outro dia e procure-o no Mercado.');
+  else if(person){setRoute(person.x,person.y);notify('Siga pelas ruas para conversar com Seu Francisco.');}
+  else notify('Francisco está em outra atividade. Descanse até outro dia e procure-o no Mercado.');
  }else if(next==='mercado'){
   const market=data.landmarks.find(p=>p.id==='mercado');
   if(market&&cultureWithinReach(market))showCulture('mercado');
@@ -1872,7 +1881,7 @@ function renderAlbum(){
   const article=document.createElement('article');article.className='album-card market-morning-memory';
   const thumbnail=document.createElement('div');thumbnail.className='fair-memory-thumbnail';thumbnail.textContent='⛱ 🍊 🧺';thumbnail.setAttribute('aria-label','Desenho original do toldo, das frutas e dos cestos arrumados');
   const content=document.createElement('div');content.className='album-card-content';
-  const title=document.createElement('strong');title.textContent='Uma manhã ao lado de Damião';
+  const title=document.createElement('strong');title.textContent='Uma manhã ao lado de Francisco';
   const description=document.createElement('span');description.textContent='Vocês prepararam juntos uma banca fictícia perto do Mercado: a lembrança é da companhia, não só da tarefa.';
   content.append(title,description);article.append(thumbnail,content);grid.append(article);
  }
@@ -1931,7 +1940,7 @@ function renderAlbum(){
   const thumbnail=document.createElement('div');thumbnail.className='neighbor-memory-thumbnail';thumbnail.textContent='🧺 🌷 📚';thumbnail.setAttribute('aria-label','Retrato ilustrativo de três amizades no bairro');
   const content=document.createElement('div');content.className='album-card-content';
   const title=document.createElement('strong');title.textContent='Uma roda de conversas';
-  const description=document.createElement('span');description.textContent='Damião, Lúcia e Bia: seis conversas em dias diferentes viraram uma amizade de verdade dentro da ficção.';
+  const description=document.createElement('span');description.textContent='Francisco, Lúcia e Bia: seis conversas em dias diferentes viraram uma amizade de verdade dentro da ficção.';
   content.append(title,description);article.append(thumbnail,content);grid.append(article);
  }
  if(window.RoncadorDailyMoments.progress(momentsSeen)===3){
@@ -2045,6 +2054,7 @@ const CULTURE={
  rodoviaria:{title:'Cartas de quem vai e volta',kind:'terminal',description:'Os catálogos de entrevistas urbanas da UFPB mencionam deslocamento para estudar, trabalho, migração e planos para o futuro. Esta pequena atividade é ficcional; não reproduz a fala de nenhum entrevistado.',lead:'Qual tema será o seu cartão de viagem?',choices:['Estudar em outra cidade','Voltar para reencontrar amigos','Um sonho para o futuro'],source:'https://repositorio.ufpb.br/jspui/bitstream/123456789/23987/2/CoLingPB_Caracter%C3%ADsticas%20dos%20%C3%A1udios_t%C3%B3picos%20abordados_Agreste-Zona%20Urbana.pdf'},
  praca_6_setembro:{title:'Praça 6 de Setembro — jardim de encontros',kind:'square',description:'A reforma da Praça 6 de Setembro em 2023 trouxe cascata iluminada, anfiteatro e jardins suspensos, conforme notícia municipal. A nova cena artística usa esses três elementos, mas não reproduz a planta construída nem possui localização GPS confirmada.',lead:'A praça é uma descoberta documental nesta versão; não há rota até uma coordenada suposta.',choices:[],source:'https://belem.pb.gov.br/public/index.php/noticia/gestora-aline-barbosa-entrega-nova-praca-6-de-setembro-e-populacao-prestigia-o-cartao-postal-de-belem'},
  escola_anita:{title:'EMEF Anita de Melo Barbosa Lima',kind:'school',description:'Localizada na Rua Clóvis Bezerra, s/n, Centro (trajeto a confirmar). O prédio escolar faz parte do cotidiano da rua, das eleições e das lembranças de infância e juventude em Belém.',lead:'Qual lembrança da Escola Anita Barbosa você quer registrar?',choices:['Uma caminhada pela Clóvis Bezerra','O movimento do pátio e os reencontros de turma','As árvores e a fachada azul e branca da escola'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
+ escola_felinto:{title:'Escola Felinto Elizio',kind:'school',description:'Uma escola estadual no Centro de Beit Lehem, representada por um ponto escolar público do OpenStreetMap. A localização é aproximada; entrada e fachada não foram verificadas. O desenho é fictício.',lead:'Que lembrança de uma escola da cidade você gostaria de imaginar?',choices:['O movimento de estudantes na saída','Amigos trocando novidades no caminho','Um dia de jogos entre turmas'],source:''},
  xaviezao:{title:'Ginásio Poliesportivo "O Xaviezão"',kind:'gym',description:'Situado entre a Rua Brasiliana da Costa, 40 e a Rua Nunes Guedes, ao lado da Câmara Municipal. Com sua cobertura metálica em arco, O Xaviezão reúne treinos, jogos escolares, futsal e encontros da galera.',lead:'O que vamos viver hoje no Xaviezão?',choices:['Torcer na arquibancada com os amigos','Bater bola na quadra sob o teto arqueado','Conferir o movimento ao lado da Câmara Municipal'],source:'http://cmbelem.pb.gov.br/'},
  bar_prosa:{title:"Bar da Prosa — Espetinhos, Calçada & Karaokê",kind:'bar',description:"Na Rua Vicente Cado, 354, Centro, o Bar da Prosa é o ponto clássico para reunir os amigos (Amigos fictícios e toda a turma) nas mesinhas amarelas da calçada, pedir espetinhos na brasa e soltar a voz no karaokê.",lead:"Qual momento no Bar da Prosa vai para o seu álbum?",choices:['Soltar a voz no karaokê com os amigos','Dividir espetinhos nas mesas da Rua Vicente Cado','Rir das histórias sob o varal de luzes quentes'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
  sonho_doce:{title:'Confeitaria & Padaria Sonho Doce',kind:'bakery',description:'Na Rua Feliciano Pedrosa, 1401, bem no coração comercial de Belém, a Sonho Doce é parada obrigatória para um café da tarde, fatias de bolo confeitado, doces e salgados depois de caminhar pelo Centro.',lead:'Escolha seu pedido favorito para recordar:',choices:['Dividir uma fatia de bolo confeitado com café','Escolher salgados e doces na vitrine iluminada','Observar o movimento da Rua Feliciano Pedrosa'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
@@ -2136,7 +2146,7 @@ function meetResident(id){
  }
  if(id==='damiao'&&!marketMorning.talked&&nearMarket(115)){
   window.RoncadorMarketMorning.meet(marketMorning);
-  $('lifeConversation').textContent+=' Damião aponta para a banca imaginária: “Me ajuda a estender o toldo e organizar as frutas e os cestos? Depois eu te conto uma novidade.”';
+  $('lifeConversation').textContent+=' Francisco aponta para a banca imaginária: “Me ajuda a estender o toldo e organizar as frutas e os cestos? Depois eu te conto uma novidade.”';
   renderMarketChapter();save();
  }
  if(id==='lucia'&&marketMorning.claimed&&!luciaGarden.talked&&nearChurch(115)){
