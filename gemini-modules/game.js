@@ -3767,7 +3767,7 @@ function syncKawaiiUI(){
  const acc=window.RoncadorKawaiiMoto.currentAccessory(kawaiiState);
  $('toggleMotoBtn').classList.toggle('active-moto',riding);
  $('motoBtnLabel').textContent=riding?'Pilotando · '+skin.name.split(' ')[1]:'Motinha Kawaii';
- $('sordaHudCount').textContent=kawaiiState.sordas+' pão'+(kawaiiState.sordas===1?'':'es');
+ $('sordaHudCount').textContent=kawaiiState.sordas+(kawaiiState.sordas===1?' pão':' pães');
  const stars=collected.size*10+window.RoncadorBelemContacts.totalHearts(belemContacts)*5+kawaiiState.sordasGifted*5+kawaiiState.ferrisRides*10;
  if($('kawaiiStatsBadge'))$('kawaiiStatsBadge').textContent='★ '+stars+' pts · '+acc.icon;
 }
