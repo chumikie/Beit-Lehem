@@ -50,3 +50,26 @@ test('marcador numérico pertence às missões e não é alterado pela C11.2',()
  assert.match(source,/function drawPin\(c,m,i,time/);
  assert.match(source,/fillText\(done\?'✓':String\(i\+1\),0,-22\.5\)/);
 });
+
+test('C11.4 mantém cores de telhado definidas em 0.65 sem acrescentar portas',()=>{
+ const far=renderHouse(.65),near=renderHouse(1.85);
+ const distantRoof=far.find(([name])=>name==='roundRect');
+ const nearRoof=near.find(([name])=>name==='roundRect');
+ assert.equal(distantRoof.at(-1),'#765c4ab5');
+ assert.equal(nearRoof.at(-1),'#79594b70');
+ assert.equal(far.filter(([name])=>name==='roundRect').length,1);
+ assert.match(houseSource,/\.92\+\.08\*Math\.max\(0,\(zoom-\.65\)\/\.4\)/);
+});
+
+test('C11.4 realça nomes existentes em todos os zooms sem recriar placas',()=>{
+ const sizes=[];
+ for(const zoom of [.65,1.85,3.5]){
+  const {c,calls}=canvas();
+  vm.runInNewContext(labelsSource,{ctx:c,labels:[{x:0,y:0,angle:0,name:'Rua Vicente Cado'}],left:-100,right:100,top:-100,bottom:100,zoom,roundRect(){calls.push(['roundRect'])}});
+  sizes.push(Number(c.font.match(/([\d.]+)px/)[1])*zoom);
+  assert.equal(c.fillStyle,'#536744');
+  assert.equal(c.globalAlpha,.92);
+  assert.equal(calls.some(([name])=>name==='roundRect'),false);
+ }
+ assert.ok(sizes.every(size=>size>=8&&size<=16));
+});

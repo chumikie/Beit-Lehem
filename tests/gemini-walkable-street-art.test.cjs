@@ -23,7 +23,7 @@ test('calçada clara e meio-fio são apenas traços Canvas nas vias urbanas',()=
 test('nomes das ruas permanecem sem placas opacas que ocultam casas e pessoas',()=>{
  const streets=section('// Low-key real street labels.', 'if(waypoint)');
  assert.doesNotMatch(streets,/roundRect\(ctx/);
- assert.match(streets,/Math\.min\(6,Math\.max\(3\.4,9\/zoom\)\)/);
+ assert.match(streets,/Math\.min\(13,Math\.max\(4\.2,12\/zoom\)\)/);
  assert.match(streets,/ctx\.strokeText\(l\.name,0,0\)/);
  assert.match(streets,/ctx\.fillText\(l\.name,0,0\)/);
 });

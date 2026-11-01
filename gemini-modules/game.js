@@ -413,7 +413,8 @@ function house(c,b){
  // doors/windows. Fade the frontage in progressively as the camera approaches.
  const frontageDetail=Math.max(0,Math.min(1,(zoom-.85)/.4));
  const wallHeight=7+(b.seed%4),frontY=b.h*.13;
- if(zoom<1.05)c.globalAlpha*=.72+.28*Math.max(0,(zoom-.65)/.4);
+ // Keep the far roof colors opaque enough to remain recognizable as tiles.
+ if(zoom<1.05)c.globalAlpha*=.92+.08*Math.max(0,(zoom-.65)/.4);
  // World-space ground shadow follows the screen's light direction, not lot rotation.
  c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();
  // Side boundary: low plaster wall or hedge softens the gaps between neighboring
@@ -429,7 +430,7 @@ function house(c,b){
  // separate it from the wall on diagonal streets.
  const roofY=-b.h*.5,roofDepth=b.h*.62;
  const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
- roundRect(c,x-1,roofY-1,b.w+2,roofDepth+2,roofType===1?2.6:1.8,roofs[b.color],'#79594b70');
+ roundRect(c,x-1,roofY-1,b.w+2,roofDepth+2,roofType===1?2.6:1.8,roofs[b.color],zoom<.95?'#765c4ab5':'#79594b70');
  if(!far){
   c.strokeStyle='#f6d9a67c';c.lineWidth=.65;
   for(let row=2;row<roofDepth-1;row+=3.2){
@@ -1919,9 +1920,9 @@ function render(time){
  ctx.textAlign='center';ctx.textBaseline='middle';for(const l of labels){if(l.x<left||l.x>right||l.y<top||l.y>bottom)continue;ctx.save();ctx.translate(l.x,l.y);let angle=l.angle;if(angle>Math.PI/2)angle-=Math.PI;if(angle<-Math.PI/2)angle+=Math.PI;ctx.rotate(angle);
   // Quiet cartographic lettering avoids opaque, rotated nameplates covering
   // the newly upright facades or nearby walkers at high zoom.
-  ctx.font=`500 ${Math.min(6,Math.max(3.4,9/zoom))}px system-ui`;
-  ctx.lineWidth=1.6/zoom;ctx.strokeStyle='#eee5ca';ctx.globalAlpha=.75;
-  ctx.strokeText(l.name,0,0);ctx.fillStyle='#6d755a';ctx.fillText(l.name,0,0);
+  ctx.font=`550 ${Math.min(13,Math.max(4.2,12/zoom))}px system-ui`;
+  ctx.lineWidth=2.2/zoom;ctx.strokeStyle='#fff6db';ctx.globalAlpha=.92;
+  ctx.strokeText(l.name,0,0);ctx.fillStyle='#536744';ctx.fillText(l.name,0,0);
   ctx.restore();}
  if(waypoint){const route=[{x:player.x,y:player.y},...waypoint.points.slice(waypoint.index)];ctx.strokeStyle='#f8f1cbbe';ctx.lineWidth=5/zoom;path(ctx,route.map(p=>[p.x,p.y]));ctx.stroke();ctx.strokeStyle='#487a5bc8';ctx.lineWidth=2.5/zoom;ctx.setLineDash([6/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#426d4b';ctx.lineWidth=2/zoom;ctx.beginPath();ctx.arc(waypoint.x,waypoint.y,5,0,Math.PI*2);ctx.stroke();}
  // One depth queue: the base of each object determines what may cover it.
