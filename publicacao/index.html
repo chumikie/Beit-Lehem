@@ -4426,7 +4426,7 @@ function preprocess(){
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
  if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
- const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway)||houses.length>=1350)continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?19:28,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),w:10+r*8,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
+ const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway)||houses.length>=1350)continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?19:28,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:10+r*8,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
  fairStalls=window.RoncadorFairStreets.layout(data,scenicScenes,houses);
  marketStall=window.RoncadorFairStreets.featured(fairStalls,data.landmarks.find(p=>p.id==='mercado')?.p);
@@ -4522,6 +4522,9 @@ function drawRuralShrub(c,x,y,r,seed){
 }
 function house(c,b){
  c.save();c.translate(b.x,b.y);c.rotate(b.angle);
+ // Both rows face the same street: mirror only the illustrated facade on the
+ // left side. Centres, OSM segments and collision rectangles remain untouched.
+ if(b.side===1)c.scale(1,-1);
  const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
  // A soft ground-contact shadow gives the house weight without inventing a
@@ -4543,6 +4546,10 @@ function house(c,b){
   if(roofType===2){c.fillStyle='#fff1d075';c.beginPath();c.moveTo(x+b.w*.5,y+1.5);c.lineTo(x+b.w*.5,y+b.h*.48);c.lineTo(x+b.w*.55,y+b.h*.48);c.closePath();c.fill();}
  }
  c.fillStyle='#fff4d9a8';c.fillRect(x,y+b.h*.57,b.w,1.2);
+ // A slim illustrated foundation/step remains INSIDE the decorative lot;
+ // it is not a mapped sidewalk and never adds a walkable road crossing.
+ if(!far){c.fillStyle='#937e6760';c.fillRect(x+.4,y+b.h-1.6,b.w-.8,1.1);
+ c.fillStyle='#fff6d7a0';c.fillRect(x+.8,y+b.h-2.5,b.w-1.6,.6);}
  if(!far){
   // The roof overhang casts a slim shadow on the illustrated front wall;
   // a shaded return face suggests volume without extending the lot.
