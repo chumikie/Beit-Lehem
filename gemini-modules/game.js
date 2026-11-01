@@ -3386,15 +3386,19 @@ const CULTURE={
 };
 function culturePlace(id){return data.landmarks.find(l=>l.id===id)||data.cultureReferences?.find(l=>l.id===id);}
 function cultureWithinReach(place){return !!(active&&place?.p&&Math.hypot(player.x-place.p[0],player.y-place.p[1])<43);}
+function cultureChoiceStatus(notes,id,choice){
+ if(notes[id]===choice)return 'recorded';
+ return notes[id]?'updated':'new';
+}
 function syncMarketToggle(){const toggle=$('marketAtmosphere'),automatic=isMarketMorning();toggle.hidden=cultureActiveId!=='mercado';toggle.disabled=automatic;toggle.setAttribute('aria-pressed',String(fairAtmosphere()));toggle.textContent=automatic?'☀ A feira aparece automaticamente na segunda do jogo':marketDay?'✿ Encerrar feira ilustrativa adicional':'✿ Imaginar um dia de feira agora';}
 function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const documentary=id==='pedra_cordeiro';const reachable=documentary||cultureWithinReach(place);
  $('cultureTitle').textContent=story.title;$('cultureDescription').textContent=story.description;
  $('cultureReliability').textContent=documentary?'Pino público de referência · contorno e entrada da trilha não verificados':place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados':'Apenas referência documental · sem posição no mapa';
  $('cultureActionLead').textContent=reachable?story.lead:story.choices.length?'Caminhe até o marcador para realizar esta atividade. Você pode marcar a rota abaixo.':story.lead;
- const options=$('cultureOptions');options.replaceChildren();for(const choice of story.choices){const button=document.createElement('button');button.type='button';button.textContent=choice;button.disabled=!reachable;button.setAttribute('aria-pressed',String(cultureNotes[id]===choice));button.onclick=()=>{cultureNotes[id]=choice;chapterUI();if(id==='mercado')recordFairQuest('mercado');
+ const options=$('cultureOptions');options.replaceChildren();for(const choice of story.choices){const button=document.createElement('button');button.type='button';const status=cultureChoiceStatus(cultureNotes,id,choice);button.textContent=status==='recorded'?'✓ '+choice+' · no caderno':choice;button.disabled=!reachable||status==='recorded';button.setAttribute('aria-pressed',String(status==='recorded'));button.onclick=()=>{const visit=cultureChoiceStatus(cultureNotes,id,choice);if(visit==='recorded')return;cultureNotes[id]=choice;chapterUI();if(id==='mercado')recordFairQuest('mercado');
  const contactMatch=window.RoncadorBelemContacts?.CONTACTS.find(c=>c.hub===id);
  if(contactMatch)window.RoncadorBelemContacts.completeHangout(belemContacts,contactMatch.id);
- syncContactsUI();save();showCulture(id);notify('Uma nova memória de Belém foi guardada no caderno!');};options.append(button);}
+ syncContactsUI();save();showCulture(id);notify(visit==='new'?'Uma nova memória de Belém foi guardada no caderno!':'Seu registro de Belém foi atualizado no caderno.');};options.append(button);}
  $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':documentary?'Registro documental: nenhuma caminhada ou chegada ao cruzeiro é simulada.':'As escolhas são do jogador, não depoimentos de moradores.';
  $('cultureRoute').hidden=documentary||!place?.p||!active||reachable;
  // Historical images and source URLs remain in the repository research archive,
