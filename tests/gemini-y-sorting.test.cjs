@@ -30,8 +30,10 @@ test('balões, placas de moradores e emojis vêm depois dos objetos ordenados',(
 
 test('cobertura do território reserva células antes de preencher o orçamento de casas',()=>{
  const build=section('function preprocess(){','function house(c,b){');
- assert.match(build,/const occupied=\[\],candidates=\[\]/);
- assert.match(build,/selected\.size>=1350/);
- assert.match(build,/candidates\.forEach\(\(b,i\)=>\{if\(!covered\.has\(cell\(b\)\)\)take\(b,i\);\}\)/);
- assert.match(build,/nearFeliciano\(b\)/);
+ const selection=section('function selectHouseCandidates(','function inside(');
+ assert.match(build,/generateHouseCandidates\(segments,center,scenicScenes,areas,treeRoadIndex\)/);
+ assert.match(build,/selectHouseCandidates\(candidates,data\)/);
+ assert.match(selection,/selected\.size>=1350/);
+ assert.match(selection,/candidates\.forEach\(\(b,i\)=>\{if\(!covered\.has\(cell\(b\)\)\)take\(b,i\);\}\)/);
+ assert.match(selection,/nearFeliciano\(b\)/);
 });
