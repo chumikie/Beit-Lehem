@@ -327,8 +327,8 @@ function applyUserPublicPlaceCorrections(){
    (projection.originLat-place.geo[0])*projection.metersPerDegreeLat]:place.p;
   landmark.p=corrected.slice();
   landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
-  for(const point of data.points){
-   if(point.tags?.name===landmark.name&&
+  for(const point of (data.localPlaces||[])){
+   if(point.landmarkId===landmark.id&&
     Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
     point.p=corrected.slice();
    }
