@@ -6459,6 +6459,23 @@ function streetPetBehavior(pet,at,minute,weather,playerPoint,people=[]){
  const observing=!rain&&!at.walking&&people.some(person=>Number.isFinite(person?.x)&&Number.isFinite(person?.y)&&Math.hypot(person.x-at.x,person.y-at.y)<26);
  return {resting,curious:!!curious,observing,tailRate:curious?4:observing?2:resting?1.2:pet.cat?2.4:3.2,bounce:resting?.18:at.walking?.78:observing?.24:.45};
 }
+function streetPetGesture(pet,at,companions,minute,weather,playerPoint){
+ // Pure reactions on existing road coordinates; no timers, path changes or save fields.
+ if(!at||weather==='chuvisco')return 'none';
+ const near=id=>companions.some(other=>other.id===id&&other.at&&Math.hypot(other.at.x-at.x,other.at.y-at.y)<28);
+ const visitor=playerPoint&&Math.hypot(playerPoint.x-at.x,playerPoint.y-at.y)<35;
+ if(pet.coat==='jekki'&&visitor)return 'greet';
+ if(pet.coat==='goku'&&visitor)return 'shy';
+ if(at.walking)return 'none';
+ if(pet.coat==='bethowen'&&near('bolt'))return 'friend';
+ if(pet.coat==='bob'&&Math.floor(minute/7)%3!==0)return 'sniff';
+ if(pet.coat==='artemis'&&near('catito'))return 'play';
+ if(pet.coat==='catito'&&near('artemis'))return 'watch';
+ if(pet.coat==='mimi'&&near('hani')&&Math.floor(minute/5)%2===0)return 'play';
+ if(pet.coat==='hani')return 'sleep';
+ if(pet.coat==='princesa'&&near('bob')&&Math.floor(minute/9)%2===0)return 'play';
+ return 'none';
+}
 function streetPetVisualOffset(at,people){
  // Visual breathing room only: never change the animal's mapped road point.
  // Keep displacement bounded so pets cannot appear to jump into buildings.
@@ -6474,15 +6491,16 @@ function streetPetVisualOffset(at,people){
  const length=best||1;
  return {x:best?nearest.dx/length*amount:amount,y:best?nearest.dy/length*amount:0};
 }
-function drawCozyPetSprite(c,pet,time,behavior,far){
+function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
  // Compact side-on silhouettes; paws touch the same ground line for every coat.
  const coat=pet.coat|| (pet.bolt?'bolt':pet.cat?'cream':'caramel');
  const colors={bolt:['#eee0c3','#d5b78e'],cream:['#eed5ae','#d8b487'],caramel:['#c99169','#a87351'],
   catito:['#f6f0df','#756154'],artemis:['#f8f0db','#b69c7c'],mimi:['#dc9152','#b56c3c'],hani:['#f8eedc','#e9a36e'],
-  jekki:['#353235','#b77649'],bethowen:['#f4ead9','#e5d9c5'],bob:['#eee4d5','#d7cbbb']};
+  jekki:['#353235','#b77649'],bethowen:['#f4ead9','#e5d9c5'],bob:['#eee4d5','#d7cbbb'],
+  goku:['#f6f0e5','#292e32'],princesa:['#c58d65','#855c49']};
  const [fur,patch]=colors[coat];
  const small=coat==='artemis';
- const size=small?.82:coat==='catito'?1.13:coat==='bob'?.78:coat==='bethowen'?1.14:coat==='jekki'?.96:1;
+ const size=coat==='goku'?.59:small?.82:coat==='catito'?1.13:coat==='bob'?.78:coat==='bethowen'?1.14:coat==='princesa'?1.23:coat==='jekki'?.96:1;
  c.save();c.scale(size,size);
  if(far){
   // Wide zoom uses species silhouette + signature coat, not subpixel facial strokes.
@@ -6498,7 +6516,7 @@ function drawCozyPetSprite(c,pet,time,behavior,far){
   c.restore();return;
  }
  const step=far||reduce||behavior.resting?0:Math.sin(time*(coat==='jekki'?11:pet.cat?6:8)+pet.variant)*.9;
- const tailSwing=reduce||behavior.resting?0:Math.sin(time*behavior.tailRate+pet.variant)*2;
+ const tailSwing=reduce||behavior.resting?0:Math.sin(time*behavior.tailRate*(gesture==='friend'||gesture==='play'?1.8:1)+pet.variant)*(gesture==='friend'||gesture==='play'?3.5:2);
  // Distinct tails: cats hold theirs high; Ártemis has an unmistakable Z tip.
  c.strokeStyle=coat==='jekki'?'#353235':coat==='catito'?'#554740':patch;
  c.lineCap='round';c.lineJoin='round';c.lineWidth=pet.cat?2.6:2.9;
@@ -6521,6 +6539,11 @@ function drawCozyPetSprite(c,pet,time,behavior,far){
   for(const x of [-1,3,6]){c.beginPath();c.moveTo(x,-10);c.lineTo(x+1,-5);c.stroke();}
  }else if(coat==='jekki'){
   c.fillStyle=patch;c.beginPath();c.ellipse(-3,-5,3,2,0,0,Math.PI*2);c.fill();
+ }else if(coat==='goku'){
+  // The tiniest dog: mostly white, dark saddle, tan face and large ears.
+  c.fillStyle=patch;c.beginPath();c.ellipse(2,-9,5,2.8,-.1,0,Math.PI*2);c.fill();
+ }else if(coat==='princesa'){
+  c.fillStyle=patch;c.beginPath();c.ellipse(3,-8,3,2,-.2,0,Math.PI*2);c.fill();
  }else if(coat==='bethowen'&&!far){
   // Tiny curls across the larger, shaggy poodle silhouette.
   c.fillStyle='#fff7e8';for(const [x,y] of [[-3,-11],[1,-12],[5,-11],[-1,-8],[4,-7]]){
@@ -6548,6 +6571,14 @@ function drawCozyPetSprite(c,pet,time,behavior,far){
   c.fillStyle='#272629';c.beginPath();c.moveTo(-11,-12);c.lineTo(-12,-19);c.lineTo(-7,-14);c.closePath();c.fill();
   c.beginPath();c.moveTo(-5,-13);c.lineTo(-3,-19);c.lineTo(-2,-12);c.closePath();c.fill();
   c.fillStyle=patch;c.beginPath();c.ellipse(-8,-8,3.7,2.6,0,0,Math.PI*2);c.fill();
+ }else if(coat==='goku'){
+  c.fillStyle=patch;c.beginPath();c.moveTo(-12,-11);c.lineTo(-13,-21);c.lineTo(-7,-15);c.closePath();c.fill();
+  c.beginPath();c.moveTo(-5,-13);c.lineTo(-2,-19);c.lineTo(-2,-11);c.closePath();c.fill();
+  c.fillStyle='#bda083';c.beginPath();c.ellipse(-8,-9,3,2.4,0,0,Math.PI*2);c.fill();
+ }else if(coat==='princesa'){
+  // Caramel Doberman-like silhouette: tall posture and narrow upright ears.
+  c.fillStyle=patch;c.beginPath();c.moveTo(-11,-12);c.lineTo(-12,-19);c.lineTo(-7,-14);c.closePath();c.fill();
+  c.beginPath();c.moveTo(-5,-12);c.lineTo(-3,-19);c.lineTo(-2,-12);c.closePath();c.fill();
  }else if(coat==='bethowen'||coat==='bob'){
   // Rounded floppy ears; Bob is clipped shorter, Bethowen has a fuller topknot.
   c.fillStyle=patch;c.beginPath();c.ellipse(-10,-11,2.6,4.2,-.2,0,Math.PI*2);c.fill();
@@ -6559,9 +6590,17 @@ function drawCozyPetSprite(c,pet,time,behavior,far){
   c.fillStyle=pet.bolt?'#6d5d55':'#a47359';c.beginPath();c.ellipse(-10,-12,2.6,4,-.4,0,Math.PI*2);c.fill();
   if(pet.bolt){c.fillStyle='#8d7868';c.beginPath();c.ellipse(-5,-12,2.1,3.1,.2,0,Math.PI*2);c.fill();}
  }
- c.fillStyle='#4c433d';c.beginPath();c.arc(-9,-10,.8,0,Math.PI*2);c.arc(-5.5,-10,.8,0,Math.PI*2);c.fill();
+ c.fillStyle='#4c433d';c.beginPath();
+ if(gesture==='sleep'){
+  c.strokeStyle='#756457';c.lineWidth=.7;c.moveTo(-10,-10);c.lineTo(-8,-10);c.moveTo(-6.5,-10);c.lineTo(-4.5,-10);c.stroke();
+ }else{
+  c.arc(-9,-10,coat==='goku'?1.25:.8,0,Math.PI*2);c.arc(-5.5,-10,coat==='goku'?1.25:.8,0,Math.PI*2);c.fill();
+ }
  c.fillStyle=pet.cat?'#ac786d':'#3e3734';c.beginPath();c.arc(-11,-7.4,1,0,Math.PI*2);c.fill();
- if(coat==='jekki'&&!far){c.strokeStyle='#e6a5a0';c.lineWidth=1.5;c.beginPath();c.moveTo(-11,-6);c.lineTo(-11,-3.3);c.stroke();}
+ if(coat==='jekki'&&!far){c.strokeStyle='#e6a5a0';c.lineWidth=1.5;c.beginPath();c.moveTo(-11,-6);c.lineTo(-11,gesture==='greet'?-4.5:-3.3);c.stroke();}
+ if(gesture==='shy'){
+  c.fillStyle='#dbb6ad';c.beginPath();c.ellipse(-4,-7,1.6,.65,0,0,Math.PI*2);c.fill();
+ }
  if(coat==='bob'&&!far){
   // His calmer, curious walk lowers the muzzle toward the pavement.
   c.strokeStyle='#b6a898';c.lineWidth=.7;c.beginPath();c.moveTo(-11,-7);c.lineTo(-13,-5);c.stroke();
@@ -6579,24 +6618,35 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   {id:'hani',name:'Hani',hub:'mercado',variant:13,cat:true,coat:'hani'},
   {id:'jekki',name:'Jekki',hub:'inicio',variant:14,cat:false,coat:'jekki'},
   {id:'bethowen',name:'Bethowen',hub:'inicio',variant:15,cat:false,coat:'bethowen'},
-  {id:'bob',name:'Bob',hub:'inicio',variant:16,cat:false,coat:'bob'}];
+  {id:'bob',name:'Bob',hub:'inicio',variant:16,cat:false,coat:'bob'},
+  {id:'goku',name:'Goku',hub:'inicio',variant:17,cat:false,coat:'goku'},
+  {id:'princesa',name:'Princesa',hub:'inicio',variant:18,cat:false,coat:'princesa'}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
-  for(const pet of candidates){
+ const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
+  for(const [index,pet] of candidates.entries()){
   if(!daylight&&pet.variant!==7)continue;
-  const at=pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
+  const at=companions[index].at;if(!at)continue;
   const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode,player,people);
+  const gesture=streetPetGesture(pet,at,companions,living.minute,skyMode,player);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
   const drawPet=()=>{
   // Character-specific rhythm, without changing street positions or save data.
-  const energy=pet.coat==='jekki'?1.9:pet.coat==='bethowen'?1.25:pet.coat==='mimi'?1.35:pet.coat==='artemis'?1.15:
-   pet.coat==='bob'?.4:pet.coat==='hani'?.35:pet.coat==='catito'?.45:1;
+  const energy=gesture==='greet'?2.1:gesture==='play'?1.5:pet.coat==='jekki'?1.9:pet.coat==='bethowen'?1.25:pet.coat==='mimi'?1.35:pet.coat==='artemis'?1.15:
+   pet.coat==='goku'?.65:pet.coat==='princesa'?.85:pet.coat==='bob'?.4:pet.coat==='hani'?.35:pet.coat==='catito'?.45:1;
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)*energy+pet.variant)*behavior.bounce*energy;
    const offset=streetPetVisualOffset(at,people);
    c.save();c.translate(at.x+offset.x,at.y+offset.y);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
   // Ground contact stays fixed while the animal's body bobs or reacts.
   c.translate(0,bounce);
-  drawCozyPetSprite(c,pet,time,behavior,zoom<1.15);
+  if(!reduce&&gesture==='shy')c.translate(1.2,0);
+  if(!reduce&&gesture==='sniff')c.rotate(.11);
+  drawCozyPetSprite(c,pet,time,behavior,zoom<1.15,gesture);
+  if(zoom>=1.85&&gesture!=='none'&&gesture!=='sleep'&&gesture!=='sniff'){
+   // A single quiet, local cue; no global banners or new interaction button.
+   c.fillStyle=gesture==='shy'?'#b7a2b9':'#e7ba79';
+   c.beginPath();c.arc(9,-19,1.7,0,Math.PI*2);c.fill();
+  }
   if(greenRest&&zoom>=1.15){
    // Bolt quietly watches the plants during a natural stop on his street route.
    c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
