@@ -5,6 +5,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
+const scenicPlacement=require('../gemini-modules/scenic-placement.js');
 
 const root=path.resolve(__dirname,'..');
 const game=fs.readFileSync(path.join(root,'gemini-modules/game.js'),'utf8');
@@ -26,7 +27,7 @@ const context={
  Math,
  segments:roadSegments,
  treeRoadIndex:null,
- window:{RoncadorScenicPlacement:{bounds:scene=>scene.bounds,contains:(bounds,x,y)=>x>=bounds.left&&x<=bounds.right&&y>=bounds.top&&y<=bounds.bottom}}
+ window:{RoncadorScenicPlacement:scenicPlacement}
 };
 const helpers=vm.runInNewContext(
  game.slice(hashStart,hashEnd)+'\n'+game.slice(helperStart,helperEnd)+
@@ -79,11 +80,12 @@ test('C17: lista ordenada de candidatos e casas selecionadas é idêntica à bus
  const baselineMetrics={roadSegmentChecks:0,occupiedHouseChecks:0};
  const indexedMetrics={roadSegmentChecks:0,occupiedHouseChecks:0};
  const center=map.urbanCenter||map.start;
+ const sceneList=scenicPlacement.layout(map);
  const baseline=helpers.generateHouseCandidates(
-  roadSegments,center,[],map.areas,index,helpers.hash,false,baselineMetrics
+  roadSegments,center,sceneList,map.areas,index,helpers.hash,false,baselineMetrics
  );
  const indexed=helpers.generateHouseCandidates(
-  roadSegments,center,[],map.areas,index,helpers.hash,true,indexedMetrics
+  roadSegments,center,sceneList,map.areas,index,helpers.hash,true,indexedMetrics
  );
  assert.ok(baseline.length>0,'a malha de referência precisa produzir casas');
  assert.equal(JSON.stringify(indexed),JSON.stringify(baseline),
