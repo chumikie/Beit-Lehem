@@ -44,6 +44,15 @@ function setupMobileWalkingHud(){
    .street-pulse .street-pulse-avatars{display:none}
    .fair-day-note{max-width:calc(100vw - 34px);padding:6px 9px;font-size:8px}
   }
+  @media(max-width:360px){
+   /* Keep the existing destination title readable beside the zoom controls. */
+   .destination{max-width:calc(100vw - 90px);padding:7px 8px;gap:6px;align-items:center}
+   .destination-arrow{font-size:19px}
+   .destination>div{min-width:0;flex:1}
+   .destination small{font-size:6px;letter-spacing:.45px;white-space:nowrap}
+   .destination strong{font-size:9px;line-height:1.15;white-space:nowrap}
+   .destination #distance{font-size:8px;margin-left:0;white-space:nowrap}
+  }
   @media(max-width:800px) and (max-height:640px){
    .touch-pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}
    .mini-wrap:not(.is-collapsed){bottom:calc(75px + env(safe-area-inset-bottom,0px))}

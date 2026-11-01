@@ -136,3 +136,10 @@ test('C15.6: o limite das placas reaproveita o slot de colisão existente',()=>{
  assert.equal(helpers.streetPetNameplateSlot(wide[1],40,compact,1),null,
   'o slot compacto conserva apenas a identificação prioritária já existente');
 });
+test('C15.7: o cartão de destino existente não corta o título em telas de 320 px',()=>{
+ const hud=game.slice(game.indexOf('function setupMobileWalkingHud()'),game.indexOf('setupMobileWalkingHud();'));
+ assert.match(hud,/@media\(max-width:360px\)[\s\S]*\.destination>div\{min-width:0;flex:1\}/);
+ assert.match(hud,/\.destination small\{font-size:6px;letter-spacing:.45px;white-space:nowrap\}/);
+ assert.match(hud,/\.destination strong\{font-size:9px;line-height:1\.15;white-space:nowrap\}/);
+ assert.match(hud,/\.destination #distance\{font-size:8px;margin-left:0;white-space:nowrap\}/);
+});
