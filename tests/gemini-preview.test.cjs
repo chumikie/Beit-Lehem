@@ -62,6 +62,8 @@ test('gera uma prévia separada, corrige somente a inicialização e preserva o 
   assert.ok(preview.includes('let belemContacts=window.RoncadorBelemContacts.fresh();'));
   assert.ok(preview.includes('let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;'));
   assert.ok(preview.includes('<title>Beit Lehem</title>'));
+  assert.ok(preview.includes('id="mobile-street-name-fit"'));
+  assert.ok(preview.includes('max-width:min(210px,calc(100vw - 152px))'));
   assert.ok(preview.includes("const STORE='roncador-expedition-v2-referencias-gemini',keys="));
 });
 
