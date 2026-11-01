@@ -1995,7 +1995,7 @@ function observeMarketChange(people){
  const reaction=window.RoncadorFairStreets.witness({state:marketMorning,witnessed:marketWitnessed,stall:marketStall,player,people,visible:marketStallVisible(),route:(a,b)=>pathfinder.route(a,b)});
  if(!reaction)return;
  marketWitnessed=true;marketReaction={id:reaction.id,until:elapsed+5.5};
- living.notes.unshift({day:living.day,text:'Ciça reparou na banca que você e Francisco organizaram.'});living.notes=living.notes.slice(0,12);
+ living.notes.unshift({day:living.day,text:'Ciça reparou na banca que você e Francisco organizaram.'});living.notes=living.notes.slice(0,24);
  save();notify(reaction.line);
 }
 function marketActivityAllowed(){return active&&marketMorning.talked&&nearMarket(95)&&marketWorkerAvailable();}
@@ -2048,7 +2048,7 @@ function claimMarketMorning(){
  if(marketMorning.claimed){$('marketWorkDialog').close();renderAlbum();showDialog('albumDialog');return;}
  if(!marketActivityAllowed()||!$('marketWorkDialog').open||!window.RoncadorMarketMorning.claim(marketMorning))return;
  living.notes.unshift({day:living.day,text:'Você ajudou Francisco a preparar a banca imaginária do Mercado.'});
- living.notes=living.notes.slice(0,12);
+ living.notes=living.notes.slice(0,24);
  for(let i=0;i<16;i++){const a=i*Math.PI/8;particles.push({x:player.x,y:player.y-12,vx:Math.cos(a)*15,vy:Math.sin(a)*17-12,life:1.5,r:1.7,color:i%2?'#e8c878':'#91b98b'});}
  note(587,0,.13);note(784,.15,.17);note(988,.31,.21);
  save();renderMarketWork('Sua ajuda virou um cartão no álbum. O caminho da Matriz ficou ainda mais convidativo.');marketScene?.react();renderMarketChapter();
@@ -2138,7 +2138,7 @@ function claimLuciaGarden(){
  if(!nearChurch(100)||!luciaAvailable()||!window.RoncadorLuciaGarden.claim(luciaGarden))return;
  const chosen=window.RoncadorLuciaGarden.MEMORIES.find(m=>m.id===luciaGarden.memory);
  living.notes.unshift({day:living.day,text:'Você cuidou de uma mudinha fictícia com Dona Lúcia e escolheu a memória: '+chosen.title+'.'});
- living.notes=living.notes.slice(0,12);
+ living.notes=living.notes.slice(0,24);
  for(let i=0;i<17;i++){const a=i*Math.PI*2/17;particles.push({x:player.x,y:player.y-15,vx:Math.cos(a)*16,vy:Math.sin(a)*16-9,life:1.6,r:1.5,color:i%2?'#ccbad9':'#b5d2a0'});}
  note(587,0,.13);note(698,.13,.16);note(880,.27,.23);
  renderLuciaGarden(chosen.story+' Um novo cartão entrou no álbum.');renderLuciaChapter();save();
@@ -2222,7 +2222,7 @@ function claimBiaLetter(){
  if(!nearBus(110)||!biaAvailable()||!window.RoncadorBiaLetters.claim(biaLetters))return;
  const theme=window.RoncadorBiaLetters.THEMES.find(t=>t.id===biaLetters.theme);
  living.notes.unshift({day:living.day,text:'Com Bia você guardou uma carta fictícia: '+theme.title+'.'});
- living.notes=living.notes.slice(0,12);
+ living.notes=living.notes.slice(0,24);
  for(let i=0;i<16;i++){const a=i*Math.PI/8;particles.push({x:player.x,y:player.y-12,vx:Math.cos(a)*17,vy:Math.sin(a)*16-10,life:1.5,r:1.5,color:i%2?'#a0bdc7':'#e7d1a2'});}
  note(587,0,.15);note(740,.14,.16);note(988,.3,.23);
  renderBiaLetter(theme.reply+' Uma carta original entrou no álbum.');renderBiaChapter();save();
@@ -2604,7 +2604,7 @@ function rememberCityStory(id,day){
  const link=links[id];
  if(link?.prior&&!cityLinks.includes(link.key)){
   cityLinks.push(link.key);changed=true;text+=' 🌿 '+link.line;
-  living.notes.unshift({day,text:link.line});living.notes=living.notes.slice(0,12);
+  living.notes.unshift({day,text:link.line});living.notes=living.notes.slice(0,24);
  }
  return {text,changed};
 }
@@ -2715,7 +2715,7 @@ function hearFriendshipTradition(id){
  if(!story)return '';
  if(!friendshipTraditions.some(r=>r.key===story.key)){
   friendshipTraditions.push({key:story.key,day:living.day});friendshipTraditions=friendshipTraditions.slice(0,8);
-  living.notes.unshift({day:living.day,text:'Tradição lembrada em conversa: '+story.text.slice(0,125)});living.notes=living.notes.slice(0,12);
+  living.notes.unshift({day:living.day,text:'Tradição lembrada em conversa: '+story.text.slice(0,125)});living.notes=living.notes.slice(0,24);
   save();
  }
  return story.text;
@@ -2751,7 +2751,7 @@ function rememberStoryEnding(id){
  if(!ending)return '';
  if(!storyEndings.some(record=>record.id===ending.id)){
   storyEndings.push({id:ending.id,day:living.day});
-  living.notes.unshift({day:living.day,text:'Desfecho afetivo: '+ending.title+'. '+ending.text.slice(0,105)});living.notes=living.notes.slice(0,12);
+  living.notes.unshift({day:living.day,text:'Desfecho afetivo: '+ending.title+'. '+ending.text.slice(0,105)});living.notes=living.notes.slice(0,24);
   save();notify('♡ Uma história amadureceu: '+ending.title+'.');
   return ending.text;
  }
@@ -2821,7 +2821,7 @@ function rememberSaoPedroStory(id){
  const tale=SAO_PEDRO_TALES[key];
  saoPedroTales.push({id:key,day:living.day,source:tale.source});
  living.notes.unshift({day:living.day,text:('São Pedro · '+tale.source+': '+tale.text).slice(0,160)});
- living.notes=living.notes.slice(0,12);save();return tale.text;
+ living.notes=living.notes.slice(0,24);save();return tale.text;
 }
 function breadStoryCandidate(id,day,records,marketClaimed){
  if(id==='damiao'&&marketClaimed&&!records.length)return 'ouvido-damiao';
@@ -2849,7 +2849,7 @@ function rememberBreadStory(id){
  if(!key)return '';
  const story=BREAD_STORIES[key];breadStories.push({id:key,day:living.day,source:story.source});
  living.notes.unshift({day:living.day,text:('O cheiro do pão da manhã · '+story.source+': '+story.text).slice(0,160)});
- living.notes=living.notes.slice(0,12);save();return story.text;
+ living.notes=living.notes.slice(0,24);save();return story.text;
 }
 function restoreMorningEncounters(raw,day){
  if(!Array.isArray(raw))return [];
@@ -2892,7 +2892,7 @@ function rememberEverydayStory(id){
  const story=EVERYDAY_STORIES[id];
  everydayMemories.push({id,day:living.day});
  living.notes.unshift({day:living.day,text:('Cotidiano de Belém: '+story.name+'. '+story.text).slice(0,160)});
- living.notes=living.notes.slice(0,12);save();return true;
+ living.notes=living.notes.slice(0,24);save();return true;
 }
 function observeEverydayStreet(){
  const id=everydayStreetCandidate(roads,player,living.minute,everydayMemories);
@@ -2947,7 +2947,7 @@ function recordSeasonalMoment(place){
  const locationName={mercado:'feira',igreja:'Matriz',rodoviaria:'Rodoviária',mato:'paisagem verde'}[place];
  const text=friends||('A época temática de '+theme.name+' inspira uma pequena pausa na '+locationName+'. O cenário e os encontros são ficcionais, sem atribuir essa festa à cidade real.');
  seasonalMemories.push({theme:themeId,year,place,kind,day:living.day});
- living.notes.unshift({day:living.day,text:('Cena sazonal '+theme.name+': '+text).slice(0,160)});living.notes=living.notes.slice(0,12);
+ living.notes.unshift({day:living.day,text:('Cena sazonal '+theme.name+': '+text).slice(0,160)});living.notes=living.notes.slice(0,24);
  save();notify(theme.icon+' '+theme.name+' · '+text);return true;
 }
 function observeSeasonalEncounter(){
@@ -3021,7 +3021,7 @@ function recordStreetVignette(place){
  const story=STREET_VIGNETTES[id];
  streetVignettes.push({id,day:living.day});
  living.notes.unshift({day:living.day,text:('Cena observada: '+story.title+'. '+story.text).slice(0,160)});
- living.notes=living.notes.slice(0,12);
+ living.notes=living.notes.slice(0,24);
  save();notify('✿ '+story.title+' — '+story.text);return true;
 }
 function observeWorldMoment(){
@@ -3040,7 +3040,7 @@ function observeWorldMoment(){
   notify(moment.icon+' Você revisita '+moment.title.toLowerCase()+'. Respire e aprecie a paisagem.');return true;
  }
  worldMoments.push({id,day:living.day});
- living.notes.unshift({day:living.day,text:'Pausa contemplativa: '+moment.story.slice(0,138)});living.notes=living.notes.slice(0,12);
+ living.notes.unshift({day:living.day,text:'Pausa contemplativa: '+moment.story.slice(0,138)});living.notes=living.notes.slice(0,24);
  save();note(523,0,.13);notify(moment.icon+' '+moment.title+' · um instante para respirar. Lembrança guardada sem recompensa.');return true;
 }
 function camucaHas(stage){return camucaStories.some(r=>r.stage===stage);}
@@ -3062,7 +3062,7 @@ function recordCamucaStage(stage){
  if(camucaHas(stage))return false;
  camucaStories.push({stage,day:living.day,...(stage==='chuva'?{weather:'chuvisco'}:{})});
  living.notes.unshift({day:living.day,text:('Caderno de paisagem · '+CAMUCA_TEXT[stage]).slice(0,160)});
- living.notes=living.notes.slice(0,12);save();notify('🌿 Caderno dos caminhos · '+CAMUCA_TEXT[stage]);return true;
+ living.notes=living.notes.slice(0,24);save();notify('🌿 Caderno dos caminhos · '+CAMUCA_TEXT[stage]);return true;
 }
 function observeCamucaPrelude(){
  // A observação acontece somente no ponto verde já jogável, nunca na crista da serra.
@@ -3115,7 +3115,7 @@ function rememberWaterConversation(id){
   bia:first?'Você conta a Bia da água que observou. Ela abre o caderno: “Posso guardar sua história sem fingir que eu também estive lá?”':'Bia lembra o relato que você compartilhou: “Seu passeio virou uma página bonita no meu caderno.”'
  };
  waterTalks.push({id,step:next.step,day:living.day});
- const text=lines[id];living.notes.unshift({day:living.day,text:('Águas da cidade · '+text).slice(0,160)});living.notes=living.notes.slice(0,12);
+ const text=lines[id];living.notes.unshift({day:living.day,text:('Águas da cidade · '+text).slice(0,160)});living.notes=living.notes.slice(0,24);
  save();return text;
 }
 function nearestWaterView(position,water,visited,nearRoad){
@@ -3139,7 +3139,7 @@ function observeWater(){
  if(!id)return false;
  waterMemories.push({id,day:living.day});
  living.notes.unshift({day:living.day,text:'Você contemplou a margem de um açude identificado no OpenStreetMap. O reflexo da água e a vegetação são interpretações artísticas; nenhuma entrada ou propriedade privada foi acessada.'});
- living.notes=living.notes.slice(0,12);save();
+ living.notes=living.notes.slice(0,24);save();
  notify('💧 Pausa junto à água · paisagem registrada no diário, sem recompensa.');return true;
 }
 function closestNamedRoad(roads,point,name){
@@ -3164,7 +3164,7 @@ function observeRuaNovaPath(){
   ruaNovaPaths.push(name);
   if(Number.isInteger(living.day)&&living.day>=1)ruaNovaDays[name]=living.day;
   living.notes.unshift({day:living.day,text:RUA_NOVA_STORIES[name].memory+' Trecho mapeado; personagens e interpretação são fictícios.'});
-  living.notes=living.notes.slice(0,12);
+  living.notes=living.notes.slice(0,24);
   save();notify(RUA_NOVA_STORIES[name].icon+' '+RUA_NOVA_STORIES[name].title+' registrada! Caminhos: '+ruaNovaPaths.length+'/3.');
   return true;
  }
@@ -3217,7 +3217,7 @@ function observeWeeklyVisit(){
  const entry=weeklyVisitEntry(scene,residentsInStreets(),player);
  if(!entry||weeklyVisitsSeen.some(r=>r.id===entry.id&&r.day===entry.day))return;
  weeklyVisitsSeen.unshift(entry);weeklyVisitsSeen=weeklyVisitsSeen.slice(0,20);
- living.notes.unshift({day:living.day,text:'Você presenciou uma visita entre Bia e Lúcia: '+scene.summary});living.notes=living.notes.slice(0,12);
+ living.notes.unshift({day:living.day,text:'Você presenciou uma visita entre Bia e Lúcia: '+scene.summary});living.notes=living.notes.slice(0,24);
  save();notify('♡ Você presenciou uma visita de Bia e Lúcia. A lembrança ficou no diário.');
 }
 function restoreSmallWalkRecords(raw,day,source){
@@ -3241,7 +3241,7 @@ function observeSmallWalk(){
  if(!visitor||!host||visitor.arriving||host.arriving||Math.hypot(visitor.x-host.x,visitor.y-host.y)>70)return;
  if(Math.min(Math.hypot(player.x-visitor.x,player.y-visitor.y),Math.hypot(player.x-host.x,player.y-host.y))>68)return;
  smallWalksSeen.unshift({id:scene.id,day:scene.day,source:'presenciado'});smallWalksSeen=smallWalksSeen.slice(0,40);
- living.notes.unshift({day:living.day,text:'Você presenciou: '+scene.title+'. Os moradores fizeram uma visita fictícia por ruas existentes.'});living.notes=living.notes.slice(0,12);
+ living.notes.unshift({day:living.day,text:'Você presenciou: '+scene.title+'. Os moradores fizeram uma visita fictícia por ruas existentes.'});living.notes=living.notes.slice(0,24);
  save();notify('♡ Você presenciou um pequeno passeio. A lembrança entrou no diário.');
 }
 function rememberSmallWalk(id){
@@ -3252,7 +3252,7 @@ function rememberSmallWalk(id){
   const witnessed=smallWalksSeen.some(r=>r.id===event.id&&r.day===d);
   const line=witnessed?'Você estava por perto naquele pequeno encontro. Foi uma conversa boa, dessas que ficam.':'Outro dia, fizemos uma visita breve para trocar notícias. Você não estava lá, mas agora posso contar.';
   smallWalkReports.unshift({id:event.id,day:d,heardDay:living.day,from:id,source:'ouvido'});smallWalkReports=smallWalkReports.slice(0,40);
-  living.notes.unshift({day:living.day,text:('Relato de '+world.RESIDENTS.find(r=>r.id===id).name+': '+event.title+'. '+line).slice(0,160)});living.notes=living.notes.slice(0,12);
+  living.notes.unshift({day:living.day,text:('Relato de '+world.RESIDENTS.find(r=>r.id===id).name+': '+event.title+'. '+line).slice(0,160)});living.notes=living.notes.slice(0,24);
   save();return line;
  }
  return '';
@@ -4311,7 +4311,7 @@ function clickWorld(e){
 }
 $('start').onclick=start;$('interact').onclick=interactAction;$('observe').onclick=observe;$('realCity').onclick=showRealCity;$('natureAtlas').onclick=showNature;$('centralBlocks').onclick=showCentralBlocks;
 $('blockFacadesToggle').onclick=()=>{detailedFacades=!detailedFacades;$('blockFacadesToggle').setAttribute('aria-pressed',String(detailedFacades));$('blockFacadesToggle').textContent=detailedFacades?'▦ Ocultar acabamentos nas casas ilustrativas':'▦ Mostrar acabamentos nas casas ilustrativas';save();};
-$('natureAction').onclick=()=>{if(gardenStep===3){gardenStep=0;rainCare=0;gardenHarvests++;living.notes.unshift({day:living.day,text:'Você concluiu uma colheita no canteiro imaginário.'});living.notes=living.notes.slice(0,12);recordFairQuest('colheita');notify('🌾 Uma colheita guardada! A terra já pode receber novo plantio.');}else{gardenStep++;rainCare=0;}showNature();save();note(587,0,.15);};
+$('natureAction').onclick=()=>{if(gardenStep===3){gardenStep=0;rainCare=0;gardenHarvests++;living.notes.unshift({day:living.day,text:'Você concluiu uma colheita no canteiro imaginário.'});living.notes=living.notes.slice(0,24);recordFairQuest('colheita');notify('🌾 Uma colheita guardada! A terra já pode receber novo plantio.');}else{gardenStep++;rainCare=0;}showNature();save();note(587,0,.15);};
 $('wildlifeToggle').onclick=()=>{showWildlife=!showWildlife;showNature();save();};
 $('groundedFloraToggle').onclick=()=>{showGroundedFlora=!showGroundedFlora;showNature();save();};
 $('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p&&cultureActiveId!=='pedra_cordeiro'){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};

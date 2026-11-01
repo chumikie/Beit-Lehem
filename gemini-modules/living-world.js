@@ -109,7 +109,7 @@
       if(Number.isInteger(old.careCount))s.people[p.id].careCount=clamp(old.careCount,0,9999);
       if(typeof old.lastCareKind==='string'&&CARE[p.id].some(option=>option.id===old.lastCareKind))s.people[p.id].lastCareKind=old.lastCareKind;
     }
-    if(Array.isArray(raw.notes))s.notes=raw.notes.slice(0,12).filter(n=>n&&typeof n.text==='string'&&n.text.length<=160&&Number.isInteger(n.day)&&n.day>=1&&n.day<=s.day).map(n=>({text:n.text,day:n.day}));
+    if(Array.isArray(raw.notes))s.notes=raw.notes.slice(0,24).filter(n=>n&&typeof n.text==='string'&&n.text.length<=160&&Number.isInteger(n.day)&&n.day>=1&&n.day<=s.day).map(n=>({text:n.text,day:n.day}));
     return s;
   }
   function label(s){const minute=Math.floor(s.minute);return 'Dia '+s.day+' · '+DAYS[(s.day-1)%7]+' · '+String(Math.floor(minute/60)).padStart(2,'0')+':'+String(minute%60).padStart(2,'0');}
@@ -266,7 +266,7 @@
   function talk(s,id){
     const p=RESIDENTS.find(p=>p.id===id);if(!p)return null;
     const n=s.people[id],firstToday=n.lastConversationDay!==s.day;
-    if(firstToday){n.lastConversationDay=s.day;n.bond=clamp(n.bond+1,0,4);n.company=clamp(n.company-25,0,100);s.notes.unshift({day:s.day,text:'Você conversou com '+p.name+' sobre '+p.likes+'.'});s.notes=s.notes.slice(0,12);}
+    if(firstToday){n.lastConversationDay=s.day;n.bond=clamp(n.bond+1,0,4);n.company=clamp(n.company-25,0,100);s.notes.unshift({day:s.day,text:'Você conversou com '+p.name+' sobre '+p.likes+'.'});s.notes=s.notes.slice(0,24);}
     const choices=DIALOGUES[id];
     const yesterday=n.lastCareDay===s.day-1&&CARE_FOLLOW_UP[id]?.[n.lastCareKind];
     const today=n.lastCareDay===s.day&&n.lastCareKind;
@@ -291,7 +291,7 @@
     person.fatigue=clamp(person.fatigue+choice.fatigue,0,100);
     person.company=clamp(person.company+choice.company,0,100);
     s.notes.unshift({day:s.day,text:CARE_DIARY[id]?.[kind]||'Um gesto de cuidado com um amigo.'});
-    s.notes=s.notes.slice(0,12);
+    s.notes=s.notes.slice(0,24);
     return{ok:true,text:choice.effect,progress:careProgress(s)};
   }
   function careProgress(s){return RESIDENTS.filter(person=>Number(s?.people?.[person.id]?.careCount)>0).length;}
