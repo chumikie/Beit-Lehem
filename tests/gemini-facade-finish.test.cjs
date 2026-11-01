@@ -37,34 +37,34 @@ test('distant roofs omit small decoration without losing silhouette',()=>{
  assert.ok(distant.some(layer=>layer.width===26),'roof remains present from afar');
 });
 
-test('roof, wall and doors use the same street-aligned lot transform',()=>{
+test('C11: roof, wall and doors stay upright regardless of street direction',()=>{
  const section=source.slice(start,end);
- assert.match(section,/c\.rotate\(b\.angle\)/);
- assert.match(section,/if\(b\.side===1\)c\.scale\(1,-1\)/);
+ assert.doesNotMatch(section,/c\.rotate\(b\.angle\)/);
+ assert.doesNotMatch(section,/if\(b\.side===1\)c\.scale\(1,-1\)/);
  assert.doesNotMatch(section,/c\.rotate\(roofAngle\)/);
  assert.match(section,/wallHeight=7\+\(b\.seed%4\)/);
  assert.match(section,/frontY\+1\.5/);
 });
 
-test('C7: casa, fachadas adicionais e colisão compartilham ângulo e lados',()=>{
+test('C11: três camadas artísticas ficam verticais enquanto colisão mantém ângulo do lote',()=>{
  const base=source.slice(start,end);
  const studio=fs.readFileSync(require.resolve('../gemini-modules/facade-studio.js'),'utf8');
  const blocks=fs.readFileSync(require.resolve('../gemini-modules/central-blocks.js'),'utf8');
  const collision=source.slice(source.indexOf('function blockedByHouse('),source.indexOf('\nfunction mayAdvanceOnMappedRoute('));
  for(const detail of [base,studio,blocks]){
-  assert.match(detail,/\.rotate\((?:b|home)\.angle\)/);
-  assert.match(detail,/\.side===1\)c\.scale\(1,-1\)/);
+  assert.doesNotMatch(detail,/\.rotate\((?:b|home)\.angle\)/);
+  assert.doesNotMatch(detail,/\.side===1\)c\.scale\(1,-1\)/);
  }
  assert.match(collision,/Math\.cos\(house\.angle\)/);
  assert.match(collision,/Math\.abs\(lx\)<house\.w\/2\+5/);
- // All drawing layers now agree at horizontal, diagonal and near-vertical lots.
+ // Every visible layer remains upright at horizontal, diagonal and vertical lots.
  for(const zoomLevel of [.65,1.15,1.85,2.85,3.5])for(const angle of [0,Math.PI/6,Math.PI/3,Math.PI/2,-Math.PI/3]){
   const transforms=[];
   const ctx={save(){},restore(){},translate(){},rotate:a=>transforms.push(a),scale(){},
    beginPath(){},ellipse(){},arc(){},fill(){},moveTo(){},lineTo(){},stroke(){},fillRect(){}};
   const draw=vm.runInNewContext(base+';house',{zoom:zoomLevel,detailedFacades:false,roundRect(){}});
   draw(ctx,{x:0,y:0,w:18,h:13,angle,side:1,seed:4,color:2});
-  assert.deepEqual(transforms,[angle],'roof is never rotated twice');
+  assert.deepEqual(transforms,[],'illustrated house remains screen-upright');
  }
 });
 

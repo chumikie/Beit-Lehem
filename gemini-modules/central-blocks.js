@@ -54,10 +54,9 @@
   function draw(c,home,phase='manha') {
     if(!home.centralBlock)return;
     const block=home.centralBlock,seed=home.seed||0,wall=colors[block][seed%4];
-    c.save();c.translate(home.x,home.y);c.rotate(home.angle);
-    // Decorative houses are generated on both sides of a road. Their entrances
-    // must face that road, regardless of the segment's drawing direction.
-    if(home.side===1)c.scale(1,-1);
+    // Architectural details follow the upright illustrated facade, not the
+    // rotated lot used for collision and routing.
+    c.save();c.translate(home.x,home.y);
     const left=-home.w/2,top=-home.h/2,base=top+home.h*.63;
     // The visible strip faces its generative street, but it is not a real facade.
     c.fillStyle='#5b5b4a24';c.fillRect(left+1,base+2,home.w+1,home.h*.36+2);

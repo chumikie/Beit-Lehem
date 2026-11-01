@@ -48,8 +48,8 @@
   const width=home.w,height=home.h;
   // Only microdetails are reduced at distant zoom; facade and lot are unchanged.
   const distant=zoomLevel<1.15;
-  c.save();c.translate(home.x,home.y);c.rotate(home.angle);
-  if(home.side===1)c.scale(1,-1);
+  // Keep windows and trim upright on screen at every street bearing.
+  c.save();c.translate(home.x,home.y);
   const left=-width/2,top=-height/2,front=top+height*.63,faceH=height*.37;
   // Roof: one thin ridge + uneven ceramic joints; no added footprint.
   c.strokeStyle=style.shade%2?'#f8ddbb88':'#f2e7c988';c.lineWidth=.65;

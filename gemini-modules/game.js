@@ -404,10 +404,9 @@ function drawRuralShrub(c,x,y,r,seed){
  c.restore();
 }
 function house(c,b){
- // The roof, wall and extra facade layers must share the same road-aligned
- // footprint used by collisions, including the street-facing side.
- c.save();c.translate(b.x,b.y);c.rotate(b.angle);
- if(b.side===1)c.scale(1,-1);
+ // The lot and collision remain road-aligned; the cozy 3/4 illustration stays
+ // upright on screen so doors and roofs never lie sideways at intersections.
+ c.save();c.translate(b.x,b.y);
  const x=-b.w/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
  const wallHeight=7+(b.seed%4),frontY=b.h*.13;
@@ -471,10 +470,11 @@ function house(c,b){
  }
 }
 function houseVisualBounds(b){
- // The road-aligned roof/walls extend beyond the lot centre at diagonal
- // bearings. Include a small margin for the porch and painted shadow.
+ // Culling covers both the road-aligned collision lot and the screen-upright
+ // illustration. Their orientations differ without changing the geography.
  const angle=b.angle||0,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
- const halfX=(b.w*cos+b.h*sin)/2+9,halfY=(b.w*sin+b.h*cos)/2+9;
+ const halfX=Math.max((b.w*cos+b.h*sin)/2,b.w/2)+9;
+ const halfY=Math.max((b.w*sin+b.h*cos)/2,b.h/2)+9;
  return {left:b.x-halfX,right:b.x+halfX,top:b.y-halfY,bottom:b.y+halfY};
 }
 function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,true);if(a.tags.landuse==='residential'){c.fillStyle='#bec59b';c.fill();c.strokeStyle='#adba8c';c.lineWidth=2;c.stroke();}else if(a.tags.landuse==='forest'||a.tags.leisure==='nature_reserve'){c.fillStyle='#8cba7c77';c.fill();if(!detail){c.strokeStyle='#61894d88';c.lineWidth=3;c.setLineDash([8,6]);c.stroke();c.setLineDash([]);}}else if(a.tags.landuse==='grass'||a.tags.landuse==='meadow'||a.tags.leisure==='park'||a.tags.leisure==='garden'){c.fillStyle='#b4cf8d';c.fill();}else if(a.tags.leisure==='pitch'){c.fillStyle='#88ab6c';c.fill();c.lineWidth=1.1;c.strokeStyle='#e7edd2b0';c.stroke();let xs=ring.map(p=>p[0]),ys=ring.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),ww=Math.max(...xs)-x,hh=Math.max(...ys)-y;const cx=x+ww/2,cy=y+hh/2;c.strokeRect(x+4,y+4,ww-8,hh-8);c.beginPath();c.moveTo(x+4,cy);c.lineTo(x+ww-4,cy);c.stroke();c.beginPath();c.arc(cx,cy,Math.min(ww,hh)*.16,0,Math.PI*2);c.stroke();}}

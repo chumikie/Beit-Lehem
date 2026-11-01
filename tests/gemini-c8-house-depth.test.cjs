@@ -16,6 +16,8 @@ test('C8: os extremos girados das casas participam da ordenação e do recorte',
   const yRadius=(20*Math.abs(Math.sin(angle))+12*Math.abs(Math.cos(angle)))/2;
   assert.ok(b.left<=home.x-xRadius&&b.right>=home.x+xRadius);
   assert.ok(b.top<=home.y-yRadius&&b.bottom>=home.y+yRadius);
+  assert.ok(b.left<=home.x-home.w/2&&b.right>=home.x+home.w/2,'fachada vertical cabe no recorte');
+  assert.ok(b.top<=home.y-home.h/2&&b.bottom>=home.y+home.h/2,'telhado vertical cabe no recorte');
   const viewport={left:home.x+xRadius-1,right:home.x+xRadius+2,top:home.y-2,bottom:home.y+2};
   const newVisible=b.right>viewport.left&&b.left<viewport.right&&b.bottom>viewport.top&&b.top<viewport.bottom;
   const oldVisible=home.x>viewport.left&&home.x<viewport.right&&home.y>viewport.top&&home.y<viewport.bottom;
