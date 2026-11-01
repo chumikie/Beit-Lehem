@@ -5188,13 +5188,23 @@ function houseVisualBounds(b){
  return {left:b.x-halfX,right:b.x+halfX,top:b.y-halfY,bottom:b.y+halfY};
 }
 function streetLabelBlocked(l,width,height,visibleHouses,people){
- // Conservative screen-space envelope of rotated lettering. The street stays
- // named in OSM/HUD; only text that would cross a facade or walker is omitted.
- const cos=Math.abs(Math.cos(l.angle)),sin=Math.abs(Math.sin(l.angle));
- const halfX=(width*cos+height*sin)/2,halfY=(width*sin+height*cos)/2;
- const left=l.x-halfX,right=l.x+halfX,top=l.y-halfY,bottom=l.y+halfY;
- if(visibleHouses.some(b=>left<b.x+b.w/2+1&&right>b.x-b.w/2-1&&top<b.y+b.h*.13+11&&bottom>b.y-b.h*.5-1))return true;
- return people.some(p=>left<p.x+8&&right>p.x-8&&top<p.y+4&&bottom>p.y-20);
+ // Test the actual oriented text rectangle against upright facade/actor boxes.
+ // The former axis-aligned envelope rejected safe names on diagonal streets.
+ const cos=Math.cos(l.angle),sin=Math.sin(l.angle),hw=width/2+1,hh=height/2+1;
+ const overlaps=(cx,cy,rx,ry)=>{
+  const dx=cx-l.x,dy=cy-l.y;
+  // Four separating axes: world X/Y and the lettering's longitudinal/normal.
+  if(Math.abs(dx)>rx+Math.abs(cos)*hw+Math.abs(sin)*hh)return false;
+  if(Math.abs(dy)>ry+Math.abs(sin)*hw+Math.abs(cos)*hh)return false;
+  if(Math.abs(dx*cos+dy*sin)>hw+Math.abs(cos)*rx+Math.abs(sin)*ry)return false;
+  if(Math.abs(-dx*sin+dy*cos)>hh+Math.abs(sin)*rx+Math.abs(cos)*ry)return false;
+  return true;
+ };
+ if(visibleHouses.some(b=>{
+  const roofTop=b.y-b.h*.5-1,frontBottom=b.y+b.h*.13+11;
+  return overlaps(b.x,(roofTop+frontBottom)/2,b.w/2+1,(frontBottom-roofTop)/2);
+ }))return true;
+ return people.some(p=>overlaps(p.x,p.y-8,8,12));
 }
 function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,true);if(a.tags.landuse==='residential'){c.fillStyle='#bec59b';c.fill();c.strokeStyle='#adba8c';c.lineWidth=2;c.stroke();}else if(a.tags.landuse==='forest'||a.tags.leisure==='nature_reserve'){c.fillStyle='#8cba7c77';c.fill();if(!detail){c.strokeStyle='#61894d88';c.lineWidth=3;c.setLineDash([8,6]);c.stroke();c.setLineDash([]);}}else if(a.tags.landuse==='grass'||a.tags.landuse==='meadow'||a.tags.leisure==='park'||a.tags.leisure==='garden'){c.fillStyle='#b4cf8d';c.fill();}else if(a.tags.leisure==='pitch'){c.fillStyle='#88ab6c';c.fill();c.lineWidth=1.1;c.strokeStyle='#e7edd2b0';c.stroke();let xs=ring.map(p=>p[0]),ys=ring.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),ww=Math.max(...xs)-x,hh=Math.max(...ys)-y;const cx=x+ww/2,cy=y+hh/2;c.strokeRect(x+4,y+4,ww-8,hh-8);c.beginPath();c.moveTo(x+4,cy);c.lineTo(x+ww-4,cy);c.stroke();c.beginPath();c.arc(cx,cy,Math.min(ww,hh)*.16,0,Math.PI*2);c.stroke();}}
 }
