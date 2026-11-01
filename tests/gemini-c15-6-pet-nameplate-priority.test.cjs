@@ -58,6 +58,6 @@ test('C15.6: mobile encounter card is compact but keeps its notebook action',()=
  const hud=source.slice(source.indexOf('function setupMobileWalkingHud()'),source.indexOf('setupMobileWalkingHud();'));
  assert.match(hud,/\.street-pulse #streetResidentsHint,\.street-pulse #streetMomentHint,[\s\S]*\.street-pulse \.street-pulse-avatars\{display:none\}/);
  assert.match(hud,/\.street-pulse\{width:min\(176px,calc\(100vw - 30px\)\)/);
- assert.match(source,/\\$\\('streetPulse'\\)\\.onclick=showLife;/);
- assert.match(source,/function showLife\\(\\)\\{[\\s\\S]*?showDialog\\('lifeDialog'\\)/);
+ assert.ok(source.includes("$('streetPulse').onclick=showLife;"));
+ assert.ok(source.includes("function showLife(){if(!loaded)return;")&&source.includes("showDialog('lifeDialog');"));
 });
