@@ -270,6 +270,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       return Array.isArray(saved.observations) && saved.observations.length > 0;
     });
     assert.ok(interactionAudit.observation, 'Observar deve registrar a paisagem no save');
+    await page.locator('.extras-cabinet > summary').click();
     await page.locator('#openAlbum').click();
     interactionAudit.album = await page.locator('#albumDialog').evaluate(el => el.open);
     assert.ok(interactionAudit.album, 'álbum deve abrir');
