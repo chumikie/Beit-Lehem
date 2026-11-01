@@ -265,14 +265,17 @@
   }
   function talk(s,id){
     const p=RESIDENTS.find(p=>p.id===id);if(!p)return null;
-    const n=s.people[id],firstToday=n.lastConversationDay!==s.day;
+    const n=s.people[id],previousConversationDay=n.lastConversationDay,firstToday=previousConversationDay!==s.day;
     if(firstToday){n.lastConversationDay=s.day;n.bond=clamp(n.bond+1,0,4);n.company=clamp(n.company-25,0,100);s.notes.unshift({day:s.day,text:'Você conversou com '+p.name+' sobre '+p.likes+'.'});s.notes=s.notes.slice(0,24);}
     const choices=DIALOGUES[id];
     const yesterday=n.lastCareDay===s.day-1&&CARE_FOLLOW_UP[id]?.[n.lastCareKind];
     const today=n.lastCareDay===s.day&&n.lastCareKind;
     const neighbor=firstToday?neighborFollowUp(s,id):null;
+    const returning=previousConversationDay>0&&previousConversationDay<s.day
+      ?(previousConversationDay===s.day-1?'Que bom rever você! Ainda lembro da nossa conversa de ontem. ':'Que bom rever você! Ainda lembro da nossa última conversa. ')
+      :'';
     const text=firstToday
-      ?(yesterday||neighbor||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
+      ?(yesterday||neighbor||returning+choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
       :(today?CARE_TODAY[id]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.');
     if(firstToday&&(yesterday||neighbor)){
       s.notes[0].text=yesterday?REUNION_DIARY[id]:
