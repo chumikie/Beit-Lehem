@@ -1422,7 +1422,7 @@ function nearbyResidentReaction(person,playerPosition,context){
 function createPlayerPresenceGestures(){
  const visits=new Map();
  const reunionDays=new Map();
- return function(person,playerPosition,context,now){
+ const react=function(person,playerPosition,context,now){
   const smile=nearbyResidentReaction(person,playerPosition,context);
   const previous=visits.get(person.id);
   if(!smile&&!previous)return null;
@@ -1454,6 +1454,8 @@ function createPlayerPresenceGestures(){
   return {pose:'wave',stage:'farewell',facing:playerPosition.x>=person.x?1:-1,
    intensity:Math.min(.38,(previous.farewellUntil-now)*.55)*residentGestureWarmth(person.id,context),react:false};
  };
+ react.clear=()=>{visits.clear();reunionDays.clear();};
+ return react;
 }
 const playerPresenceGestures=createPlayerPresenceGestures();
 function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
@@ -4227,7 +4229,7 @@ function showCentralBlocks(){
  showDialog('blockDialog');
 }
 function start(){if(!loaded)return;active=true;$('welcome').hidden=true;canvas.focus({preventScroll:true});last=performance.now();updateUI();notify(saved?'Bem-vindo de volta a Belém! Seu diário e suas amizades foram preservados.':'A aventura começa no centro de Belém! Encontre Lia para fazer uma nova amizade.');}
-function reset(){if(!loaded)return;smallWalksSeen=[];smallWalkReports=[];for(const d of document.querySelectorAll('dialog[open]'))d.close();collected.clear();target=0;elapsed=0;waypoint=null;friendship=0;chapter=0;observations.clear();photos={};cultureNotes={};gardenStep=0;gardenHarvests=0;fairQuest=window.RoncadorCozyQuests.fresh();marketMorning=window.RoncadorMarketMorning.fresh();marketFruitSlots=Array(6).fill(null);marketWitnessed=false;marketReaction=null;marketScene?.close();luciaGarden=window.RoncadorLuciaGarden.fresh();biaLetters=window.RoncadorBiaLetters.fresh();sideNeighbors=window.RoncadorSecondaryNeighbors.fresh();ruaNovaPaths=[];ruaNovaShared=false;ruaNovaDays={};cityKnowledge={};cityLinks=[];cityConsequences=[];cityReports=[];weeklyVisitsSeen=[];friendshipTraditions=[];storyEndings=[];microStories=[];lastJournalDay=1;worldMoments=[];streetVignettes=[];everydayMemories=[];saoPedroTales=[];breadStories=[];morningEncounters=[];waterMemories=[];waterTalks=[];seasonalMemories=[];camucaStories=[];worldPause=null;belemContacts=window.RoncadorBelemContacts.fresh();facadeSketches=[];communitySeen=[];marketDay=false;living=window.RoncadorLivingWorld.fresh();showWildlife=true;festivalCelebrated=false;lightPhase='manha';skyMode='sol';rainCare=0;showGroundedFlora=true;momentsSeen=[];syncLightButton();syncSkyButton();player.x=data.start[0];player.y=data.start[1];camera.x=player.x;camera.y=player.y;particles=[];active=true;$('welcome').hidden=true;saved=null;renderMissions();updateUI();save();canvas.focus({preventScroll:true});notify('Um novo começo! Lia e os caminhos estão esperando por você.');}
+function reset(){if(!loaded)return;playerPresenceGestures.clear();smallWalksSeen=[];smallWalkReports=[];for(const d of document.querySelectorAll('dialog[open]'))d.close();collected.clear();target=0;elapsed=0;waypoint=null;friendship=0;chapter=0;observations.clear();photos={};cultureNotes={};gardenStep=0;gardenHarvests=0;fairQuest=window.RoncadorCozyQuests.fresh();marketMorning=window.RoncadorMarketMorning.fresh();marketFruitSlots=Array(6).fill(null);marketWitnessed=false;marketReaction=null;marketScene?.close();luciaGarden=window.RoncadorLuciaGarden.fresh();biaLetters=window.RoncadorBiaLetters.fresh();sideNeighbors=window.RoncadorSecondaryNeighbors.fresh();ruaNovaPaths=[];ruaNovaShared=false;ruaNovaDays={};cityKnowledge={};cityLinks=[];cityConsequences=[];cityReports=[];weeklyVisitsSeen=[];friendshipTraditions=[];storyEndings=[];microStories=[];lastJournalDay=1;worldMoments=[];streetVignettes=[];everydayMemories=[];saoPedroTales=[];breadStories=[];morningEncounters=[];waterMemories=[];waterTalks=[];seasonalMemories=[];camucaStories=[];worldPause=null;belemContacts=window.RoncadorBelemContacts.fresh();facadeSketches=[];communitySeen=[];marketDay=false;living=window.RoncadorLivingWorld.fresh();showWildlife=true;festivalCelebrated=false;lightPhase='manha';skyMode='sol';rainCare=0;showGroundedFlora=true;momentsSeen=[];syncLightButton();syncSkyButton();player.x=data.start[0];player.y=data.start[1];camera.x=player.x;camera.y=player.y;particles=[];active=true;$('welcome').hidden=true;saved=null;renderMissions();updateUI();save();canvas.focus({preventScroll:true});notify('Um novo começo! Lia e os caminhos estão esperando por você.');}
 function anyDialog(){return !!document.querySelector('dialog[open]')||$('sidebar').classList.contains('open');}
 function showDialog(id){keys.clear();touches.clear();$(id).showModal();if(id==='mapDialog')requestAnimationFrame(drawBig);updateUI();}
 let ambientSoundSeconds=0;
