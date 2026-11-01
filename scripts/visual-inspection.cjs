@@ -362,15 +362,31 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       assert.ok(interactionAudit.sidebarEscape, name + ': Escape deve fechar o roteiro móvel');
     }
   } else {
-    await page.locator('#observe').click();
-    interactionAudit.observation = await page.evaluate(() => {
+    const beforeObservation = await page.evaluate(() => {
       const saved = JSON.parse(localStorage.getItem('roncador-expedition-v2-referencias-gemini') || '{}');
-      const collections = ['observations', 'worldMoments', 'waterMemories', 'ruaNovaPaths',
-        'streetVignettes', 'seasonalMemories', 'everydayMemories', 'camucaStories',
-        'morningEncounters', 'waterTalks'];
-      return collections.some(key => Array.isArray(saved[key]) && saved[key].length > 0);
+      return { observations:saved.observations||[], worldMoments:saved.worldMoments||[],
+        waterMemories:saved.waterMemories||[], ruaNovaPaths:saved.ruaNovaPaths||[],
+        streetVignettes:saved.streetVignettes||[], seasonalMemories:saved.seasonalMemories||[],
+        everydayMemories:saved.everydayMemories||[], camucaStories:saved.camucaStories||[],
+        morningEncounters:saved.morningEncounters||[], waterTalks:saved.waterTalks||[],
+        notes:saved.living?.notes||[] };
     });
-    assert.ok(interactionAudit.observation, 'Observar deve registrar a paisagem no save');
+    const previousToast=(await page.locator('#toast').textContent()||'').trim();
+    await page.locator('#observe').click();
+    await page.waitForTimeout(120);
+    const observationResult=await page.evaluate(before=>{
+      const saved=JSON.parse(localStorage.getItem('roncador-expedition-v2-referencias-gemini')||'{}');
+      const collections=['observations','worldMoments','waterMemories','ruaNovaPaths','streetVignettes',
+        'seasonalMemories','everydayMemories','camucaStories','morningEncounters','waterTalks'];
+      const persisted=collections.some(key=>JSON.stringify(saved[key]||[])!==JSON.stringify(before[key]||[]))||
+        JSON.stringify(saved.living?.notes||[])!==JSON.stringify(before.notes||[]);
+      const toast=document.querySelector('#toast');
+      return {persisted,toastVisible:!!toast?.classList.contains('visible'),toastText:toast?.textContent?.trim()||''};
+    },beforeObservation);
+    interactionAudit.observation=observationResult.persisted||
+      (observationResult.toastVisible&&!!observationResult.toastText&&observationResult.toastText!==previousToast);
+    interactionAudit.observationMode=observationResult.persisted?'saved':'contextual-pause';
+    assert.ok(interactionAudit.observation, 'Observar deve guardar uma lembrança ou iniciar a pausa contextual existente');
     await page.locator('.extras-cabinet > summary').click();
     await page.locator('#openAlbum').click();
     interactionAudit.album = await page.locator('#albumDialog').evaluate(el => el.open);
