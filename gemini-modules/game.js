@@ -3252,6 +3252,11 @@ function observeRuaNovaPath(){
  }
  return false;
 }
+function revisitedLandscapeLine(road,observedCount){
+ const name=road?.d<35&&typeof road.s?.road?.tags?.name==='string'?road.s.road.tags.name.trim():'';
+ const where=name?'Você observa '+name+' de novo.':'Você observa os caminhos de Belém de novo.';
+ return where+(observedCount>=3?' As três paisagens já estão no diário; siga passeando no seu ritmo.':' Esta paisagem já está no diário; há outros caminhos para descobrir.');
+}
 function observe(){
  if(!active||anyDialog()){if(!active)notify('Comece a expedição para registrar suas paisagens.');return;}
  if(observeCamucaPrelude())return;
@@ -3262,7 +3267,7 @@ function observe(){
  let key='vila',label='A vila e seus caminhos';
  if(distance(player,missions[5].p)<145){key='mata';label='Os caminhos da natureza';}
  else if(distance(player,missions[2].p)<120){key='campo';label='Os arredores do campo';}
- if(observations.has(key)){notify('Essa paisagem já está no diário. Explore outra região para descobrir mais!');return;}
+ if(observations.has(key)){notify(revisitedLandscapeLine(nearestRoad(player.x,player.y),observations.size));return;}
  observations.add(key);
  const photo=capturePhoto();if(photo)photos[key]=photo;
  $('memoryFlash').classList.remove('active');void $('memoryFlash').offsetWidth;$('memoryFlash').classList.add('active');
