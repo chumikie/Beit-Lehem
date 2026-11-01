@@ -27,7 +27,7 @@ test('C19.4: exactly 13 existing pets inhabit four established street hubs, with
   for (const [one, two] of [['bolt', 'bethowen'], ['catito', 'artemis'], ['mimi', 'hani'], ['bob', 'princesa']]) {
     assert.equal(ids.get(one), ids.get(two), `${one} e ${two} continuam no mesmo entorno`);
   }
-  assert.match(segment, /walkingPoint\(pet\.id,pet\.hub,pet\.variant\)/);
+  assert.match(segment, /walkingPoint\(pet\.id,pet\.hub,pet\.variant(?:,petPathStagger\[pet\.id\]\|\|0)?\)/);
 });
 
 test('C19.4: scheduled neighbors retain close, distinct samples on the existing road itinerary', () => {
