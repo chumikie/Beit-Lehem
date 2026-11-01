@@ -1,29 +1,42 @@
 # Decisões vigentes
 
-- Nome oficial: **Beit Lehem**. Repositório privado: https://github.com/chumikie/Beit-Lehem.
+## Produto e referência
 
-- V2.27 é a referência técnica estável, congelada. **Por decisão posterior do autor, o experimento Gemini passa a ser a base principal das prévias em desenvolvimento**, por conter o mapa visual e sistemas mais completos.
-- V2.28 foi rejeitada. Não reutilizar seu corte territorial e seu novo elenco como padrão.
-- Território desejado: cidade de Belém/PB, distrito Rua Nova, caminhos rurais, serras e fauna/flora do entorno; encerrar antes de construir os demais núcleos urbanos.
-- Um mundo conectado; divisão por setores pode existir internamente para organização e desempenho.
-- Prioridade atual: fundamentação e acabamento do mapa, navegação e personagens. Novas atividades pausadas.
-- Mercado — decisão artística de 01/11/2026: não deslocar nem corrigir artificialmente as ruas para acomodar cenários. A área ocupada pela ilustração do Mercado deve ficar livre de cruzamentos com segmentos OSM; fachadas e comércio da Rua Feliciano Pedrosa aguardam confirmação de lotes e entradas antes de novos desenhos.
-- Fotos de referência serão enviadas aos poucos pelo usuário. Trabalhar por lugares identificados e comparações visuais controladas.
-- GitHub privado para desenvolvimento; cópia local para jogar; nenhuma hospedagem.
-- Testes locais. Não incluir workflows; desativação administrativa de Actions ainda pendente de conferência pelo proprietário apenas neste repositório; preservar o projeto principal e as configurações globais da conta.
-- Não há exportação/importação do diário ainda. Implementar de forma testável antes de trocar a origem/local de execução supondo que o progresso migrará sozinho.
+- Nome oficial do jogo: **Beit Lehem**.
+- Repositório `chumikie/Beit-Lehem`: **público por decisão do autor**. Essa visibilidade deve ser mantida.
+- **A versão atual de Beit Lehem é a referência ativa de desenvolvimento, visual e técnica.** O mapa, a apresentação e os sistemas atuais orientam as próximas melhorias.
+- A V2.27 permanece preservada como snapshot histórico/rollback. Não é mais a referência normativa nem limita a evolução da versão atual.
+- A V2.28 reformulada anteriormente rejeitada não se torna aprovada por esta decisão.
 
-- Referências do Gemini: conservar cópia grande anonimizada e guia cumulativo em uma única PR de rascunho. Commits e atualizações na PR estão autorizados; merge permanece proibido até autorização expressa. Não publicar nomes ou vínculos residenciais particulares.
+## Território, nomes e representação
 
+- Referência geográfica: Belém/PB, Rua Nova e o entorno rural/serrano, em mundo amplo e conectado.
+- **Os nomes reais das ruas devem permanecer idênticos aos nomes validados**, incluindo acentos e grafia.
+- Nomes de POIs, estabelecimentos e elementos narrativos podem ser alterados para aliases ficcionais. O nome original e o alias de exibição devem permanecer conceitualmente separados.
+- Dados geográficos, validações locais do autor e ilustrações são camadas diferentes. Não apresentar desenho ilustrativo como contorno cadastral; não inventar coordenadas, entradas ou nomes.
+- Não deslocar geometrias viárias reais para acomodar cenários. Setorização interna é permitida para organização/desempenho, sem fragmentar a experiência de exploração.
 
-## Crescimento a partir das referências Gemini
+## Arquitetura e funcionamento
 
-A V2.27 permanece preservada como recuperação. A linha principal de desenvolvimento agora deriva do Gemini; seus bugs, compatibilidade de save e apresentação móvel precisam ser corrigidos gradualmente sem encolher o mundo. A malha OSM de 462 trechos permanece inalterada. As 17 propostas de nomes e superfícies locais permanecem desativadas até validação; nenhum rótulo pendente é exibido como dado confirmado. O estudo de fachadas cresce para seis zonas, mas as três novas zonas são estudos preliminares, sem confirmar nomes ou limites viários. O progresso já salvo nas três áreas antigas permanece válido. O snapshot do jogo em desenvolvimento é gerado por `scripts/build-development-preview.cjs` a partir do Gemini. Os módulos de `dist/` continuam disponíveis para portar correções.
+- O jogo é executado localmente no navegador e mantém progresso no armazenamento local; não há autorização para introduzir backend ou telemetria.
+- A fonte editável atual está em `gemini-modules/`; as prévias em `previews/` são geradas, não editadas diretamente.
+- `gemini-modules/game.js` ainda é grande e deve ser modularizado incrementalmente, preservando comportamento, visual, ordem de processamento e saves.
+- A fonte HTML arquivada em `references/gemini-2026-10-31/` serve como consulta para sistemas ainda não extraídos, não como padrão imutável.
+- `baseline/Belem-Viva-V2-27.html` e o código histórico em `dist/` não são a base ativa. O hash da V2.27 serve somente para verificar que o arquivo histórico não foi alterado.
+- A geração OSM antiga e a representação de mapa embutida na base atual ainda não estão completamente unificadas. Mudanças no GeoJSON não devem ser presumidas como mudanças já incorporadas ao jogo atual.
 
-## Prévia pública de testes — autorização de 31/10/2026
+## Salvamento
 
-O autor autorizou disponibilizar Beit Lehem na internet para poder jogar e realizar inspeções visuais, sem exigir que o repositório de desenvolvimento se torne público. A branch `gh-pages` foi preparada apenas com `index.html` (cópia do HTML autônomo atual) e `.nojekyll`; nenhuma fonte, histórico de PR ou documentação privada é incluída nessa árvore de publicação.
+- A base atual e V2.27 têm chaves/esquemas distintos. Não prometer transferência automática de progresso.
+- Preservar a chave e o esquema atuais durante refatorações. Migração futura deve incluir backup, validação de dados e opção reversível.
 
-A ativação do GitHub Pages em **Settings → Pages → Deploy from a branch → gh-pages → /(root)** ainda depende da configuração administrativa pelo proprietário. Não considerar o site publicado até o URL abrir e o jogo carregar. Se o plano do GitHub não permitir Pages para repositório privado, consultar o autor antes de mudar a visibilidade do repositório inteiro.
+## Publicação e segurança
 
-A PR #1 continua como ambiente de desenvolvimento sem merge. Atualizar `gh-pages` somente depois de reconstruir e testar a prévia e obter confirmação de que é a versão desejada para testes públicos. Não publicar dados pessoais, domicílios ou anexos privados.
+- Repositório público não equivale a GitHub Pages ativo. Hospedagem, publicação e atualização de branches de distribuição permanecem ações separadas e exigem autorização específica.
+- Não modificar configurações globais da conta nem outros repositórios.
+- Relatórios antigos de auditoria de cópia pública podem conter avaliações superadas; não usá-los como evidência atual sem nova verificação. O documento antigo correspondente foi marcado como supersedido.
+
+## Processo
+
+- Alterações na PR #2 permanecem em rascunho até revisão. **Não fazer merge nem publicar sem autorização expressa.**
+- Cada etapa deve informar arquivos alterados, testes realmente executados e limitações que continuam pendentes.
