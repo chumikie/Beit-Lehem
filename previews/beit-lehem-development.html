@@ -4774,7 +4774,19 @@ function preprocess(){
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
  if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
- const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway)||houses.length>=1350)continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?17:21,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:13+r*7,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
+ const occupied=[],candidates=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway))continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?17:21,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);candidates.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:13+r*7,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
+ // Preserve central street life but reserve a small share of the illustration
+ // budget across the mapped territory before filling the remaining slots.
+ const centralHubs=['igreja','mercado'].map(id=>data.landmarks.find(l=>l.id===id)?.p).filter(Boolean);
+ const felicianoRoads=roads.filter(r=>r.tags.name==='Rua Feliciano Pedrosa');
+ const nearFeliciano=b=>felicianoRoads.some(r=>r.p.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<90));
+ const selected=new Set(),covered=new Set(),cell=b=>Math.floor(b.x/250)+':'+Math.floor(b.y/250);
+ const take=(b,i)=>{if(selected.size>=1350||selected.has(i))return;selected.add(i);covered.add(cell(b));};
+ candidates.forEach((b,i)=>{if(centralHubs.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<150))take(b,i);});
+ candidates.forEach((b,i)=>{if(nearFeliciano(b))take(b,i);});
+ candidates.forEach((b,i)=>{if(!covered.has(cell(b)))take(b,i);});
+ candidates.forEach(take);
+ houses.push(...candidates.filter((b,i)=>selected.has(i)));
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
  fairStalls=window.RoncadorFairStreets.layout(data,scenicScenes,houses);
  marketStall=window.RoncadorFairStreets.featured(fairStalls,data.landmarks.find(p=>p.id==='mercado')?.p);
@@ -4920,9 +4932,11 @@ function house(c,b){
    c.beginPath();c.moveTo(edge,frontY+wallHeight-1);c.lineTo(edge+side*3.5,frontY+wallHeight-1);c.stroke();
   }
  }
- // The roof remains oriented toward its mapped parcel; its decorative front
- // is drawn afterward in screen coordinates, never flipped or upside down.
- c.save();c.rotate(b.angle);
+ // Keep a hint of the parcel's bearing without letting a 90°/180° road turn
+ // the roof edge-on or hide it behind the south-facing front wall.
+ const roofBearing=Math.atan(Math.tan(b.angle));
+ const roofAngle=Math.max(-.42,Math.min(.42,roofBearing));
+ c.save();c.rotate(roofAngle);
  const roofY=-b.h*.5,roofDepth=b.h*.62;
  const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
  roundRect(c,x-1,roofY-1,b.w+2,roofDepth+2,roofType===1?2.6:1.8,roofs[b.color],'#79594b70');
@@ -5230,14 +5244,15 @@ function drawFlowers(c,left,right,top,bottom){
   }
  }
 }
-function drawGroundedFlora(c,view,time){
+function drawGroundedFlora(c,view,time,renderables=null){
  if(!showGroundedFlora)return;
  for(const item of floraLayer.points){
   const {x,y,kind,seed}=item;
   if(x<view.left-22||x>view.right+22||y<view.top-23||y>view.bottom+23)continue;
   if(verifiedWater.some(w=>inside(x,y,w.p)))continue;
   if(kind==='canopy'||kind==='shade'){
-   drawTree(c,x,y,kind==='canopy'?11+seed%4:7+seed%3,seed,kind);
+   const draw=()=>drawTree(c,x,y,kind==='canopy'?11+seed%4:7+seed%3,seed,kind);
+   if(renderables)renderables.push({sortY:y+2,draw});else draw();
    continue;
   }
   c.save();c.translate(x,y);
@@ -5867,7 +5882,7 @@ function chooseConversationLayer(streetEvent,communityEvent,people,playerPositio
  };
  return distanceToEvent(streetEvent)<=distanceToEvent(communityEvent)?'street':'community';
 }
-function drawStreetLife(c,time,view){
+function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
  const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere(),elapsed);
  const residents=residentsInStreets(),secondaries=secondaryInStreets(residents);
@@ -5927,13 +5942,14 @@ function drawStreetLife(c,time,view){
    person.social={pose:'smile',stage:'quiet',facing:player.x>=person.x?1:-1,intensity:reduce?1:Math.min(1,(worldPause.age-.4)*2),react:true};
   }
   if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25||person.visibility<.015)continue;
+  const drawPerson=()=>{
   // One representation per frame avoids ghost outlines at intermediate zoom.
   c.save();c.globalAlpha*=person.visibility;
   if(zoom<1.15)drawDistantResident(c,person);
   else if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
   c.restore();
-  if(zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
+  const drawGreeting=()=>{if(zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
    const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
    const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
    const label=parting?'Até já! ♡':afternoon?'Boa tardinha ♡':'Oi! ♡';
@@ -5943,7 +5959,8 @@ function drawStreetLife(c,time,view){
    c.fillStyle='#fff8e8';c.strokeStyle='#bda78e';c.lineWidth=.8;c.beginPath();
    c.roundRect(person.x-width/2,person.y-55,width,14,6);c.fill();c.stroke();
    c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText(label,person.x,person.y-45);c.restore();
-  }
+  }};
+  if(speechOverlays)speechOverlays.push(drawGreeting);else drawGreeting();
   if(zoom>=1.2&&person.id==='bia'&&person.activity&&(person.activity.includes('lendo')||person.activity.includes('estudando')||person.encounter?.id==='caderno-na-feira')){
    // A page-turning pocket notebook follows Bia's fictional routine along the
    // mapped streets; no reading spot or bench is added at invented coordinates.
@@ -5981,16 +5998,20 @@ function drawStreetLife(c,time,view){
    c.fillStyle='#fff8e8';c.font='bold 6px system-ui';c.textAlign='center';c.fillText(marketMorning.claimed?'♥':'♪',3,-17);
    c.restore();
   }
-  if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
+  const drawReaction=()=>{if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Francisco!',person.x,person.y-71);
-  }
+  }};
+  if(speechOverlays)speechOverlays.push(drawReaction);else drawReaction();
+  };
+  if(renderables)renderables.push({sortY:person.y,draw:drawPerson});else drawPerson();
  }
  // Labels are the last resident layer: another passing sprite cannot cut them
  // in half, and the higher-priority conversation overlay comes after them.
- for(const label of nameplates){
+ const drawNameplates=()=>{for(const label of nameplates){
   roundRect(c,label.x-label.width/2,label.y-6.5,label.width,13,5,'#fffcf1ed','#b4c2a1');
   c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(label.name,label.x,label.y);
- }
+ }};
+ if(speechOverlays)speechOverlays.push(drawNameplates);else drawNameplates();
 }
 let boltMarketRoad=null;
 function boltCityPoint(){
@@ -6055,7 +6076,7 @@ function streetPetVisualOffset(at,people){
  const length=best||1;
  return {x:best?nearest.dx/length*amount:amount,y:best?nearest.dy/length*amount:0};
 }
-function drawStreetPets(c,time,view,people=[]){
+function drawStreetPets(c,time,view,people=[],renderables=null){
  const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
   for(const pet of candidates){
@@ -6063,6 +6084,7 @@ function drawStreetPets(c,time,view,people=[]){
   const at=pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
   const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode,player,people);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
+  const drawPet=()=>{
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)+pet.variant)*behavior.bounce;
    const offset=streetPetVisualOffset(at,people);
    c.save();c.translate(at.x+offset.x,at.y+offset.y+bounce);
@@ -6081,7 +6103,7 @@ function drawStreetPets(c,time,view,people=[]){
     roundRect(c,-12,-20,24,8,3,'#fff9eb','#9b8068');
     c.fillStyle='#5c4a38';c.font='bold 6px system-ui';c.textAlign='center';c.fillText('Bolt',0,-14);
    }
-   c.restore();continue;
+   c.restore();return;
   }
   c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*behavior.tailRate+pet.variant)*(behavior.resting?.7:2)),9,-13);c.stroke();
   roundRect(c,-6,-7,12,9,4,fur,'#9c846b');
@@ -6109,6 +6131,8 @@ function drawStreetPets(c,time,view,people=[]){
    c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,-17);
   }
   c.restore();
+  };
+  if(renderables)renderables.push({sortY:at.y,draw:drawPet});else drawPet();
  }
 }
 function drawPuddles(c,time,view){
@@ -6179,8 +6203,10 @@ function render(time){
  window.RoncadorRoadDetails.draw(ctx,roadDetails,{left,right,top,bottom},zoom);
  drawPuddles(ctx,time,{left,right,top,bottom});
  drawMappedPlaces(ctx,{left,right,top,bottom});
- const visibleHouses=houses.filter(b=>b.x>left&&b.x<right&&b.y>top&&b.y<bottom);for(const b of visibleHouses)house(ctx,b);
- drawGroundedFlora(ctx,{left,right,top,bottom},time);
+ const renderables=[],speechOverlays=[];
+ const visibleHouses=houses.filter(b=>b.x>left&&b.x<right&&b.y>top&&b.y<bottom);
+ for(const b of visibleHouses)renderables.push({sortY:b.y+b.h*.45,draw:()=>house(ctx,b)});
+ drawGroundedFlora(ctx,{left,right,top,bottom},time,renderables);
  // Trees are illustrative scenery. Keep roads, the field and homes clear.
  for(let gx=Math.floor(left/45);gx<right/45;gx++)for(let gy=Math.floor(top/45);gy<bottom/45;gy++){
   const key=gx+','+gy;let tree=treeCache.get(key);
@@ -6192,17 +6218,21 @@ function render(time){
    treeCache.set(key,tree);
   }
   if(tree){
-   const cordeiro=data.landmarks.find(l=>l.id==='pedra_cordeiro')?.p;
-   if(tree.rural&&cordeiro&&tree.seed%19===0&&Math.hypot(tree.x-cordeiro[0],tree.y-cordeiro[1])<360)
-    drawCordeiroCactus(ctx,tree.x,tree.y,tree.r,tree.seed);
-   else if(tree.rural&&tree.seed%5===0)drawRuralShrub(ctx,tree.x,tree.y,tree.r,tree.seed);
-   else drawTree(ctx,tree.x,tree.y,tree.r,tree.seed);
+   const currentTree=tree;
+   renderables.push({sortY:tree.y+2,draw:()=>{
+    const cordeiro=data.landmarks.find(l=>l.id==='pedra_cordeiro')?.p;
+    if(currentTree.rural&&cordeiro&&currentTree.seed%19===0&&Math.hypot(currentTree.x-cordeiro[0],currentTree.y-cordeiro[1])<360)
+     drawCordeiroCactus(ctx,currentTree.x,currentTree.y,currentTree.r,currentTree.seed);
+    else if(currentTree.rural&&currentTree.seed%5===0)drawRuralShrub(ctx,currentTree.x,currentTree.y,currentTree.r,currentTree.seed);
+    else drawTree(ctx,currentTree.x,currentTree.y,currentTree.r,currentTree.seed);
+   }});
   }
  }
  drawWildlife(ctx,time,{left,right,top,bottom});
  if(showScenery){
   const stalls=fairAtmosphere()?fairStalls:marketStallVisible()?[marketStall]:[];
-  window.RoncadorFairStreets.draw(ctx,stalls,{left,right,top,bottom},time,reduce,marketMorning.talked&&marketStall?{stall:marketStall,state:marketMorning,slots:marketFruitSlots,label:zoom>1.2&&Math.hypot(player.x-marketStall.p[0],player.y-marketStall.p[1])<130}:null);
+  const stallOptions=marketMorning.talked&&marketStall?{stall:marketStall,state:marketMorning,slots:marketFruitSlots,label:zoom>1.2&&Math.hypot(player.x-marketStall.p[0],player.y-marketStall.p[1])<130}:null;
+  for(const stall of stalls)renderables.push({sortY:stall.p[1],draw:()=>window.RoncadorFairStreets.draw(ctx,[stall],{left,right,top,bottom},time,reduce,stallOptions)});
   // Decorative reward tied to the existing fictional market stall and saved choice.
   // It is not a mapped building, business sign or newly invented coordinate.
   if(marketStall&&stalls.includes(marketStall)&&marketMorning.claimed&&sideNeighbors.choices?.cica==='banca'){
@@ -6236,25 +6266,36 @@ function render(time){
   }
   ctx.restore();}
  if(waypoint){const route=[{x:player.x,y:player.y},...waypoint.points.slice(waypoint.index)];ctx.strokeStyle='#f8f1cbbe';ctx.lineWidth=5/zoom;path(ctx,route.map(p=>[p.x,p.y]));ctx.stroke();ctx.strokeStyle='#487a5bc8';ctx.lineWidth=2.5/zoom;ctx.setLineDash([6/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#426d4b';ctx.lineWidth=2/zoom;ctx.beginPath();ctx.arc(waypoint.x,waypoint.y,5,0,Math.PI*2);ctx.stroke();}
- // When a larger character crosses a mission marker, keep the GPS pin at its
- // exact mapped coordinate but draw it behind the sprite instead of across a
- // face. Pins away from characters keep their usual foreground contrast.
- const castNow=residentsInStreets(),pinsBehind=new Set();
+ // One depth queue: the base of each object determines what may cover it.
+ const castNow=residentsInStreets();
  const peopleNearPins=[...castNow,...secondaryInStreets(castNow),player,guide];
- for(let i=0;i<missions.length;i++)if(peopleNearPins.some(p=>Math.hypot(missions[i].p[0]-p.x,missions[i].p[1]-p.y)<35)){drawPin(ctx,missions[i],i,time,false,true);pinsBehind.add(i);}
- drawStreetLife(ctx,time,{left,right,top,bottom});
-  drawStreetPets(ctx,time,{left,right,top,bottom},peopleNearPins);
- for(let i=0;i<missions.length;i++)if(!pinsBehind.has(i))drawPin(ctx,missions[i],i,time);
+ for(let i=0;i<missions.length;i++){
+  const mission=missions[i],subtle=peopleNearPins.some(p=>Math.hypot(mission.p[0]-p.x,mission.p[1]-p.y)<35);
+  renderables.push({sortY:mission.p[1],draw:()=>drawPin(ctx,mission,i,time,false,subtle)});
+ }
+ drawStreetLife(ctx,time,{left,right,top,bottom},renderables,speechOverlays);
+ drawStreetPets(ctx,time,{left,right,top,bottom},peopleNearPins,renderables);
  // The guide and player use the same distant scale as the other residents.
  const mapDetail=Math.max(0,Math.min(1,(zoom-.95)/.30));
+ renderables.push({sortY:guide.y,draw:()=>{
  if(mapDetail<1){
   ctx.save();ctx.globalAlpha*=1-mapDetail;
   drawDistantResident(ctx,{x:guide.x,y:guide.y,def:{tone:'#9fb8a1'},id:'guide'});
-  drawDistantResident(ctx,{x:player.x,y:player.y,def:{tone:'#d97854'},id:'player'});
-  ctx.strokeStyle='#fff9e4';ctx.lineWidth=1.8/zoom;ctx.beginPath();ctx.arc(player.x,player.y-5,8,0,Math.PI*2);ctx.stroke();
   ctx.restore();
  }
- if(mapDetail>0){ctx.save();ctx.globalAlpha*=mapDetail;drawGuide(ctx,time);drawPlayer(ctx,time);ctx.restore();}
+ if(mapDetail>0){ctx.save();ctx.globalAlpha*=mapDetail;drawGuide(ctx,time);ctx.restore();}
+ }});
+ renderables.push({sortY:player.y,draw:()=>{
+  if(mapDetail<1){
+   ctx.save();ctx.globalAlpha*=1-mapDetail;
+   drawDistantResident(ctx,{x:player.x,y:player.y,def:{tone:'#d97854'},id:'player'});
+   ctx.strokeStyle='#fff9e4';ctx.lineWidth=1.8/zoom;ctx.beginPath();ctx.arc(player.x,player.y-5,8,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
+  if(mapDetail>0){ctx.save();ctx.globalAlpha*=mapDetail;drawPlayer(ctx,time);ctx.restore();}
+ }});
+ renderables.sort((a,b)=>a.sortY-b.sortY);
+ for(const item of renderables)item.draw();
+ for(const draw of speechOverlays)draw();
  for(const p of particles){ctx.globalAlpha=Math.min(1,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}ctx.globalAlpha=1;
  for(const ep of emojiParticles){
   ctx.save();ctx.globalAlpha=Math.max(0,Math.min(1,ep.life/.45));

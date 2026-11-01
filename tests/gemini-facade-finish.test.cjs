@@ -39,9 +39,10 @@ test('distant roofs omit small decoration without losing silhouette',()=>{
 
 test('roof may follow the parcel but doors and windows remain upright on screen',()=>{
  const section=source.slice(start,end);
- assert.match(section,/c\.rotate\(b\.angle\)/);
+ assert.match(section,/c\.rotate\(roofAngle\)/);
+ assert.match(section,/Math\.max\(-\.42,Math\.min\(\.42,roofBearing\)\)/);
  assert.doesNotMatch(section,/c\.scale\(1,-1\)/);
- assert.ok(section.indexOf('c.restore();\n // A 7–10 px vertical')>section.indexOf('c.rotate(b.angle)'),
+ assert.ok(section.indexOf('c.restore();\n // A 7–10 px vertical')>section.indexOf('c.rotate(roofAngle)'),
   'roof transform ends before the front wall');
  assert.match(section,/wallHeight=7\+\(b\.seed%4\)/);
  assert.match(section,/frontY\+1\.5/);
