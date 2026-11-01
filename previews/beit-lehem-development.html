@@ -2594,10 +2594,13 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
           Math.hypot(nodes[e.id].x - anchor[0], nodes[e.id].y - anchor[1]) < limit)
         .sort((a, b) => a.metres - b.metres || a.id - b.id);
       if (!choices.length) break;
-      const choice = choices[(variant + step) % Math.min(choices.length, 2)];
+      // Secondary neighbors use variants 6+; retain their individual branch
+      // choices instead of collapsing every pair to the same parity route.
+      const choice = choices[(variant + Math.floor(variant / 6) + step) % choices.length];
       visited.add(choice.id);total += choice.metres;cursor = choice.id;
       path.push({ x: nodes[cursor].x, y: nodes[cursor].y });
-      if (total >= 32 && path.length >= 3) break;
+      // The validated graph and the existing `limit` already bound the walk.
+      // Cutting at 32 m made several neighbors trace identical short segments.
     }
     if (path.length === 1) {
       const neighbor = nodes[cursor].neighbours.find(e => e.metres > 0 && e.metres < limit);
