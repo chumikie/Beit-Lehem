@@ -89,6 +89,20 @@
 
 Próxima subetapa: revisar transições visuais entre frentes residenciais e comerciais, especialmente em zoom próximo, e avaliar sobreposições aparentes entre quintais, muros e casas ilustradas sem alterar a geometria ou a lógica de colisão.
 
+### Subetapa 7.3 — transições de frente e inspeção de colisões visuais
+
+- `gemini-modules/facade-studio.js` agora classifica as frentes artísticas em três perfis determinísticos: residencial, comercial e misto. Feira mantém predominância comercial com transições pontuais; Feliciano Pedrosa tem continuidade comercial com fachadas intermediárias; Vicente Cado combina residências e pequenas frentes comerciais; João Pessoa e Clovis permanecem residenciais; Matriz recebe transições mais raras e discretas.
+- O perfil misto usa faixa de jardim, pequeno trecho de marquise/faixa anônima e caminho deslocado. Não há nomes, logotipos, lojas reais, lotes, portas georreferenciadas ou footprints novos.
+- `tests/gemini-street-frontage-layer.test.cjs` ganhou duas regressões: distribuição dos perfis coerente por setor e verificação em zoom próximo de que a pintura permanece sob recorte Canvas e não modifica posição, dimensões, ângulo, lado ou outros campos da casa. A lógica física de colisão e a geometria OSM não foram modificadas.
+- `scripts/visual-inspection.cjs` captura agora uma imagem adicional de zoom próximo após cinco incrementos de zoom, tanto em desktop como em móvel, e verifica tinta no canvas e ausência de overflow horizontal.
+- **CI HEAD `94c9bafb` (#49):** `npm test` **417/417 aprovados, zero falhas**. Build temporário **965.470 bytes**, com 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais e 86 nomes; nenhum preview versionado foi escrito.
+- Playwright/Chromium: desktop **1440×960** e móvel com toque **390×844**, ambos com cinco incrementos de zoom para captura próxima. Dez capturas temporárias (welcome, jogo, closeup, mapa e após interação por viewport); sem overflow horizontal e sem erros JavaScript de página. As duas mensagens de console `net::ERR_FAILED` correspondem a recursos externos bloqueados pelo harness.
+- O nome exibido continuou canônico (`Rua Joaquim Rodrigues`); mapa ampliado e seleção de rota funcionaram (mensagem aproximada: 246 m no desktop e 139 m no móvel). Save experimental isolado continuou válido, versão 3, fonte `belem-osm-2026.geojson` e coordenadas finitas.
+- A inspeção próxima ainda mostra adensamento de sprites de animais e placas de personagens ao redor da câmera inicial, especialmente no móvel. É um limite visual preexistente de composição de personagens, não uma colisão física nem uma expansão da camada de fachadas; fica registrado para uma etapa própria de espaçamento/legibilidade.
+- [CI da subetapa 7.3](https://github.com/chumikie/Beit-Lehem/actions/runs/41342539407) · [capturas desktop/mobile e relatório JSON](https://github.com/chumikie/Beit-Lehem/actions/runs/41342539407/artifacts/13098226700).
+
+Próximo passo: tratar o agrupamento de personagens e placas na câmera inicial, preservando posições de agenda, rotas, horários e saves; em paralelo, revisar transições de frente em outras cenas de quarteirão com evidência visual dedicada.
+
 ### 8. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
