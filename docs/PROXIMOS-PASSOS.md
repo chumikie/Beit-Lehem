@@ -17,7 +17,7 @@
 - Marcar avaliações anteriores de privacidade/publicação como supersedidas quando não refletirem as decisões atuais.
 - Não fazer merge nem atualizar GitHub Pages nesta etapa.
 
-### 2. Fluxo geográfico canônico — integração de código concluída, inspeção local pendente
+### 2. Fluxo geográfico canônico — integração e regressões automatizadas concluídas; inspeção visual pendente
 
 - O build atual agora lê diretamente `source/belem-osm-2026.geojson` por `scripts/current-geodata.cjs` e injeta o mapa composto durante a geração offline.
 - Ruas, áreas e pontos são reconstruídos a partir das feições OSM. O nome da rua é copiado literalmente de `properties.name`, sem normalização ou correção de acentos.
@@ -25,17 +25,33 @@
 - Superfícies usadas apenas pelo estilo foram separadas em `roadAppearance`; nove pontos locais foram movidos para `localPlaces`, com `displayName`, `sourceName`, proveniência e estado; seis rótulos herdados sem correspondência OSM estão em `unverifiedRoadLabels` e não são exibidos como ruas.
 - A preparação antiga de `dist/map.json` deixa de ser o caminho de composição do mapa ativo. O HTML arquivado e os HTMLs gerados não foram editados diretamente.
 
-**Próxima validação necessária:** executar `npm test` e `npm run build` em ambiente com Node.js, abrir a prévia gerada e comparar visualmente nomes de ruas, POIs, rotas, fachadas e salvamento. O HTML versionado ainda não foi regenerado nesta etapa. Mudanças futuras na geometria OSM exigem revisão explícita e atualização deliberada da referência geométrica; não desativar o guard para aprová-las automaticamente.
+**Validação automatizada:** os testes de geografia e de separação OSM/localPlaces integram a suíte oficial; a suíte completa passou no CI. A inspeção visual de nomes, POIs, fachadas e salvamentos ainda requer uma prévia temporária aberta em navegador. O HTML versionado não foi regenerado nesta etapa. Mudanças futuras na geometria OSM exigem revisão explícita e atualização deliberada da referência geométrica; não desativar o guard para aprová-las automaticamente.
 
-### 3. Geração de casas — índices espaciais implementados; validação local pendente
+### 3. Geração de casas — índices espaciais implementados e validados
 
 - O índice de segmentos viários agora é construído antes da geração de casas e é reutilizado na reserva de espaço de árvores. A grade de ruas usa caixas delimitadoras expandidas em 22 unidades; a consulta continua executando a distância ponto-segmento exata e os limites estritos originais (11,5; 14,5; 22).
 - A ocupação de casas agora usa uma grade de 32 unidades. A consulta visita as células vizinhas necessárias e mantém `Math.hypot` e os limites estritos originais (14,5; 18).
 - O laço de candidatos, a ordem das vias/lados, o incremento de IDs, os `seeds`, os filtros de cenário/campo e a seleção final de até 1.350 casas foram mantidos. As funções de geração/seleção foram isoladas para permitir comparação direta entre busca exaustiva e indexada.
 - Novo teste C17 compara, sobre a malha de ruas de referência, a lista ordenada de todos os candidatos e a lista final selecionada entre os dois caminhos; também verifica coordenadas negativas, limites de célula e distâncias exatamente no limiar. O teste mede contagens de comparações geométricas, sem depender de benchmark temporal.
 
-**Validação executada nesta etapa:** o corpo dos três testes C17 e dos dois casos C10 existentes foi exercitado em runtime V8 com adaptadores para as APIs Node usadas pelos testes (não equivale a executar `node --test` ou `npm test`). Com 5.023 segmentos e o layout real de quatro cenas, a busca exaustiva e a indexada produziram exatamente 2.077 candidatos e as mesmas 1.350 casas selecionadas, na mesma ordem e coordenadas. As comparações ponto-segmento caíram de 21.408.026 para 35.632; as comparações de ocupação, de 3.083.985 para 10.297. Os casos de célula negativa, fronteira e distância exatamente no limite também passaram. **Ainda pendente:** executar `npm test` no ambiente Node do projeto e fazer a inspeção visual da prévia em uma etapa autorizada. Nenhum HTML gerado foi atualizado nesta etapa.
-### 4. Modularizar o monólito de forma incremental
+**Validação por equivalência:** com 5.023 segmentos e quatro cenas, a busca exaustiva e a indexada produziram exatamente 2.077 candidatos e as mesmas 1.350 casas selecionadas, na mesma ordem, coordenadas e atributos. As comparações ponto-segmento caíram de 21.408.026 para 35.632; as comparações de ocupação, de 3.083.985 para 10.297. Os casos de célula negativa, fronteira e distância exatamente no limite passaram.
+
+**Validação oficial:** GitHub Actions executou `npm test` com Node 22.23.4: **398/398 testes passaram, zero falhas**, em 25,14 segundos (execução no commit `04d5739`). Os testes C10/C17, os de cobertura espacial e as regressões geográficas fazem parte dessa execução. A inspeção visual no navegador continua pendente. Nenhum HTML gerado foi atualizado nesta etapa.
+### 4. Validação contínua no GitHub — suíte oficial aprovada
+
+- Adicionado `.github/workflows/test.yml` para executar a suíte nativa `npm test` com Node.js 22 em cada atualização da branch de trabalho.
+- Resultado confirmado: 398 testes, 398 aprovados, 0 falhas; execução de 25,14 s.
+- O workflow tem permissão de leitura do repositório, não faz merge, não publica e não aciona Pages.
+- A execução oficial fica registrada no [GitHub Actions](https://github.com/chumikie/Beit-Lehem/actions/runs/41331595171).
+
+### 5. Build isolado e revisão visual — próxima etapa
+
+- Acrescentado ao workflow um passo que executa `buildGeminiPreview` em arquivo temporário fora do repositório e valida 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais e 86 nomes de ruas.
+- Esse passo não escreve em `previews/`, não altera `publicacao/index.html` e não gera artefato publicado.
+- A execução desse novo passo ainda precisa concluir no commit que o introduziu.
+- Depois, abrir uma saída temporária no navegador e conferir nomes de ruas, posição das casas, POIs, fachadas, rotas e salvamento em desktop e móvel. Inspeção visual não deve ser declarada concluída apenas com testes de código.
+
+### 6. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
 
