@@ -1520,9 +1520,10 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   }
   function label(c, landmark) {
     const title = landmark.kind === 'square' ? 'Praça 6 de Setembro*' : landmark.name;
-    const y = landmark.kind === 'church' ? 33 : landmark.kind === 'square' ? 43 : 36;
-    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 8px system-ui';
-    c.lineWidth = 3; c.strokeStyle = '#fff9df'; c.strokeText(title, 0, y);
+    // Keep captions clear of the market counters and the terminal waiting bay.
+    const y = landmark.kind === 'church' ? 37 : landmark.kind === 'square' ? 43 : landmark.kind === 'market' || landmark.kind === 'terminal' ? 46 : 39;
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 7.2px system-ui';
+    c.lineWidth = 2.4; c.strokeStyle = '#fff9df'; c.strokeText(title, 0, y);
     c.fillStyle = '#476b55'; c.fillText(title, 0, y);
   }
 
@@ -1546,7 +1547,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       c.restore();
     }
   }
-  function drawDetails(c, landmarks, viewport, marketDay, time = 0, night = false) {
+  function drawDetails(c, landmarks, viewport, marketDay, time = 0, night = false, labelOptions = null) {
     for (const landmark of landmarks || []) {
       if (!visible(landmark, viewport)) continue;
       c.save(); c.translate(landmark.p[0], landmark.p[1]);
@@ -1563,7 +1564,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       if (landmark.kind === 'chapel') drawChapelDetails(c);
       if (landmark.kind === 'amusement') drawAmusementDetails(c, night, time);
       if (landmark.kind === 'rockview') drawRockviewDetails(c, night);
-      label(c, landmark);
+      // At city scale the mapped POI glyph stays visible, while full captions
+      // wait until the player approaches. Postcards omit options and keep labels.
+      if (!labelOptions || (labelOptions.zoom >= 1.65 && labelOptions.distance <= 105)) label(c, landmark);
       c.restore();
     }
   }
@@ -4884,8 +4887,9 @@ function drawScenicLayer(c,viewport,details=false){
   if(scene.id==='pedra_cordeiro'&&details)drawPedraLandscape(c,x,y);
   c.save();c.translate(x,y);c.scale(scene.scale,scene.scale);
   const prop={p:[0,0],kind:scene.kind,name:scene.name};
-  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60);
-   if(scene.positionStatus!=='osm_point'){
+  const sceneDistance=Math.hypot(player.x-x,player.y-y);
+  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60,{zoom,distance:sceneDistance});
+   if(scene.positionStatus!=='osm_point'&&zoom>=1.85&&sceneDistance<=90){
     c.fillStyle='#fff9e8';c.strokeStyle='#ac986d';c.lineWidth=1;
     c.beginPath();c.roundRect(-48,49,96,13,4);c.fill();c.stroke();
     c.fillStyle='#806c47';c.font='bold 7px system-ui';c.textAlign='center';c.fillText('ILUSTRAÇÃO · SEM LOCAL EXATO',0,57);
@@ -6460,7 +6464,9 @@ function drawResidentPortrait(def,index){
  portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Retrato kawaii ilustrado de '+def.name);
  const pc=portrait.getContext('2d');pc.fillStyle='#f1eee3';pc.fillRect(0,0,92,104);
  pc.fillStyle=def.tone+'24';pc.beginPath();pc.ellipse(46,86,34,19,0,0,7);pc.fill();
- pc.save();pc.translate(46,82);pc.scale(1.42,1.42);
+ // Portrait cards need a readable face at sidebar sizes; this only affects
+ // the offscreen portrait canvas, never the walking sprite or its world scale.
+ pc.save();pc.translate(46,91);pc.scale(2.5,2.5);
  drawKawaiiWalker(pc,{x:0,y:0,id:def.id,def,walking:false,meeting:false,variant:index},1.3);
  pc.restore();
  return portrait;
