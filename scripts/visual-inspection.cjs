@@ -252,6 +252,38 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       name + ': selecionar um trecho do mapa deve marcar uma rota pelas ruas');
   }
 
+  // C19: verify real control transitions and recovery before resumed walking.
+  const interactionAudit = { album: false, help: false, observation: false, mobileRoute: false };
+  if (mobile) {
+    if (await page.locator('#mobileRoute').isVisible()) {
+      await page.locator('#mobileRoute').click();
+      interactionAudit.mobileRoute = await page.locator('#sidebar').evaluate(el => el.classList.contains('open'));
+      assert.ok(interactionAudit.mobileRoute, name + ': rota móvel deve abrir o painel');
+      await page.locator('#closeRoute').click();
+      assert.equal(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')),
+        false, name + ': painel móvel deve fechar');
+    }
+  } else {
+    await page.locator('#observe').click();
+    interactionAudit.observation = await page.evaluate(() => {
+      const saved = JSON.parse(localStorage.getItem('roncador-expedition-v2-referencias-gemini') || '{}');
+      return Array.isArray(saved.observations) && saved.observations.length > 0;
+    });
+    assert.ok(interactionAudit.observation, 'Observar deve registrar a paisagem no save');
+    await page.locator('#openAlbum').click();
+    interactionAudit.album = await page.locator('#albumDialog').evaluate(el => el.open);
+    assert.ok(interactionAudit.album, 'álbum deve abrir');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#albumDialog').evaluate(el => el.open), false,
+      'Escape deve fechar o álbum');
+    await page.locator('#help').click();
+    interactionAudit.help = await page.locator('#helpDialog').evaluate(el => el.open);
+    assert.ok(interactionAudit.help, 'ajuda deve abrir');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#helpDialog').evaluate(el => el.open), false,
+      'Escape deve fechar a ajuda');
+  }
+
   let movement = { controlVisible: false, localStorageKeys: [], saveVersion: null, saveMapSource: null };
   if (mobile) {
     const right = page.locator('#touchPad [data-move="right"]');
@@ -305,7 +337,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, routeSelection, movement
+    mapDialog, routeSelection, movement, interactionAudit
   };
   report.viewports[name] = result;
 
