@@ -4,8 +4,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 
 const source=fs.readFileSync(path.join(__dirname,'../gemini-modules/game.js'),'utf8');
-const fragment=source.slice(source.indexOf('function nearbyResidentReaction('),source.indexOf('function drawStreetLife('));
-const nearbyResidentReaction=new Function(fragment+';return nearbyResidentReaction;')();
+const fragment=source.slice(source.indexOf('function residentGestureWarmth('),source.indexOf('function drawStreetLife('));
+const {nearbyResidentReaction,residentGestureWarmth}=new Function(fragment+';return {nearbyResidentReaction,residentGestureWarmth};')();
 const createPlayerPresenceGestures=new Function('nearbyResidentReaction',fragment+';return createPlayerPresenceGestures;')(nearbyResidentReaction);
 const player={x:20,y:0};
 const context={living:{people:{damiao:{bond:2},lucia:{bond:1},bia:{bond:1}}},sideNeighbors:{seen:['cica','nara']},worldPause:null};
@@ -99,4 +99,42 @@ test('atividade prioritária cancela uma despedida e não cria dado de save',()=
  assert.equal(gesture(person,{x:52,y:0},context,22.3),null);
  assert.deepEqual(person,snapshot);
  assert.doesNotMatch(source,/playerPresenceGestures[,:]\s*(?:save|saved|JSON\.stringify)/);
+});
+
+test('afeto cresce apenas com os níveis de vínculo existentes',()=>{
+ const weak={...context,living:{people:{damiao:{bond:1}}}};
+ const strong={...context,living:{people:{damiao:{bond:4}}}};
+ assert.equal(residentGestureWarmth('damiao',weak),.7);
+ assert.equal(residentGestureWarmth('damiao',strong),1);
+ assert.ok(nearbyResidentReaction(resident('damiao'),player,strong).intensity>
+  nearbyResidentReaction(resident('damiao'),player,weak).intensity);
+ assert.equal(residentGestureWarmth('damiao',{...context,living:{people:{damiao:{bond:0}}}}),0);
+});
+
+test('Ciça e Nara distinguem apresentação de escolha realmente registrada',()=>{
+ const introduced={...context,sideNeighbors:{seen:['cica','nara'],choices:{}}};
+ const shared={...context,sideNeighbors:{seen:['cica','nara'],choices:{cica:'fitas',nara:'janela'}}};
+ for(const id of ['cica','nara']){
+  assert.equal(residentGestureWarmth(id,introduced),.68);
+  assert.equal(residentGestureWarmth(id,shared),.88);
+  assert.ok(nearbyResidentReaction(resident(id),player,shared).intensity>
+   nearbyResidentReaction(resident(id),player,introduced).intensity);
+ }
+ assert.equal(residentGestureWarmth('cica',{...context,sideNeighbors:{seen:[],choices:{cica:'fitas'}}}),0);
+});
+
+test('despedida fica mais calorosa com vínculo, mas conserva duração',()=>{
+ const weak={...context,living:{people:{bia:{bond:1}}}};
+ const strong={...context,living:{people:{bia:{bond:4}}}};
+ const measure=ctx=>{
+  const gesture=createPlayerPresenceGestures(),person=resident('bia');
+  gesture(person,player,ctx,1);
+  gesture(person,player,ctx,3);
+  return {wave:gesture(person,{x:52,y:0},ctx,3.1),end:gesture(person,{x:52,y:0},ctx,4.1)};
+ };
+ const one=measure(weak),four=measure(strong);
+ assert.equal(one.wave.pose,'wave');
+ assert.ok(four.wave.intensity>one.wave.intensity);
+ assert.equal(one.end,null);
+ assert.equal(four.end,null);
 });

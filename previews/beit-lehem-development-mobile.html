@@ -6010,13 +6010,20 @@ function chooseConversationLayer(streetEvent,communityEvent,people,playerPositio
  return distanceToEvent(streetEvent)<=distanceToEvent(communityEvent)?'street':'community';
 }
 let streetConversation=null;
+function residentGestureWarmth(id,context){
+ const bond=Math.max(0,Math.min(4,Number(context.living.people[id]?.bond)||0));
+ if(bond>0)return .6+bond*.1;
+ if(!context.sideNeighbors.seen?.includes(id))return 0;
+ // A recorded shared choice is more familiar than an introduction alone.
+ return typeof context.sideNeighbors.choices?.[id]==='string'&&context.sideNeighbors.choices[id].length>0 ? .88 : .68;
+}
 function nearbyResidentReaction(person,playerPosition,context){
  if(context.worldPause||!person.def||person.walking||person.arriving||person.meeting||person.travel||person.social||person.greeting||person.moment||person.crowded)return null;
- const known=context.living.people[person.id]?.bond>0||context.sideNeighbors.seen?.includes(person.id);
- if(!known)return null;
+ const warmth=residentGestureWarmth(person.id,context);
+ if(!warmth)return null;
  const distance=Math.hypot(person.x-playerPosition.x,person.y-playerPosition.y);
  if(distance>=42)return null;
- return {pose:'smile',stage:'nearby',facing:playerPosition.x>=person.x?1:-1,intensity:Math.min(.45,(42-distance)*.018),react:true};
+ return {pose:'smile',stage:'nearby',facing:playerPosition.x>=person.x?1:-1,intensity:Math.min(.45,(42-distance)*.018)*warmth,react:true};
 }
 function createPlayerPresenceGestures(){
  const visits=new Map();
@@ -6044,7 +6051,7 @@ function createPlayerPresenceGestures(){
   }
   if(!previous.departed||now>=previous.farewellUntil)return null;
   return {pose:'wave',stage:'farewell',facing:playerPosition.x>=person.x?1:-1,
-   intensity:Math.min(.38,(previous.farewellUntil-now)*.55),react:false};
+   intensity:Math.min(.38,(previous.farewellUntil-now)*.55)*residentGestureWarmth(person.id,context),react:false};
  };
 }
 const playerPresenceGestures=createPlayerPresenceGestures();
