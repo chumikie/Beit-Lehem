@@ -17,7 +17,7 @@ jobs:
   test:
     name: npm test (Node 22)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -29,6 +29,23 @@ jobs:
 
       - name: Run complete test suite
         run: npm test
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Inspect desktop and mobile gameplay in a temporary browser
+        run: node scripts/visual-inspection.cjs
+
+      - name: Upload temporary visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beit-lehem-visual-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/beit-lehem-visual-review/
+          if-no-files-found: warn
+          retention-days: 3
 
       - name: Build current preview outside the repository
         run: |
