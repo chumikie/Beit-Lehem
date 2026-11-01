@@ -1,0 +1,37 @@
+{
+  "type": "FeatureCollection",
+  "name": "serra-do-camuca-crista-referencia-nao-navegavel",
+  "license": "OpenStreetMap contributors (ODbL 1.0)",
+  "source": "https://www.openstreetmap.org/way/884827347",
+  "retrieved": "2026-11-01",
+  "warning": "Linha de crista natural, NAO e estrada, trilha, entrada publica ou acesso autorizado.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_way": 884827347,
+        "name": "Serra do Camucá",
+        "natural": "ridge",
+        "navigable": false,
+        "public_access_verified": false,
+        "source_name": "IBGE; Cartas Topográficas do Exército Brasileiro"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-35.522318, -6.7004115],
+          [-35.5181123, -6.7004115],
+          [-35.5155373, -6.7004967],
+          [-35.5121041, -6.7019459],
+          [-35.5093575, -6.7020311],
+          [-35.5068684, -6.7006672],
+          [-35.5049802, -6.6988771],
+          [-35.5025769, -6.6963197],
+          [-35.500517, -6.6941886],
+          [-35.4991437, -6.6918869],
+          [-35.4979421, -6.6904378]
+        ]
+      }
+    }
+  ]
+}
