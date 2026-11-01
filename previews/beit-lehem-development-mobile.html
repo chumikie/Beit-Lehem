@@ -6010,6 +6010,14 @@ function chooseConversationLayer(streetEvent,communityEvent,people,playerPositio
  return distanceToEvent(streetEvent)<=distanceToEvent(communityEvent)?'street':'community';
 }
 let streetConversation=null;
+function nearbyResidentReaction(person,playerPosition,context){
+ if(context.worldPause||!person.def||person.walking||person.arriving||person.meeting||person.travel||person.social||person.greeting||person.moment||person.crowded)return null;
+ const known=context.living.people[person.id]?.bond>0||context.sideNeighbors.seen?.includes(person.id);
+ if(!known)return null;
+ const distance=Math.hypot(person.x-playerPosition.x,person.y-playerPosition.y);
+ if(distance>=42)return null;
+ return {pose:'smile',stage:'nearby',facing:playerPosition.x>=person.x?1:-1,intensity:Math.min(.45,(42-distance)*.018),react:true};
+}
 function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
  const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere(),elapsed);
@@ -6069,6 +6077,8 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
    const age=elapsed-(marketReaction.until-5.5);
    if(age<2)person.social={pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,age/.3,(2-age)/.4)),react:true};
   }
+  // Recognition is an expression on an existing stop, never a new stop or route.
+  if(!person.social)person.social=nearbyResidentReaction(person,player,{living,sideNeighbors,worldPause});
   residentMotion.present(person,elapsed,reduce);
   // A nearby friend can share a quiet smile when already stopped; do not
   // interrupt a route, a scripted greeting or another resident's encounter.
