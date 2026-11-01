@@ -1782,8 +1782,10 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   const drawPet=()=>{
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)+pet.variant)*behavior.bounce;
    const offset=streetPetVisualOffset(at,people);
-   c.save();c.translate(at.x+offset.x,at.y+offset.y+bounce);
+   c.save();c.translate(at.x+offset.x,at.y+offset.y);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
+  // Ground contact stays fixed while the animal's body bobs or reacts.
+  c.translate(0,bounce);
   const fur=pet.bolt?'#eee0c3':pet.cat?'#f0d3ac':'#cd9870';
   if(zoom<1.15){
    // At wide zoom, avoid subpixel eyes, ears and overlapping fine outlines.
