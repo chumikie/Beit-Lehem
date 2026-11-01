@@ -253,7 +253,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   }
 
   // C19: verify real control transitions and recovery before resumed walking.
-  const interactionAudit = { album: false, help: false, observation: false, mobileRoute: false };
+  const interactionAudit = { album: false, help: false, observation: false, mobileRoute: false,
+    mapEscape: false, sidebarEscape: false, modalIsolation: false, saveRestored: false };
   if (mobile) {
     if (await page.locator('#mobileRoute').isVisible()) {
       await page.locator('#mobileRoute').click();
@@ -262,6 +263,10 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       await page.locator('#closeRoute').click();
       assert.equal(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')),
         false, name + ': painel móvel deve fechar');
+      await page.locator('#mobileRoute').click();
+      await page.keyboard.press('Escape');
+      interactionAudit.sidebarEscape = !(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')));
+      assert.ok(interactionAudit.sidebarEscape, name + ': Escape deve fechar o roteiro móvel');
     }
   } else {
     await page.locator('#observe').click();
@@ -274,6 +279,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     await page.locator('#openAlbum').click();
     interactionAudit.album = await page.locator('#albumDialog').evaluate(el => el.open);
     assert.ok(interactionAudit.album, 'álbum deve abrir');
+    interactionAudit.modalIsolation = await page.locator('dialog[open]').count() === 1;
+    assert.ok(interactionAudit.modalIsolation, 'álbum não deve abrir sobre outra janela');
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#albumDialog').evaluate(el => el.open), false,
       'Escape deve fechar o álbum');
@@ -284,6 +291,15 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     assert.equal(await page.locator('#helpDialog').evaluate(el => el.open), false,
       'Escape deve fechar a ajuda');
   }
+
+  // The expanded map must also recover via Escape without losing the selected route.
+  if (await mapButton.isVisible().catch(() => false)) await mapButton.click();
+  else await page.keyboard.press('m');
+  assert.equal(await page.locator('#mapDialog').evaluate(el => el.open), true,
+    name + ': mapa deve reabrir após definir uma rota');
+  await page.keyboard.press('Escape');
+  interactionAudit.mapEscape = !(await page.locator('#mapDialog').evaluate(el => el.open));
+  assert.ok(interactionAudit.mapEscape, name + ': Escape deve fechar o mapa');
 
   let movement = { controlVisible: false, localStorageKeys: [], saveVersion: null, saveMapSource: null };
   if (mobile) {
@@ -324,6 +340,16 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   });
   movement.saveValid = movement.saveVersion === 3 &&
     movement.saveMapSource === map.source && movement.playerCoordinatesFinite;
+
+  // Reload is a real persistence boundary; dialogs and touch controls must not corrupt saves.
+  await page.reload({ waitUntil: 'load' });
+  await page.locator('#world').waitFor({ state: 'visible' });
+  interactionAudit.saveRestored = await page.evaluate(expected => {
+    const data = JSON.parse(localStorage.getItem('roncador-expedition-v2-referencias-gemini') || '{}');
+    return data.v === expected.version && data.mapSource === expected.source &&
+      Number.isFinite(data.player?.x) && Number.isFinite(data.player?.y);
+  }, { version: movement.saveVersion, source: movement.saveMapSource });
+  assert.ok(interactionAudit.saveRestored, name + ': recarregar deve manter save e posição válidos');
 
   const finalLayout = await collectLayout(page, name + '-after-input');
   await page.screenshot({
@@ -366,6 +392,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   try {
     await captureViewport(browser, baseUrl, 'desktop', { width: 1440, height: 960 }, false);
     await captureViewport(browser, baseUrl, 'mobile', { width: 390, height: 844 }, true);
+    await captureViewport(browser, baseUrl, 'mobile-narrow', { width: 320, height: 640 }, true);
   } finally {
     await browser.close();
     server.close();
