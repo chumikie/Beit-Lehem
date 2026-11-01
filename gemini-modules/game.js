@@ -2096,7 +2096,11 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   {id:'goku',name:'Goku',hub:'mercado',variant:17,cat:false,coat:'goku'},
   {id:'princesa',name:'Princesa',hub:'rodoviaria',variant:18,cat:false,coat:'princesa'}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
- const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
+ // C20: a few pairs reached the same point at 17h/19h despite distinct hubs.
+ // Stagger their phases along their *existing* OSM route, without moving a hub,
+ // inventing coordinates or separating the companion pairs beyond interaction range.
+ const petPathStagger={mimi:10,hani:-10,jekki:30,bob:-10,princesa:10,'gatinho-2':20};
+ const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant,petPathStagger[pet.id]||0)}));
  lastPetPopulation=companions;
  const occupiedNameplates=[],drawnPetCenters=[];
  const compactViewport=w<=600;
