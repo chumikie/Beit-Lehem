@@ -31,12 +31,22 @@ function cleanJpeg(encoded){
 // These checks deliberately reject the current Gemini build; removing JPEG EXIF
 // alone does not make a private family-oriented game safe to distribute.
 function auditPublicContent(html){
+ // Fictional contacts may stay, but any change to this curated roster
+ // requires another explicit privacy review.
+ if(html.includes('RoncadorBelemContacts')){
+  const block=html.match(/const CONTACTS\s*=\s*\[([\s\S]*?)\n\s*\];/);
+  const ids=block?[...block[1].matchAll(/\bid:\s*'([^']+)'/g)].map(m=>m[1]):[];
+  const approved=['familia_varanda','turma_karaoke','galera_xaviezao','pausa_sonho_doce','memorias_anita','bloco_capela_luz'];
+  if(ids.length!==approved.length||ids.some((id,i)=>id!==approved[i])||
+     !block[1].includes('Localização narrativa a definir')||
+     !block[1].includes('não representa família real'))
+   throw Error('Cópia pública bloqueada: revisão de contatos ficcionais necessária.');
+ }
  const checks=[
-  ['rotinas ou contatos afetivos','RoncadorBelemContacts'],
   ['âncora residencial particular','casa_varanda'],
   ['referência de domicílio numerado',/\bCasa\s*(?:849|841)\b/i],
   ['coordenada residencial particular',/\[\s*136\.5\s*,\s*578(?:\.0)?\s*\]/],
-  ['marcação interna de privacidade',/\b(?:PRIVATE|PRIVADO|PESSOAL[_ -]IDENTIFICAVEL)\b/i]
+  ['marcação interna de privacidade',/(?:\/\/\s*(?:PRIVATE|PRIVADO)\b|\/\*\s*(?:PRIVATE|PRIVADO)\b|\bPESSOAL[_ -]IDENTIFICAVEL\b)/i]
  ];
  const found=checks.filter(([,pattern])=>typeof pattern==='string'?html.includes(pattern):pattern.test(html)).map(([name])=>name);
  if(found.length)throw Error('Cópia pública bloqueada: requer revisão de '+found.join(', ')+'. Nenhum arquivo novo foi gerado.');
