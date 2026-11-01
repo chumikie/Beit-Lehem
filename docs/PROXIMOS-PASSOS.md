@@ -103,6 +103,20 @@ Próxima subetapa: revisar transições visuais entre frentes residenciais e com
 
 Próximo passo: tratar o agrupamento de personagens e placas na câmera inicial, preservando posições de agenda, rotas, horários e saves; em paralelo, revisar transições de frente em outras cenas de quarteirão com evidência visual dedicada.
 
+### Subetapa 7.4 — composição visual da câmera inicial
+
+- `gemini-modules/game.js` ganhou `streetPetCrowdVisible`: seleção de silhuetas por distância em pixels de tela, sem deslocar os pontos reais. O intervalo mínimo é de 44 px no canvas compacto (até 600 px) e 26 px em telas maiores; como a distância é convertida pelo zoom atual, mais animais reaparecem naturalmente quando a câmera aproxima.
+- No mobile, a câmera usa a largura real do canvas (`w`) para ativar o perfil compacto, não a largura expandida do retângulo de culling. As placas dos pets ficam restritas ao Bolt no mobile; os demais nomes continuam disponíveis na identificação/diário, sem ocupar a cena. Placas de moradores também caem para uma por composição em telas estreitas.
+- Nenhum pet ou morador foi removido dos itinerários. Permanecem os 13 pets, suas agendas e amostragens de rota; a filtragem só decide quais sprites/placas cabem simultaneamente no quadro. A lógica de movimento, coordenadas salvas, grafo OSM, horários, IDs e esquema de save não foi modificada.
+- Regressões C15.5 verificam espaçamento compacto/desktop, resposta ao zoom, imutabilidade do ponto de rota, retorno booleano da visibilidade de placa, detecção da largura real do canvas e limite de uma placa de morador no mobile. Os testes existentes de 7 dias confirmam que os 13 pets continuam nos caminhos reais.
+- **CI HEAD `879c1eb5` (#?):** `npm test` **422/422 aprovados, zero falhas**. Build temporário **966.467 bytes**, 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais e 86 nomes; nenhum preview versionado foi escrito.
+- Playwright/Chromium: desktop **1440×960** e móvel com toque **390×844**, ambos com cinco incrementos de zoom e capturas welcome, jogo, closeup, mapa e após interação. Sem overflow horizontal, sem page errors JavaScript; duas mensagens de console `net::ERR_FAILED` são recursos externos bloqueados pelo harness.
+- `Rua Joaquim Rodrigues` continua literal/canônica. Mapa ampliado e seleção de rota funcionaram; save experimental isolado permaneceu válido (v3, `belem-osm-2026.geojson`, coordenadas finitas).
+- A captura móvel agora evita placas de animais em série; ainda há alguns sprites próximos no centro da cena quando as rotas convergem, mas sem nomes competindo sobre os corpos. O desktop mantém mais identificações simultâneas, coerente com a área maior. Chromium emulado não substitui ensaio em aparelho físico.
+- [CI da subetapa 7.4](https://github.com/chumikie/Beit-Lehem/actions/runs/41344020396) · [capturas e relatório temporários](https://github.com/chumikie/Beit-Lehem/actions/runs/41344020396/artifacts/13097553993).
+
+Próximo passo: avaliar os sprites ainda próximos no corredor central em zoom alto, sem aumentar os limites de deslocamento visual nem tocar nas posições de agenda; qualquer refinamento adicional deve continuar limitado à composição da câmera.
+
 ### 8. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
