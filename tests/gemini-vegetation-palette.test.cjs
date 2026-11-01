@@ -14,8 +14,8 @@ function render(phase){
  for(const name of ['save','restore','translate','beginPath','ellipse','arc','fill','stroke','fillRect','moveTo','lineTo','quadraticCurveTo'])
   c[name]=(...args)=>ops.push([name,...args]);
  const roundRect=(ctx,x,y,w,h,r,fill)=>{ctx.beginPath();ctx.fillStyle=fill;ctx.fill();};
- const draw=new Function('lightPhase','roundRect','showGroundedFlora','floraLayer',script+'return drawGroundedFlora;')
-  (phase,roundRect,true,{points});
+ const draw=new Function('lightPhase','roundRect','showGroundedFlora','floraLayer','verifiedWater',script+'return drawGroundedFlora;')
+  (phase,roundRect,true,{points},[]);
  draw(c,{left:-5,right:150,top:-5,bottom:30},0);
  return ops;
 }

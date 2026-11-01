@@ -153,12 +153,12 @@ test('nomes priorizam proximidade sem cobrir rostos no desktop e no celular',()=
  assert.ok(start>=0&&end>start,'seleção de nomes encontrada');
  const layout=vm.runInNewContext(source.slice(start,end)+';layoutResidentNameplates');
  const people=[
-  {id:'rosa',def:{name:'Rosa'},x:20,y:0},
-  {id:'mila',def:{name:'Mila'},x:45,y:0},
-  {id:'zeca',def:{name:'Zeca'},x:60,y:0},
-  {id:'cica',def:{name:'Ciça'},x:80,y:0},
+  {id:'rosa',def:{name:'Rosa'},x:10,y:0},
+  {id:'mila',def:{name:'Mila'},x:55,y:40},
+  {id:'zeca',def:{name:'Zeca'},x:85,y:-45},
+  {id:'cica',def:{name:'Ciça'},x:120,y:0},
   {id:'nara',def:{name:'Nara'},x:140,y:0},
-  {id:'bia',def:{name:'Bia'},x:10,y:0,meeting:true}
+  {id:'bia',def:{name:'Bia'},x:10,y:50,meeting:true}
  ];
  for(const [phone,expected] of [[false,3],[true,2]]){
   const names=layout(people,{x:0,y:0},1.85,phone);

@@ -28,20 +28,37 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   let html = fs.readFileSync(sourcePath, 'utf8');
   const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
   html=workbench.html;
+  // Geographic overlay is compiled into the offline preview, not fetched by
+  // the browser. The archived Gemini source and V2.27 remain untouched.
+  const hydroFile=path.join(projectRoot,'source','belem-aguas-osm-2026-11-01.geojson');
+  if(workbench.used.includes('game')&&html.includes('const VERIFIED_HYDRO_GEOJSON=null;')&&fs.existsSync(hydroFile)){
+    const file=hydroFile;
+    const hydro=JSON.parse(fs.readFileSync(file,'utf8'));
+    if(hydro.metadata?.CD_MUN!=='2501906'||hydro.features?.length!==2||hydro.features.some(f=>f.properties?.natural!=='water'||f.geometry?.type!=='Polygon')){
+      throw new Error('Hidrografia de Belém/PB não validada; não gerar prévia.');
+    }
+    html=replaceExactlyOnce(html,'const VERIFIED_HYDRO_GEOJSON=null;',
+      'const VERIFIED_HYDRO_GEOJSON='+JSON.stringify(hydro)+';',
+      'Polígonos OSM de água de Belém/PB');
+  }
   // Extend the existing album, after its original cards, without editing the
   // archived Gemini file or adding a second album interface.
-  html=replaceExactlyOnce(
-    html,
-    "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n}\nfunction observe()",
-    "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n window.RoncadorAffectionMemory.appendSocialKeepsakes(grid,{marketMorning,luciaGarden,biaLetters,communitySeen},document);\n}\nfunction observe()",
-    'Cartões afetivos no álbum existente'
-  );
+  const albumTail="content.append(title,description);article.append(preview,content);grid.append(article);\n }\n}";
+  const afterAlbum=html.includes(albumTail+'\nfunction restoreRuaNovaPaths(')?'function restoreRuaNovaPaths(':'function observe()';
+  html=replaceExactlyOnce(html,albumTail+'\n'+afterAlbum,
+    "content.append(title,description);article.append(preview,content);grid.append(article);\n }\n window.RoncadorAffectionMemory.appendSocialKeepsakes(grid,{marketMorning,luciaGarden,biaLetters,communitySeen},document);\n}\n"+afterAlbum,
+    'Cartões afetivos no álbum existente');
   // Lúcia's existing planter ages with the fictional calendar. No new map points.
   html=replaceExactlyOnce(html,"window.RoncadorLuciaGarden.claim(luciaGarden)","window.RoncadorLuciaGarden.claim(luciaGarden,living.day)",'Crescimento de Lúcia');
   html=replaceExactlyOnce(html,"const nod=reduce?0:Math.sin(time*2.1)*.9;\n   c.save();","const nod=reduce?0:Math.sin(time*2.1)*.9;\n   const bloom=window.RoncadorLuciaGarden.growth(luciaGarden,living.day);\n   c.save();",'Crescimento de Lúcia');
   html=replaceExactlyOnce(html,"c.translate(11,-7);c.scale(.82,.82);","c.translate(11,-7);c.scale(.82*bloom.scale,.82*bloom.scale);",'Escala da muda de Lúcia');
   html=replaceExactlyOnce(html,"c.arc(nod,-12,luciaGarden.claimed?3.8:2.6,0,7)","c.arc(nod,-12,[1.1,1.7,2.6,3.8][bloom.stage],0,7)",'Crescimento de Lúcia');
-  html=replaceExactlyOnce(html,"$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “O carinho que a gente planta permanece.”'","$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “'+logic.growth(luciaGarden,living.day).caption+' O carinho que a gente planta permanece.”'",'Crescimento de Lúcia');
+  const legacyLuciaSpeech="$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “O carinho que a gente planta permanece.”'";
+  if(html.includes(legacyLuciaSpeech)){
+    html=replaceExactlyOnce(html,legacyLuciaSpeech,"$('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “'+logic.growth(luciaGarden,living.day).caption+' O carinho que a gente planta permanece.”'",'Crescimento de Lúcia');
+  }else if(!html.includes("gardenStageDialogue('lucia',logic.growth(luciaGarden,living.day))")){
+    throw new Error('Crescimento de Lúcia: fala contextual não encontrada após sobreposição.');
+  }
   // Rosa joins the journal; the original trio keeps its earned album card.
   html=replaceExactlyOnce(html,"if(sideNeighbors.seen.length===3)","if(window.RoncadorSecondaryNeighbors.coreProgress(sideNeighbors)===3)",'Elenco ampliado');
   html=replaceExactlyOnce(html,"$('sideProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos';","$('sideProgress').textContent=sideNeighbors.seen.length+'/'+window.RoncadorSecondaryNeighbors.RESIDENTS.length+' conhecidos';",'Elenco ampliado');

@@ -41,13 +41,54 @@
     {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]}
  ]);
  const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
- const fresh=()=>({seen:[],lastHelp:{},choices:{}});
+ const fresh=()=>({seen:[],lastHelp:{},choices:{},recados:{stage:0},connections:{damiaoTeo:false,biaTeo:false,zecaLucia:false,zecaLuciaDay:0},marketLegacy:{kind:null,day:0}});
  function restore(raw){
   const state=fresh();if(!raw||typeof raw!=='object')return state;
   state.seen=Array.isArray(raw.seen)?RESIDENTS.map(r=>r.id).filter(id=>raw.seen.includes(id)):[];
   for(const def of RESIDENTS){const day=Number(raw.lastHelp?.[def.id]);if(Number.isInteger(day)&&day>=1&&day<=100000)state.lastHelp[def.id]=day;
    if(def.options.some(o=>o.id===raw.choices?.[def.id]))state.choices[def.id]=raw.choices[def.id];}
+  const stage=Number(raw.recados?.stage);
+  if(Number.isInteger(stage)&&stage>=0&&stage<=3)state.recados.stage=stage;
+  for(const key of ['damiaoTeo','biaTeo'])state.connections[key]=raw.connections?.[key]===true;
+  state.connections.zecaLucia=raw.connections?.zecaLucia===true||state.choices.zeca==='muda-lucia';
+  const zecaDay=Number(raw.connections?.zecaLuciaDay);
+  if(Number.isInteger(zecaDay)&&zecaDay>=1&&zecaDay<=9999)state.connections.zecaLuciaDay=zecaDay;
+  if(['fita','conversa'].includes(raw.marketLegacy?.kind)){
+   const day=Number(raw.marketLegacy?.day);
+   if(Number.isInteger(day)&&day>=1&&day<=9999)state.marketLegacy={kind:raw.marketLegacy.kind,day};
+  }
   return state;
+ }
+ function rememberFairChoice(state,kind,day){
+  if(!state||!['fita','conversa'].includes(kind)||!Number.isInteger(day)||day<1||day>9999)return false;
+  if(['fita','conversa'].includes(state.marketLegacy?.kind))return false;
+  state.marketLegacy={kind,day};return true;
+ }
+ function fairMemoryLine(state,person){
+  const kind=state?.marketLegacy?.kind;
+  if(kind==='fita')return person==='damiao'?'Francisco reconhece a fita preparada com Ciça: “Essa cor ficou na memória da feira.”':person==='cica'?'Ciça lembra do laço que vocês prepararam para a banca de Francisco.':'';
+  if(kind==='conversa')return person==='damiao'?'Francisco lembra da conversa sem pressa que vocês tiveram depois de arrumar a banca.':person==='cica'?'Ciça comenta: “Francisco gostou tanto daquela conversa tranquila na feira.”':'';
+  return '';
+ }
+ function rememberConnection(state,key){
+  if(!['damiaoTeo','biaTeo'].includes(key)||!state||typeof state!=='object')return false;
+  state.connections=state.connections||{damiaoTeo:false,biaTeo:false};
+  if(state.connections[key])return false;
+  state.connections[key]=true;return true;
+ }
+ const RECADOS=Object.freeze([
+  {id:'teo',choice:'recado',label:'✉️ Receber um recado de Téo',hub:'rodoviaria',story:'Téo confia a você um bilhete fictício para Rosa: uma pequena saudade que encontrou palavras.'},
+  {id:'rosa',choice:'caderno',label:'☕ Ouvir a resposta de Rosa',hub:'sonho_doce',story:'Rosa lê o bilhete e escreve no caderno: “A amizade também sabe esperar.” Ela pede que você conte isso a Téo.'},
+  {id:'teo',choice:'envelope',label:'✉️ Voltar com o recado a Téo',hub:'rodoviaria',story:'Téo guarda a resposta num envelope desenhado. “Agora esta lembrança tem caminho de ida e volta.”'}
+ ]);
+ function recadoStage(state){const n=Number(state?.recados?.stage);return Number.isInteger(n)?Math.max(0,Math.min(3,n)):0;}
+ function recadoLine(state,id){
+  const stage=recadoStage(state);
+  if(id==='teo'&&stage===1)return 'Téo se lembra do bilhete que confiou a você. Rosa talvez tenha uma resposta.';
+  if(id==='teo'&&stage===2)return 'Téo olha para o caminho: “Você conseguiu encontrar Rosa? Quero guardar a resposta.”';
+  if(id==='rosa'&&stage>=2)return 'Rosa sorri: “Espero que Téo tenha guardado nossa conversa com carinho.”';
+  if(id==='teo'&&stage===3)return 'Téo reconhece você: “Nosso recado já fez sua viagem de volta.”';
+  return '';
  }
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
  // Fictional weekly variations; never claims residents' real schedules.
@@ -104,9 +145,16 @@
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
+  if(id==='zeca'&&choiceId==='muda-lucia'){
+   state.connections=state.connections||fresh().connections;
+   state.connections.zecaLucia=true;state.connections.zecaLuciaDay=clock.day;
+  }
   const first=!state.seen.includes(id);if(first)state.seen.push(id);
-  return{ok:true,first,reply:choice.reply,unlocked:coreProgress(state)===3};
+  const stage=recadoStage(state),step=RECADOS[stage];
+  const threadAdvanced=!!step&&step.id===id&&step.choice===choiceId;
+  if(threadAdvanced){state.recados=state.recados||{stage:0};state.recados.stage=stage+1;}
+  return{ok:true,first,reply:choice.reply+(threadAdvanced?' ✉️ '+step.story:''),unlocked:coreProgress(state)===3,threadAdvanced,threadComplete:threadAdvanced&&stage===2};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine};
 })(typeof window!=='undefined'?window:globalThis);
 

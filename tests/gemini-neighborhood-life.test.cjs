@@ -46,7 +46,7 @@ test('diálogos locais variam por toque e não exigem rede nem save',()=>{
  const person={id:'passeio-4',hub:'mercado'};
  const first=say(person,world),second=say(person,world);
  assert.match(first,/feira/);
- assert.match(second,/sorda/);
+ assert.match(second,/pão francês.*pão doce de coco/);
  assert.notEqual(first,second);
  assert.equal(say({id:'outra-pessoa',hub:'mercado'},world),'');
 });

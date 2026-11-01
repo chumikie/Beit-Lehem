@@ -19,6 +19,7 @@ assert(returning.offset<72&&returning.offset>0);
 assert(end.offset>=0&&end.offset<1);
 assert.equal(walk(1,16*60+27).offset,pause.offset,'Same day and time reproduce the same errand');
 const oldSave=api.restore({seen:['mila'],lastHelp:{mila:1},choices:{mila:'cores'}});
-assert.deepEqual(Object.keys(oldSave).sort(),['choices','lastHelp','seen'],'No extra save field');
+assert.ok(['choices','lastHelp','seen'].every(key=>Object.hasOwn(oldSave,key)),'Legacy save fields remain intact');
+assert.deepEqual(oldSave.seen,['mila']);
 assert.equal(api.smallWalk(clock(1,16*60+27),mila,api.agenda(clock(1,16*60+27),mila)).paused,true);
 console.log('Mila: deterministic short walk, observation, return, priority and legacy saves OK.');

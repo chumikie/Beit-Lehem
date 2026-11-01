@@ -411,7 +411,8 @@
     rounded(c, -34, -20, 68, 42, 6, '#f6ebd6', '#d1bc99');
   }
   function drawAmusementDetails(c, night = false, time = 0) {
-    // Parque Artesanal São Luís: colorful recycled-art Ferris wheel & carousel
+    // Fictional miniatures of recycled-material playthings inspired by the
+    // documented artisan park, not a surveyed inventory or real placement.
     if (night) circle(c, -10, -24, 24, '#ffe69944');
     // A-frame support legs for the Ferris wheel
     c.strokeStyle = '#6c7c87'; c.lineWidth = 2.2;
@@ -437,6 +438,12 @@
       c.strokeStyle = '#8c6d53'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(hx, 2); c.lineTo(hx, 12); c.stroke();
       circle(c, hx, 8 + Math.sin(time * 3 + hx) * 1.3, 2.2, '#e8998d');
     }
+    // Small painted spinning disc and reused-tire toy diversify the scene.
+    c.strokeStyle='#798d83';c.lineWidth=1.1;c.beginPath();c.moveTo(33,-9);c.lineTo(33,4);c.stroke();
+    c.fillStyle='#dd9973';c.beginPath();
+    for(let i=0;i<4;i++){const a=i*TAU/4+time*.8;c.moveTo(33,-9);c.lineTo(33+Math.cos(a)*5,-9+Math.sin(a)*5);c.lineTo(33+Math.cos(a+.55)*3,-9+Math.sin(a+.55)*3);}
+    c.fill();circle(c,33,-9,1.6,'#f7d58b');
+    ellipse(c,-33,11,4.6,2.7,'#4d6670');ellipse(c,-33,11,2.3,1.3,'#f1dab1');
     rounded(c, -26, 17, 52, 7, 2.5, '#fff7e6', '#b87d56');
     c.fillStyle = '#874c2b'; c.font = 'bold 5.2px system-ui'; c.textAlign = 'center'; c.fillText('PARQUE SÃO LUÍS 🎡', 0, 20.8);
   }

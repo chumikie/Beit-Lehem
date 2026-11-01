@@ -10,7 +10,7 @@
  const WORDS={
   mercado:[
    'Bom dia! O movimento da feira anima a semana inteira.',
-   'O cheiro de sorda quentinha me lembra as manhãs daqui.',
+   'Um pão francês quentinho e um pão doce de coco lembram a Padaria da Tia.',
    'Hoje vim olhar as frutas e encontrar os conhecidos.',
    'A feira é boa até pra quem vem só trocar dois dedos de prosa.'
   ],

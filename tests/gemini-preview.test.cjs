@@ -70,7 +70,8 @@ test('recusa um módulo que usaria a chave do diário oficial',t=>{
 
 test('recusa um módulo com inicialização de contatos desconhecida',t=>{
  const project=createProject(t,fixture());
- alterGame(project,'let belemContacts=window.RoncadorBelemContacts.fresh();','/* inicialização alterada */');
+ alterGame(project,'let belemContacts=window.RoncadorBelemContacts.fresh();',
+   'let belemContacts=null;');
  assert.throws(()=>buildGeminiPreview(project.root),/Inicialização de kawaiiState desconhecida/);
  assert.equal(fs.existsSync(project.outputPath),false);
 });

@@ -1,0 +1,42 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const hydro=JSON.parse(fs.readFileSync('source/belem-aguas-osm-2026-11-01.geojson','utf8'));
+const map=JSON.parse(fs.readFileSync('dist/map.json','utf8'));
+const source=fs.readFileSync('gemini-modules/game.js','utf8');
+const logic=source.slice(source.indexOf('function projectVerifiedWater('),source.indexOf('function drawRoads('));
+const viewing=source.slice(source.indexOf('function restoreWaterMemories('),source.indexOf('function closestNamedRoad('));
+const context=vm.createContext({Object,Number,Array,Set,Math});
+vm.runInContext(source.slice(source.indexOf('function inside('),source.indexOf('function applyUserPublicPlaceCorrections(')),context);
+vm.runInContext(logic,context);
+vm.runInContext(viewing,context);
+test('somente dois polígonos OSM de Belém/PB entram na camada, sem mudar vias',()=>{
+ assert.equal(hydro.metadata.CD_MUN,'2501906');
+ assert.deepEqual(hydro.features.map(f=>f.id),['way/264042876','way/264042878']);
+ const projected=context.projectVerifiedWater(hydro,map.projection);
+ assert.equal(projected.length,2);
+ assert.deepEqual(Array.from(projected,w=>w.p.length),[169,596]);
+ assert.equal(map.roads.length,462);
+ assert.equal(map.areas.length,20);
+ assert.equal(context.projectVerifiedWater({...hydro,metadata:{CD_MUN:'1501402'}},map.projection).length,0);
+ assert.equal(context.projectVerifiedWater({...hydro,features:[{...hydro.features[0],id:'way/1',geometry:{type:'Polygon',coordinates:[[[0,0],[1,0],[0,1],[0,0]]]}}]},map.projection).length,0);
+});
+test('contemplação exige caminho próximo, fora da água, e não duplica memória',()=>{
+ const water=context.projectVerifiedWater(hydro,map.projection);
+ const candidate=context.nearestWaterView;
+ assert.equal(candidate({x:0,y:0},water,[],{d:0}),null);
+ assert.equal(candidate({x:0,y:0},water,[],{d:20}),null);
+ assert.equal(context.restoreWaterMemories(undefined,4,water).length,0);
+ assert.deepEqual(Array.from(context.restoreWaterMemories([{id:water[0].id,day:2},{id:water[0].id,day:3},{id:'way/false',day:1},{id:water[1].id,day:6}],4,water),r=>r.id),[water[0].id]);
+});
+test('prévia offline incorpora fonte com diário e sem alterar o roteador',()=>{
+ const builder=fs.readFileSync('scripts/build-gemini-preview.cjs','utf8');
+ assert.match(builder,/Polígonos OSM de água de Belém\/PB/);
+ assert.match(source,/verifiedWater=projectVerifiedWater\(VERIFIED_HYDRO_GEOJSON,data\.projection\)/);
+ assert.match(source,/drawVerifiedWater\(ctx\)/);
+ assert.match(source,/drawVerifiedWater\(c,false\)/);
+ assert.match(source,/waterMemories=restoreWaterMemories\(saved\.waterMemories,living\.day,verifiedWater\)/);
+ assert.match(source,/if\(observeWater\(\)\)return/);
+ assert.match(source,/waterMemories=\[\];waterTalks=\[\];seasonalMemories=\[\]/);
+});

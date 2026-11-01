@@ -13,9 +13,9 @@
     {id:'bia',name:'Bia',role:'Jovem estudante fictícia',likes:'leitura, música e amizades',hub:'rodoviaria',icon:'📚',tone:'#d8a35c',topic:'Falar sobre sonhos',reply:'Às vezes viajar faz parte de aprender. Depois a gente volta cheio de novas histórias.'}
   ];
   const CARE = {
-    damiao:[{id:'cestos',label:'🧺 Ajudar com os cestos',effect:'Um gesto simples tornou o trabalho mais leve. Francisco agradece e guarda uma fruta para o intervalo.',fatigue:-14,company:-9},{id:'historias',label:'☕ Ouvir histórias da feira',effect:'Entre uma conversa e outra, Francisco compartilha uma história inventada sobre os dias de feira.',fatigue:-5,company:-17}],
-    lucia:[{id:'mudas',label:'🌿 Cuidar das mudinhas',effect:'Vocês ajeitam um pequeno vaso ilustrativo. Lúcia sorri ao ver as folhas se levantarem.',fatigue:-12,company:-10},{id:'lembrancas',label:'📮 Trocar uma lembrança',effect:'Lúcia conta por que guarda pequenas coisas no caderno: cada uma lembra alguém querido.',fatigue:-4,company:-18}],
-    bia:[{id:'caderno',label:'📚 Revisar o caderno',effect:'Bia encontra uma ideia nova depois de vocês organizarem juntos suas anotações.',fatigue:-12,company:-9},{id:'planos',label:'✨ Conversar sobre sonhos',effect:'Vocês desenham planos imaginários e concordam em contar mais novidades num próximo encontro.',fatigue:-4,company:-18}]
+    damiao:[{id:'cestos',label:'🧺 Ajudar com os cestos',effect:'Um gesto simples tornou o trabalho mais leve. Francisco agradece e guarda uma fruta para o intervalo.',fatigue:-14,company:-9},{id:'historias',label:'☕ Ouvir histórias da feira',effect:'Entre uma conversa e outra, Francisco compartilha uma história inventada sobre os dias de feira.',fatigue:-5,company:-17},{id:'sombra',label:'🌤️ A sombra da feira',effect:'Vocês ajeitam um tecido ilustrativo para dar sombra aos cadernos da banca. Francisco conta como um gesto pequeno muda uma manhã.',fatigue:-9,company:-11}],
+    lucia:[{id:'mudas',label:'🌿 Cuidar das mudinhas',effect:'Vocês ajeitam um pequeno vaso ilustrativo. Lúcia sorri ao ver as folhas se levantarem.',fatigue:-12,company:-10},{id:'lembrancas',label:'📮 Trocar uma lembrança',effect:'Lúcia conta por que guarda pequenas coisas no caderno: cada uma lembra alguém querido.',fatigue:-4,company:-18},{id:'sementes',label:'🌱 Sementes de histórias',effect:'Lúcia separa sementes imaginárias no caderno e pergunta qual lembrança mereceria um lugar no jardim.',fatigue:-8,company:-12}],
+    bia:[{id:'caderno',label:'📚 Revisar o caderno',effect:'Bia encontra uma ideia nova depois de vocês organizarem juntos suas anotações.',fatigue:-12,company:-9},{id:'planos',label:'✨ Conversar sobre sonhos',effect:'Vocês desenham planos imaginários e concordam em contar mais novidades num próximo encontro.',fatigue:-4,company:-18},{id:'bilhetes',label:'✉️ Uma página de chegadas',effect:'Vocês organizam bilhetes em branco e Bia imagina que histórias poderão ser escritas neles quando alguém voltar.',fatigue:-7,company:-13}]
   };
   const DIALOGUES = {
     damiao:['Uma boa feira é feita das pessoas que chegam e dos encontros que ficam.','Hoje eu separo os cestos com calma. Cada conversa também faz parte do caminho.','Quando a rua acorda, eu gosto de escutar as novidades e oferecer um bom dia.'],
@@ -27,15 +27,18 @@
   const CARE_FOLLOW_UP={
     damiao:{
       cestos:'Os cestos que arrumamos ontem deixaram a banca pronta bem mais cedo. Obrigado pela força!',
-      historias:'Ainda pensei naquela conversa de ontem. É bom ter quem escute com calma.'
+      historias:'Ainda pensei naquela conversa de ontem. É bom ter quem escute com calma.',
+      sombra:'O tecido que ajeitamos ajudou a deixar a banca mais acolhedora. Obrigado pela companhia!'
     },
     lucia:{
       mudas:'Olhe, a mudinha que cuidamos ontem parece mais viçosa. Cuidar junto faz diferença.',
-      lembrancas:'Guardei com carinho o que conversamos ontem. Tem lembrança que floresce devagar.'
+      lembrancas:'Guardei com carinho o que conversamos ontem. Tem lembrança que floresce devagar.',
+      sementes:'Voltei a olhar as sementes desenhadas no caderno. Algumas ideias precisam de tempo.'
     },
     bia:{
       caderno:'Revisei as anotações que organizamos ontem. Agora meus planos estão mais claros.',
-      planos:'Fiquei pensando nos caminhos que imaginamos ontem. Já tenho outra ideia para contar!'
+      planos:'Fiquei pensando nos caminhos que imaginamos ontem. Já tenho outra ideia para contar!',
+      bilhetes:'Separei uma página para os bilhetes que inventamos. Ainda há espaço para novas histórias.'
     }
   };
   // A neighbor may mention a recent kindness shown to someone else.
@@ -65,15 +68,18 @@
   const CARE_DIARY={
     damiao:{
       cestos:'Na feira, você organizou os cestos com Francisco e deixou a passagem mais acolhedora.',
-      historias:'Você parou para ouvir as histórias de Francisco, sem pressa de seguir caminho.'
+      historias:'Você parou para ouvir as histórias de Francisco, sem pressa de seguir caminho.',
+      sombra:'Você ajudou Francisco a imaginar uma sombra acolhedora para os cadernos da banca.'
     },
     lucia:{
       mudas:'Perto da Matriz, você cuidou de uma pequena muda com Lúcia.',
-      lembrancas:'Você e Lúcia dividiram uma lembrança tranquila, dessas que cabem no coração.'
+      lembrancas:'Você e Lúcia dividiram uma lembrança tranquila, dessas que cabem no coração.',
+      sementes:'Você e Lúcia imaginaram sementes e guardaram perguntas no caderno do jardim.'
     },
     bia:{
       caderno:'Na Rodoviária, você ajudou Bia a colocar suas anotações em ordem.',
-      planos:'Você ouviu os sonhos de Bia e imaginou com ela caminhos para o futuro.'
+      planos:'Você ouviu os sonhos de Bia e imaginou com ela caminhos para o futuro.',
+      bilhetes:'Você e Bia organizaram bilhetes fictícios para futuras chegadas e despedidas.'
     }
   };
   const REUNION_DIARY={
@@ -110,6 +116,87 @@
   // Fictional vignette inspired by the documented traditional Monday market.
   // Do not interpret this interval as the city's real operating hours in 2026.
   function isMarketMorning(s){return (s.day-1)%7===0&&s.minute>=7*60&&s.minute<14*60;}
+  // Weekly changes are deterministic fictional routines, not real local schedules.
+  // Keep the opening week stable and let scheduled community encounters take priority.
+  function weeklyVariation(s,id){
+    const week=Math.floor((s.day-1)/7),weekday=(s.day-1)%7,hour=s.minute/60;
+    if(week===0)return null;
+    if(id==='damiao'&&week%3===1&&weekday===1&&hour>=10&&hour<11)
+      return{present:false,hub:null,activity:'descansando em casa depois dos preparativos da feira'};
+    return null;
+  }
+  function weeklyReunion(s){
+    const week=Math.floor((s.day-1)/7),weekday=(s.day-1)%7;
+    if(week===0)return null;
+    const visit=week%2===1&&weekday===2
+      ?{id:'lucia-visita-bia',host:'bia',visitor:'lucia',from:'igreja',to:'rodoviaria',start:16*60+45,summary:'Lúcia passou para conversar com Bia sobre caminhos e lembranças.'}
+      :week%3===2&&weekday===3
+      ?{id:'bia-visita-lucia',host:'lucia',visitor:'bia',from:'rodoviaria',to:'igreja',start:10*60+55,summary:'Bia visitou Lúcia para trocar ideias para o caderno.'}:null;
+    if(!visit)return null;
+    const elapsed=s.minute-visit.start;
+    if(elapsed<0||elapsed>=55)return null;
+    return {...visit,day:s.day,phase:elapsed<15?'approach':elapsed<40?'visit':'return'};
+  }
+  function weeklyVisitAgenda(s,id){
+    const scene=weeklyReunion(s);
+    if(!scene||![scene.host,scene.visitor].includes(id))return null;
+    const visitor=id===scene.visitor,meeting=scene.phase==='visit';
+    return {present:true,hub:visitor&&scene.phase==='return'?scene.from:scene.to,
+      activity:meeting?'conversando com '+(id==='bia'?'Lúcia':'Bia'):visitor?scene.phase==='approach'?'a caminho de visitar uma amiga':'voltando da visita':'esperando a visita de uma amiga',
+      reunion:scene,meeting};
+  }
+  // Uma visita curta por semana, sempre entre pontos conhecidos da malha.
+  // Encontros comunitários e visitas de capítulos anteriores mantêm prioridade.
+  const SMALL_WALKS=[
+    {id:'bia-jardim',visitor:'bia',host:'lucia',from:'rodoviaria',to:'igreja',weekday:1,start:15*60+35,title:'Bia passa para dar notícias a Lúcia'},
+    {id:'damiao-caderno',visitor:'damiao',host:'bia',from:'mercado',to:'rodoviaria',weekday:3,start:16*60+10,title:'Francisco visita Bia por alguns instantes'},
+    {id:'lucia-feira',visitor:'lucia',host:'damiao',from:'igreja',to:'mercado',weekday:5,start:10*60+15,title:'Lúcia passa na feira para cumprimentar Francisco'}
+  ];
+  function smallWalkForDay(day){
+    if(!Number.isInteger(day)||day<8)return null;
+    const week=Math.floor((day-1)/7),def=SMALL_WALKS[(week-1)%SMALL_WALKS.length];
+    return(day-1)%7===def.weekday?{...def,day}:null;
+  }
+  function smallWalkAt(s){
+    const def=smallWalkForDay(s?.day);if(!def)return null;
+    const elapsed=s.minute-def.start;if(elapsed<0||elapsed>=48)return null;
+    return{...def,phase:elapsed<14?'approach':elapsed<33?'visit':'return',progress:elapsed<14?elapsed/14:elapsed<33?1:1-(elapsed-33)/15};
+  }
+  function smallWalkAgenda(s,id){
+    const scene=smallWalkAt(s);if(!scene||![scene.visitor,scene.host].includes(id))return null;
+    const visitor=id===scene.visitor,meeting=scene.phase==='visit';
+    return{present:true,hub:visitor&&scene.phase==='return'?scene.from:scene.to,
+      activity:meeting?'conversando com '+RESIDENTS.find(r=>r.id===(visitor?scene.host:scene.visitor)).name:visitor?scene.phase==='approach'?'seguindo para uma visita curta':'voltando à rotina':'recebendo uma visita breve',
+      meeting,travel:visitor&&!meeting,smallWalk:scene};
+  }
+  function smallWalkOccurred(day){
+    const event=smallWalkForDay(day);if(!event)return null;
+    const s={day,minute:event.start+20};
+    // Important: a prior community scene can cancel this optional outing.
+    if(agenda(s,event.visitor).smallWalk?.id!==event.id||agenda(s,event.host).smallWalk?.id!==event.id)return null;
+    return event;
+  }
+  function lastWeekRoutine(s,id){
+    const lastWeek=Math.floor((s.day-1)/7)-1;
+    if(lastWeek<1)return '';
+    if(id==='damiao'&&lastWeek%3===1)return'Na semana passada, tirei uma manhã para descansar depois da feira. Voltei mais disposto a conversar.';
+    if(id==='lucia'&&lastWeek%2===1)return'Na semana passada, passei pela Rodoviária para visitar Bia. Uma boa conversa também faz parte do cuidado.';
+    if(id==='bia'&&lastWeek%3===2)return'Na semana passada, fui até a região da Matriz conversar com Lúcia. Voltei com mais perguntas para o caderno.';
+    return '';
+  }
+  // Morning is an ordinary part of the existing mapped walking route, not a
+  // simulated trip from a real home or an assertion about working hours.
+  function morningDeparture(s,id){
+    if(!s||s.minute<8*60||s.minute>=9*60)return null;
+    const phase=(s.minute-8*60)/60;
+    const activities={
+      damiao:'chegando aos cestos e cumprimentando os conhecidos',
+      lucia:'começando a manhã perto do jardim',
+      bia:'chegando com o caderno e observando os caminhos'
+    };
+    if(!Object.hasOwn(activities,id))return null;
+    return{activity:activities[id],shift:Math.sin(Math.PI*phase)*11};
+  }
   function agenda(s,id){
     const hour=s.minute/60,weekday=(s.day-1)%7;
     if(hour<8||hour>=20)return{present:false,activity:'descansando em casa',hub:null};
@@ -119,13 +206,19 @@
     if(community)return community;
     const encounter=typeof window!=='undefined'&&window.RoncadorStreetEncounters?.agenda(s,id);
     if(encounter)return encounter;
+    const reunion=weeklyVisitAgenda(s,id);
+    if(reunion)return reunion;
+    const littleVisit=smallWalkAgenda(s,id);
+    if(littleVisit)return littleVisit;
+    const variation=weeklyVariation(s,id);
+    if(variation)return variation;
     if(typeof window==='undefined'&&weekday===4&&hour>=16.5&&hour<17)
       return{present:true,hub:'mercado',activity:'encontrando amigos na feira',meeting:true};
-    if(id==='damiao')return hour<13||hour>=16&&hour<18?{present:true,hub:'mercado',activity:weekday===0?'organizando a feira':'conversando no mercado'}:{present:false,hub:null,activity:'fazendo uma pausa e almoçando'};
+    if(id==='damiao')return hour<13||hour>=16&&hour<18?{present:true,hub:'mercado',activity:morningDeparture(s,id)?.activity||(weekday===0?'organizando a feira':'conversando no mercado')}:{present:false,hub:null,activity:'fazendo uma pausa e almoçando'};
     // Fictional half-past-eight start keeps the Matriz chapter accessible just
     // after the Mercado morning; it does not claim a real local resident schedule.
-    if(id==='lucia')return hour>=8.5&&hour<12||hour>=15&&hour<17?{present:true,hub:'igreja',activity:hour<12?'observando os jardins':'trocando histórias e cuidando das flores'}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
-    if(id==='bia')return hour>=8&&hour<11||hour>=15&&hour<19?{present:true,hub:'rodoviaria',activity:hour<11?'lendo enquanto espera':'estudando e planejando novos caminhos'}:{present:false,hub:null,activity:'em casa, lendo e fazendo uma pausa'};
+    if(id==='lucia')return hour>=8.5&&hour<12||hour>=15&&hour<17?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||(hour<12?'observando os jardins':'trocando histórias e cuidando das flores')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
+    if(id==='bia')return hour>=8&&hour<11||hour>=15&&hour<19?{present:true,hub:'rodoviaria',activity:morningDeparture(s,id)?.activity||(hour<11?'lendo enquanto espera':'estudando e planejando novos caminhos')}:{present:false,hub:null,activity:'em casa, lendo e fazendo uma pausa'};
     return{present:false,hub:null,activity:'em sua rotina'};
   }
   function mood(s,id){
@@ -202,6 +295,6 @@
     return{ok:true,text:choice.effect,progress:careProgress(s)};
   }
   function careProgress(s){return RESIDENTS.filter(person=>Number(s?.people?.[person.id]?.careCount)>0).length;}
-  return{DAYS,RESIDENTS,CARE,fresh,restore,label,isMarketMorning,agenda,mood,advance,tomorrow,event,talk,care,careProgress};
+  return{DAYS,RESIDENTS,CARE,fresh,restore,label,isMarketMorning,weeklyVariation,weeklyReunion,weeklyVisitAgenda,smallWalkForDay,smallWalkAt,smallWalkAgenda,smallWalkOccurred,lastWeekRoutine,morningDeparture,agenda,mood,advance,tomorrow,event,talk,care,careProgress};
 });
 
