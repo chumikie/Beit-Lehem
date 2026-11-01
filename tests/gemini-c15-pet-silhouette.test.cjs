@@ -53,7 +53,8 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
  const scope={Math,zoom:2.35,reduce:false,living:{minute:600},skyMode:'sol',player:{x:100,y:100},
   boltCityPoint:()=>({x:10,y:20}),walkingPoint:()=>({x:10,y:20}),boltRestingByGreen:()=>false,
   streetPetBehavior:()=>({resting:false,bounce:.78,tailRate:3.2,curious:false,observing:false}),
-  streetPetVisualOffset:()=>({x:0,y:0}),streetPetGesture:()=> 'none',roundRect:()=>{}};
+  streetPetVisualOffset:()=>({x:0,y:0}),streetPetCrowdVisible:()=>true,
+  streetPetGesture:()=> 'none',roundRect:()=>{}};
  const draw=vm.runInNewContext(groupOffsetSource+'\n'+petSource+';drawStreetPets',scope);
  const queue=[];draw(ctx,1,{left:-100,right:100,top:-100,bottom:100},[],queue);
  assert.equal(queue.length,13);
