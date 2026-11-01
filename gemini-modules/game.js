@@ -166,7 +166,7 @@ function applyUserPublicPlaceCorrections(){
   const prior=landmark.p;
   const projection=data.projection;
   const corrected=place.geo?[(place.geo[1]-projection.originLon)*projection.metersPerDegreeLon,
-   (place.geo[0]-projection.originLat)*projection.metersPerDegreeLat]:place.p;
+   (projection.originLat-place.geo[0])*projection.metersPerDegreeLat]:place.p;
   landmark.p=corrected.slice();
   landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
   for(const point of data.points){
@@ -182,7 +182,7 @@ function applyUserPublicPlaceCorrections(){
   const projection=data.projection;
   data.landmarks.push({id:'escola_felinto',name:'Escola Felinto Elizio',kind:'school',
    p:[(-35.5373344-projection.originLon)*projection.metersPerDegreeLon,
-      (-6.6984949-projection.originLat)*projection.metersPerDegreeLat],
+      (projection.originLat-(-6.6984949))*projection.metersPerDegreeLat],
    positionStatus:'osm_public_school_point',artStatus:'marcador ilustrativo; edifício e entrada não verificados'});
  }
  const plaza=data.cultureReferences?.find(p=>p.id==='praca_6_setembro');
@@ -406,7 +406,7 @@ function projectVerifiedWater(geo,projection){
   const ring=feature.geometry.coordinates?.[0];if(!Array.isArray(ring)||ring.length<4||ring.length>5000)continue;
   if(ring.some(p=>!Array.isArray(p)||p.length!==2||!Number.isFinite(p[0])||!Number.isFinite(p[1])||p[0]<-35.56||p[0]>-35.49||p[1]<-6.72||p[1]>-6.66))continue;
   if(ring[0][0]!==ring.at(-1)[0]||ring[0][1]!==ring.at(-1)[1])continue;
-  const p=ring.map(([lon,lat])=>[(lon-projection.originLon)*projection.metersPerDegreeLon,(lat-projection.originLat)*projection.metersPerDegreeLat]);
+  const p=ring.map(([lon,lat])=>[(lon-projection.originLon)*projection.metersPerDegreeLon,(projection.originLat-lat)*projection.metersPerDegreeLat]);
   result.push({id:feature.id,p});
  }
  return result;
@@ -1001,9 +1001,9 @@ function residentDrawScale(base,x,y){return characterDrawScale(base)*.88*central
 function layoutResidentNameplates(people,playerPosition,scale,phone){
  const market=typeof data==='undefined'?null:data?.landmarks?.find(place=>place.id==='mercado');
  const marketCrowd=!!market&&Math.hypot(playerPosition.x-market.p[0],playerPosition.y-market.p[1])<145;
- // The market has stalls, POIs and interaction icons: show only the closest
- // resident's name there. The full cast is still available in the diary.
- const limit=marketCrowd?1:phone?2:3,placed=[],used=[];
+ // Allow two nearby residents at the market while retaining facade and
+ // marker collision checks below.
+ const limit=marketCrowd?2:phone?2:3,placed=[],used=[];
  const nearby=people.filter(p=>p.def&&!p.meeting&&!p.greeting&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)<105)
   .sort((a,b)=>Math.hypot(playerPosition.x-a.x,playerPosition.y-a.y)-Math.hypot(playerPosition.x-b.x,playerPosition.y-b.y));
  const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
@@ -1225,7 +1225,7 @@ function drawStreetEncounter(c,time,residents,view){
  // text appears only when Lia can actually overhear the people on that street.
  // A full speech card belongs to a close conversation, not to the entire
  // market skyline. The encounter continues normally when its card is hidden.
- if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76){c.restore();return;}
+ if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105){c.restore();return;}
  const phrase=window.RoncadorStreetEncounters.line(living,encounter),colon=phrase.indexOf(':');
  const who=colon<0?'Encontro':phrase.slice(0,colon),spoken=colon<0?phrase:phrase.slice(colon+1).trim();
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(spoken,phone?21:28);
@@ -1255,7 +1255,7 @@ function drawCommunityEncounter(c,time,people,view){
  c.font='14px system-ui';c.textAlign='center';c.textBaseline='middle';
  c.fillText(event.icon,cx,cy-33+bounce);
  c.fillStyle='#e8bc83';for(let i=0;i<3;i++){const ox=(i-1)*9;c.beginPath();c.arc(cx+ox,cy-46+(i%2)*4+bounce,.8+(i%2)*.4,0,7);c.fill();}
- if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76){c.restore();return;}
+ if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105){c.restore();return;}
  const phrase=window.RoncadorStreetCommunity.line(living,event),separator=phrase.indexOf(':');
  const speaker=separator>=0?phrase.slice(0,separator):'Amigos',speech=separator>=0?phrase.slice(separator+1).trim():phrase;
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(speech,phone?20:26);
@@ -2980,10 +2980,11 @@ function observe(){
  if(observeWater())return;
  if(observeRuaNovaPath())return;
  if(observeEverydayStreet())return;
+ if(observeWorldMoment())return;
  let key='vila',label='A vila e seus caminhos';
  if(distance(player,missions[5].p)<145){key='mata';label='Os caminhos da natureza';}
  else if(distance(player,missions[2].p)<120){key='campo';label='Os arredores do campo';}
- if(observations.has(key)){if(observeWorldMoment())return;notify('Essa paisagem já está no diário. Explore outra região para descobrir mais!');return;}
+ if(observations.has(key)){notify('Essa paisagem já está no diário. Explore outra região para descobrir mais!');return;}
  observations.add(key);
  const photo=capturePhoto();if(photo)photos[key]=photo;
  $('memoryFlash').classList.remove('active');void $('memoryFlash').offsetWidth;$('memoryFlash').classList.add('active');
@@ -3654,7 +3655,7 @@ function renderLife(){
  renderConversationFollowup();
  $('lifeRest').disabled=!active;
 }
-function showLife(){if(!loaded)return;$('sidebar').classList.remove('open');syncRoute();renderLife();showDialog('lifeDialog');lastJournalDay=living.day;save();}
+function showLife(){if(!loaded)return;$('sidebar').classList.remove('open');syncRoute();renderLife();showDialog('lifeDialog');}
 function visitStreetEncounter(){
  if(!active)return;
  const stories=window.RoncadorStreetEncounters,current=stories.current(living),next=stories.next(living);
@@ -4130,6 +4131,7 @@ $('openContactsSidebar').onclick=showContacts;
 $('downloadHtmlLink').onclick=e=>{e.preventDefault();const blob=new Blob([document.documentElement.outerHTML],{type:'text/html;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='Trilhas-do-Roncador-Cozy-V2-27 (1).html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);};
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='c'&&!e.repeat&&!anyDialog()&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){e.preventDefault();showContacts();}});
 $('openLife').onclick=showLife;
+$('lifeDialog').addEventListener('close',()=>{if(!loaded)return;lastJournalDay=living.day;save();});
 $('encounterVisit').onclick=visitStreetEncounter;
 $('communityWatchAction').onclick=visitCommunityEncounter;
 $('momentAction').onclick=exploreMoment;
