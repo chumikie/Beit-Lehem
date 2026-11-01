@@ -7,6 +7,7 @@
 - Território desejado: cidade de Belém/PB, distrito Rua Nova, caminhos rurais, serras e fauna/flora do entorno; encerrar antes de construir os demais núcleos urbanos.
 - Um mundo conectado; divisão por setores pode existir internamente para organização e desempenho.
 - Prioridade atual: fundamentação e acabamento do mapa, navegação e personagens. Novas atividades pausadas.
+- Mercado — decisão artística de 01/11/2026: não deslocar nem corrigir artificialmente as ruas para acomodar cenários. A área ocupada pela ilustração do Mercado deve ficar livre de cruzamentos com segmentos OSM; fachadas e comércio da Rua Feliciano Pedrosa aguardam confirmação de lotes e entradas antes de novos desenhos.
 - Fotos de referência serão enviadas aos poucos pelo usuário. Trabalhar por lugares identificados e comparações visuais controladas.
 - GitHub privado para desenvolvimento; cópia local para jogar; nenhuma hospedagem.
 - Testes locais. Não incluir workflows; desativação administrativa de Actions ainda pendente de conferência pelo proprietário apenas neste repositório; preservar o projeto principal e as configurações globais da conta.

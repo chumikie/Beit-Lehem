@@ -1636,7 +1636,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   'use strict';
   const TYPES = {
     church: {scale: .43, extent: [-31, -81, 31, 43]},
-    market: {scale: .52, extent: [-48, -43, 48, 50]},
+    market: {scale: .46, extent: [-48, -43, 48, 50]},
     square: {scale: .62, extent: [-52, -38, 52, 50]},
     terminal: {scale: .63, extent: [-36, -27, 36, 42]},
     homeVaranda: {scale: .58, extent: [-36, -36, 36, 38]},
@@ -1682,6 +1682,24 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     }
     return result;
   }
+  // An exact segment/rectangle check: sparse sampling can miss a road crossing
+  // between the sample points of a facade. This never changes road geometry.
+  function crossesRect(s, rect) {
+    if (s.bounds[2] < rect[0] || s.bounds[0] > rect[2] ||
+        s.bounds[3] < rect[1] || s.bounds[1] > rect[3]) return false;
+    let entry = 0, exit = 1;
+    for (const [p, q] of [[-s.dx, s.ax - rect[0]], [s.dx, rect[2] - s.ax],
+      [-s.dy, s.ay - rect[1]], [s.dy, rect[3] - s.ay]]) {
+      if (Math.abs(p) < 1e-9) { if (q < 0) return false; }
+      else {
+        const t = q / p;
+        if (p < 0) entry = Math.max(entry, t);
+        else exit = Math.min(exit, t);
+        if (entry > exit) return false;
+      }
+    }
+    return true;
+  }
   function layout(data) {
     const entries = [...data.landmarks, ...(data.cultureReferences || []).filter(r => r.visualReference)];
     const segments = lineSegments(data.roads);
@@ -1692,13 +1710,18 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       if (!TYPES[kind]) continue;
       const nearby = segments.filter(s => s.bounds[0] < anchor[0]+165 && s.bounds[2] > anchor[0]-165 && s.bounds[1] < anchor[1]+165 && s.bounds[3] > anchor[1]-165);
       let best = null;
-      for (const radius of [19, 29, 40, 53, 67, 79]) {
+      for (const radius of (item.id === 'mercado'
+        ? [19, 29, 40, 53, 67, 79, 93, 109, 125, 143]
+        : [19, 29, 40, 53, 67, 79])) {
         for (let k = 0; k < 16; k++) {
           const angle = (k + (kind === 'church' ? .8 : kind === 'market' ? .4 : .05)) * Math.PI / 8;
           const candidate = {id:item.id,kind,name:item.name,
             at:[anchor[0]+Math.cos(angle)*radius,anchor[1]+Math.sin(angle)*radius],
             anchor:item.p || null,positionStatus:item.positionStatus,scale:TYPES[kind].scale};
           const rect = bounds(candidate, 3);
+          // First fix the Mercado, whose decorative footprint crossed a real
+          // street. Keep all other established scene placements unchanged.
+          if (item.id === 'mercado' && nearby.some(s => crossesRect(s, rect))) continue;
           let penalty = radius * 1.25;
           for (let xi = 0; xi < 5; xi++) for (let yi = 0; yi < 5; yi++) {
             const x = rect[0] + (rect[2]-rect[0]) * xi / 4;
