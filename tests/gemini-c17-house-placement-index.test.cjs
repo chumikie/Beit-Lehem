@@ -10,7 +10,7 @@ const root=path.resolve(__dirname,'..');
 const game=fs.readFileSync(path.join(root,'gemini-modules/game.js'),'utf8');
 const map=JSON.parse(fs.readFileSync(path.join(root,'dist/map.json'),'utf8'));
 const hashStart=game.indexOf('const hash=');
-const hashEnd=game.indexOf('\\nfunction affectionSnapshot(',hashStart);
+const hashEnd=game.indexOf('\nfunction affectionSnapshot(',hashStart);
 const helperStart=game.indexOf('function pointSegment(');
 const helperEnd=game.indexOf('function applyUserPublicPlaceCorrections(',helperStart);
 assert.ok(hashStart>=0&&hashEnd>hashStart,'hash atual da geração de casas');
@@ -29,7 +29,7 @@ const context={
  window:{RoncadorScenicPlacement:{bounds:scene=>scene.bounds,contains:(bounds,x,y)=>x>=bounds.left&&x<=bounds.right&&y>=bounds.top&&y<=bounds.bottom}}
 };
 const helpers=vm.runInNewContext(
- game.slice(hashStart,hashEnd)+'\\n'+game.slice(helperStart,helperEnd)+
+ game.slice(hashStart,hashEnd)+'\n'+game.slice(helperStart,helperEnd)+
  ';({hash,pointSegment,prepareTreeRoadIndex,roadTooClose,treeRoadTooClose,'+
  'createHouseOccupancyGrid,houseOccupancyTooClose,addHouseOccupancyPoint,'+
  'generateHouseCandidates,selectHouseCandidates})',
