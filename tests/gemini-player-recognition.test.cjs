@@ -5,7 +5,7 @@ const path=require('node:path');
 
 const source=fs.readFileSync(path.join(__dirname,'../gemini-modules/game.js'),'utf8');
 const fragment=source.slice(source.indexOf('function residentGestureWarmth('),source.indexOf('function drawStreetLife('));
-const {nearbyResidentReaction,residentGestureWarmth}=new Function(fragment+';return {nearbyResidentReaction,residentGestureWarmth};')();
+const {nearbyResidentReaction,residentGestureWarmth,recordedInteractionGapDays}=new Function(fragment+';return {nearbyResidentReaction,residentGestureWarmth,recordedInteractionGapDays};')();
 const createPlayerPresenceGestures=new Function('nearbyResidentReaction',fragment+';return createPlayerPresenceGestures;')(nearbyResidentReaction);
 const player={x:20,y:0};
 const context={living:{people:{damiao:{bond:2},lucia:{bond:1},bia:{bond:1}}},sideNeighbors:{seen:['cica','nara']},worldPause:null};
@@ -137,4 +137,44 @@ test('despedida fica mais calorosa com vínculo, mas conserva duração',()=>{
  assert.ok(four.wave.intensity>one.wave.intensity);
  assert.equal(one.end,null);
  assert.equal(four.end,null);
+});
+
+test('reencontro usa somente conversa, cuidado ou gentileza com data comprovada',()=>{
+ const dated={living:{day:9,people:{damiao:{bond:2,lastConversationDay:5,lastCareDay:8},lucia:{bond:2,lastConversationDay:4,lastCareDay:0},bia:{bond:1,lastConversationDay:9,lastCareDay:2}}},sideNeighbors:{seen:['cica','nara'],lastHelp:{cica:6,nara:8},choices:{}}};
+ assert.equal(recordedInteractionGapDays('damiao',dated),1);
+ assert.equal(recordedInteractionGapDays('lucia',dated),5);
+ assert.equal(recordedInteractionGapDays('bia',dated),0);
+ assert.equal(recordedInteractionGapDays('cica',dated),3);
+ assert.equal(recordedInteractionGapDays('nara',dated),1);
+});
+
+test('saves antigos e datas inválidas não inventam reencontros',()=>{
+ const legacy={living:{day:9,people:{damiao:{bond:1,lastConversationDay:0,lastCareDay:20}}},sideNeighbors:{seen:['cica'],lastHelp:{cica:'5'},choices:{}}};
+ assert.equal(recordedInteractionGapDays('damiao',legacy),0);
+ assert.equal(recordedInteractionGapDays('cica',legacy),0);
+ assert.equal(recordedInteractionGapDays('desconhecido',legacy),0);
+});
+
+test('reconhecimento de reencontro é breve e limitado a uma chegada por dia',()=>{
+ const gesture=createPlayerPresenceGestures();
+ const dated={living:{day:7,people:{lucia:{bond:2,lastConversationDay:3,lastCareDay:0}}},sideNeighbors:{seen:[],choices:{},lastHelp:{}}};
+ const person=resident('lucia');
+ const arrival=gesture(person,player,dated,20);
+ assert.equal(arrival.pose,'smile');
+ assert.equal(arrival.stage,'reunion');
+ const staying=gesture(person,player,dated,21);
+ assert.equal(staying.stage,'nearby');
+ assert.ok(arrival.intensity>staying.intensity);
+ gesture(person,{x:80,y:0},dated,22);
+ assert.equal(gesture(person,player,dated,24).stage,'nearby');
+ assert.equal(person.walking,undefined);
+});
+
+test('o reencontro não vence atividades nem cria nova fala ou campo de save',()=>{
+ const gesture=createPlayerPresenceGestures();
+ const dated={living:{day:10,people:{}},sideNeighbors:{seen:['nara'],lastHelp:{nara:3},choices:{nara:'janela'}}};
+ const occupied=resident('nara',{moment:{pose:'draw'}});
+ assert.equal(gesture(occupied,player,dated,1),null);
+ assert.equal(gesture(resident('nara'),player,dated,2).stage,'reunion');
+ assert.doesNotMatch(source,/reunionDays,|reunionUntil,\s*sideNeighbors/);
 });

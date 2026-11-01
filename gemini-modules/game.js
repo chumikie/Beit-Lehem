@@ -1403,6 +1403,14 @@ function residentGestureWarmth(id,context){
  // A recorded shared choice is more familiar than an introduction alone.
  return typeof context.sideNeighbors.choices?.[id]==='string'&&context.sideNeighbors.choices[id].length>0 ? .88 : .68;
 }
+function recordedInteractionGapDays(id,context){
+ const today=context.living.day;
+ if(!Number.isInteger(today)||today<1||!residentGestureWarmth(id,context))return 0;
+ const person=context.living.people[id];
+ const days=person?[person.lastConversationDay,person.lastCareDay]:[context.sideNeighbors.lastHelp?.[id]];
+ const valid=days.filter(day=>Number.isInteger(day)&&day>0&&day<=today);
+ return valid.length?today-Math.max(...valid):0;
+}
 function nearbyResidentReaction(person,playerPosition,context){
  if(context.worldPause||!person.def||person.walking||person.arriving||person.meeting||person.travel||person.social||person.greeting||person.moment||person.crowded)return null;
  const warmth=residentGestureWarmth(person.id,context);
@@ -1413,6 +1421,7 @@ function nearbyResidentReaction(person,playerPosition,context){
 }
 function createPlayerPresenceGestures(){
  const visits=new Map();
+ const reunionDays=new Map();
  return function(person,playerPosition,context,now){
   const smile=nearbyResidentReaction(person,playerPosition,context);
   const previous=visits.get(person.id);
@@ -1426,8 +1435,14 @@ function createPlayerPresenceGestures(){
   }
   const distance=Math.hypot(person.x-playerPosition.x,person.y-playerPosition.y);
   if(smile){
-   if(!previous)visits.set(person.id,{entered:now,inside:true,departed:false});
+   if(!previous){
+    const reunited=recordedInteractionGapDays(person.id,context)>=2&&reunionDays.get(person.id)!==context.living.day;
+    visits.set(person.id,{entered:now,inside:true,departed:false,reunionUntil:reunited?now+.8:0});
+    if(reunited)reunionDays.set(person.id,context.living.day);
+   }
    else if(!previous.departed)previous.inside=true;
+   const until=visits.get(person.id)?.reunionUntil;
+   if(until>now)return {...smile,stage:'reunion',intensity:Math.min(.5,smile.intensity*1.12)};
    return smile;
   }
   if(!previous||distance>=64){visits.delete(person.id);return null;}
