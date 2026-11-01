@@ -171,6 +171,55 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   });
   const cdp = await context.newCDPSession(page);
   await cdp.send('Performance.enable');
+  await cdp.send('Profiler.enable');
+  await cdp.send('Profiler.setSamplingInterval', { interval: 1000 });
+  // The trace is a separate window: tracing overhead cannot bias timed rounds.
+  async function captureCpuTrace(durationMs = 550) {
+    const traceEvents = [];
+    const onData = payload => traceEvents.push(...payload.value);
+    let complete;
+    const completed = new Promise(resolve => { complete = resolve; });
+    cdp.on('Tracing.dataCollected', onData);
+    cdp.once('Tracing.tracingComplete', complete);
+    await cdp.send('Tracing.start', {
+      categories: 'devtools.timeline,v8.execute,blink.user_timing',
+      transferMode: 'ReportEvents'
+    });
+    await cdp.send('Profiler.start');
+    await page.waitForTimeout(durationMs);
+    const { profile } = await cdp.send('Profiler.stop');
+    await cdp.send('Tracing.end');
+    await completed;
+    cdp.off('Tracing.dataCollected', onData);
+    const byNode = new Map(profile.nodes.map(node => [node.id, node.callFrame.functionName || '(anonymous)']));
+    const cpuMs = new Map();
+    for (let i = 0; i < (profile.samples?.length || 0); i++) {
+      const fn = byNode.get(profile.samples[i]) || '(unknown)';
+      cpuMs.set(fn, (cpuMs.get(fn) || 0) + (profile.timeDeltas?.[i] || 0)/1000);
+    }
+    const kinds = new Set(['RunTask','FunctionCall','TimerFire','FireAnimationFrame',
+      'Paint','CompositeLayers','UpdateLayoutTree','Layout','EventDispatch','EvaluateScript']);
+    const timeline = new Map();
+    for (const event of traceEvents) {
+      if (event.ph !== 'X' || !kinds.has(event.name)) continue;
+      const previous = timeline.get(event.name) || { count: 0, totalMs: 0, maxMs: 0 };
+      const ms = (event.dur || 0)/1000;
+      previous.count++;
+      previous.totalMs += ms;
+      previous.maxMs = Math.max(previous.maxMs, ms);
+      timeline.set(event.name, previous);
+    }
+    return {
+      // CPU samples approximate self-time; nested timeline categories overlap.
+      cpuTop: [...cpuMs].sort((a,b) => b[1]-a[1]).slice(0,12)
+        .map(([functionName, ms]) => ({ functionName, ms: +ms.toFixed(1) })),
+      categories: Object.fromEntries([...timeline].map(([name, value]) => [name, {
+        count: value.count, totalMs: +value.totalMs.toFixed(1), maxMs: +value.maxMs.toFixed(1)
+      }])),
+      sampleCount: profile.samples?.length || 0,
+      traceEvents: traceEvents.length
+    };
+  }
   async function samplePerformance(phase, durationMs = 850) {
     const rounds = [];
     for (let round = 0; round < 3; round++) {
@@ -216,7 +265,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     assert.ok(summary.canvas?.width > 0 && summary.canvas?.height > 0);
     rounds.push(summary);
     }
-    return { phase, rounds };
+    return { phase, rounds, cpuTrace: await captureCpuTrace() };
   }
   page.on('pageerror', error => pageErrors.push(name + ': ' + error.message));
   page.on('console', message => {
