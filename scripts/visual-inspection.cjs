@@ -86,6 +86,22 @@ async function collectLayout(page, label) {
       viewportHeight: document.documentElement.clientHeight,
       documentHeight: document.documentElement.scrollHeight
     };
+    const hudSelectors = ['#touchPad', '#mobileRoute', '#interact', '#observe',
+      '.street-pulse', '.mini-wrap', '#zoomIn', '#zoomOut'];
+    const hudRects = hudSelectors.map(selector => {
+      const element = document.querySelector(selector), box = element?.getBoundingClientRect();
+      const style = element && getComputedStyle(element);
+      return box && style?.display !== 'none' && style?.visibility !== 'hidden' &&
+        box.width > 0 && box.height > 0 ? { selector, box } : null;
+    }).filter(Boolean);
+    const hudCollisions = [];
+    for (let i = 0; i < hudRects.length; i++) for (let j = i + 1; j < hudRects.length; j++) {
+      const a = hudRects[i], b = hudRects[j];
+      const width = Math.max(0, Math.min(a.box.right, b.box.right) - Math.max(a.box.left, b.box.left));
+      const height = Math.max(0, Math.min(a.box.bottom, b.box.bottom) - Math.max(a.box.top, b.box.top));
+      const ratio = width * height / Math.min(a.box.width * a.box.height, b.box.width * b.box.height);
+      if (ratio > .12) hudCollisions.push({ a: a.selector, b: b.selector, ratio: +ratio.toFixed(2) });
+    }
     const canvas = document.querySelector('#world');
     let canvasInk = 0;
     if (canvas && canvas.width && canvas.height) {
@@ -97,7 +113,7 @@ async function collectLayout(page, label) {
       }
     }
     return {
-      label, rects, overflow, canvasInk,
+      label, rects, overflow, canvasInk, hudCollisions,
       locationLabel: document.querySelector('#location')?.textContent?.trim() || null,
       locationLabelClipped: (() => {
         const element = document.querySelector('#location');
@@ -464,6 +480,19 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     await page.waitForTimeout(650);
     await page.keyboard.up('ArrowRight');
   }
+  const cameraBefore = await page.evaluate(() => {
+    const state=expeditionState;
+    return Math.hypot(state.position.x-state.cameraPosition.x,state.position.y-state.cameraPosition.y);
+  });
+  await page.keyboard.press('r');
+  await page.waitForTimeout(80);
+  const cameraAfter = await page.evaluate(() => {
+    const state=expeditionState;
+    return Math.hypot(state.position.x-state.cameraPosition.x,state.position.y-state.cameraPosition.y);
+  });
+  const cameraAudit = { before: cameraBefore, after: cameraAfter,
+    recentered: cameraAfter <= cameraBefore + 3 };
+  assert.ok(cameraAudit.recentered, name + ': R deve recentrar a câmera no jogador');
   await page.waitForTimeout(1500);
   movement = await page.evaluate(() => {
     const keys = Object.keys(localStorage);
@@ -505,7 +534,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters
+    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters, cameraAudit
   };
   report.viewports[name] = result;
 
