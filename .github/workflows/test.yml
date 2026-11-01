@@ -1,0 +1,41 @@
+name: Test suite
+
+on:
+  push:
+    branches:
+      - chore/consolidar-html-principal-2026-11-01
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'gemini-modules/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'dist/**'
+      - 'package.json'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: npm test (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run complete test suite
+        run: npm test
