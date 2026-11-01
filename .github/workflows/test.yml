@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -44,6 +46,18 @@ jobs:
         with:
           name: beit-lehem-visual-review-${{ github.run_id }}
           path: ${{ runner.temp }}/beit-lehem-visual-review/
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Compare original and indexed road searches on the same Chromium runner
+        run: node scripts/paired-performance.cjs
+
+      - name: Upload temporary paired performance audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beit-lehem-paired-performance-${{ github.run_id }}
+          path: ${{ runner.temp }}/beit-lehem-paired-performance/paired-report.json
           if-no-files-found: warn
           retention-days: 3
 
