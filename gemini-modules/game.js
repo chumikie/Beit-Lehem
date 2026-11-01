@@ -3390,11 +3390,23 @@ function cultureChoiceStatus(notes,id,choice){
  if(notes[id]===choice)return 'recorded';
  return notes[id]?'updated':'new';
 }
+function cultureDailyActivity(id,clock,world,neighbors){
+ const pair={mercado:['damiao','cica'],igreja:['lucia','nara'],rodoviaria:['bia','teo']}[id];
+ if(!pair)return null;
+ const first=world.RESIDENTS.find(person=>person.id===pair[0]);
+ const second=neighbors.RESIDENTS.find(person=>person.id===pair[1]);
+ if(!first||!second)return null;
+ const duties=[{def:first,duty:world.agenda(clock,first.id)},{def:second,duty:neighbors.agenda(clock,second)}];
+ if(clock.minute>=12*60)duties.reverse();
+ const current=duties.find(({duty})=>duty?.present&&duty.hub===id&&!duty.travel&&!duty.meeting&&!duty.community&&!duty.encounter&&typeof duty.activity==='string');
+ return current?'Na agenda deste horário: '+current.def.name+' — '+current.duty.activity+'.':null;
+}
 function syncMarketToggle(){const toggle=$('marketAtmosphere'),automatic=isMarketMorning();toggle.hidden=cultureActiveId!=='mercado';toggle.disabled=automatic;toggle.setAttribute('aria-pressed',String(fairAtmosphere()));toggle.textContent=automatic?'☀ A feira aparece automaticamente na segunda do jogo':marketDay?'✿ Encerrar feira ilustrativa adicional':'✿ Imaginar um dia de feira agora';}
 function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const documentary=id==='pedra_cordeiro';const reachable=documentary||cultureWithinReach(place);
  $('cultureTitle').textContent=story.title;$('cultureDescription').textContent=story.description;
  $('cultureReliability').textContent=documentary?'Pino público de referência · contorno e entrada da trilha não verificados':place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados':'Apenas referência documental · sem posição no mapa';
- $('cultureActionLead').textContent=reachable?story.lead:story.choices.length?'Caminhe até o marcador para realizar esta atividade. Você pode marcar a rota abaixo.':story.lead;
+ const activity=reachable?cultureDailyActivity(id,living,window.RoncadorLivingWorld,window.RoncadorSecondaryNeighbors):null;
+ $('cultureActionLead').textContent=(reachable?story.lead:story.choices.length?'Caminhe até o marcador para realizar esta atividade. Você pode marcar a rota abaixo.':story.lead)+(activity?' '+activity:'');
  const options=$('cultureOptions');options.replaceChildren();for(const choice of story.choices){const button=document.createElement('button');button.type='button';const status=cultureChoiceStatus(cultureNotes,id,choice);button.textContent=status==='recorded'?'✓ '+choice+' · no caderno':choice;button.disabled=!reachable||status==='recorded';button.setAttribute('aria-pressed',String(status==='recorded'));button.onclick=()=>{const visit=cultureChoiceStatus(cultureNotes,id,choice);if(visit==='recorded')return;cultureNotes[id]=choice;chapterUI();if(id==='mercado')recordFairQuest('mercado');
  const contactMatch=window.RoncadorBelemContacts?.CONTACTS.find(c=>c.hub===id);
  if(contactMatch)window.RoncadorBelemContacts.completeHangout(belemContacts,contactMatch.id);
