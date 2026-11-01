@@ -2,6 +2,8 @@
 
 ## Base e direção aprovadas
 
+- **Feliciano Pedrosa — etapa de pesquisa (01/11/2026):** endereços dos mercados Vida Nova 1/2 e Família confirmados por fontes públicas, mas lote, entrada e lado da via ainda não demonstrados. Não desenhar fachadas de marcas nem interpolar posições por número postal. Critérios e fontes em [ESTUDO-RUA-FELICIANO-PEDROSA.md](ESTUDO-RUA-FELICIANO-PEDROSA.md).
+
 - A V2.27 é a referência estável congelada; **a base atual do jogo em desenvolvimento passa a ser o Gemini**, conforme decisão posterior do autor.
 - O Gemini é uma referência mais rica em informações e precisão local. Aproveitar dados, descrições de ruas e estudos visuais em melhorias graduais.
 - O mundo deve continuar amplo e conectado entre Belém, Rua Nova e o entorno rural/serrano. Não reduzir os limites de exploração.
