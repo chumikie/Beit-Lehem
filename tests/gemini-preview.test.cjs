@@ -19,6 +19,9 @@ function createProject(t, source) {
   const sourcePath = path.join(root, SOURCE_RELATIVE);
   fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
   fs.writeFileSync(sourcePath, source, 'utf8');
+  const osmPath=path.join(root,'source','belem-osm-2026.geojson');
+  fs.mkdirSync(path.dirname(osmPath),{recursive:true});
+  fs.copyFileSync(path.join(__dirname,'..','source','belem-osm-2026.geojson'),osmPath);
   const indexPath=path.join(root,'references','gemini-2026-10-31','INDICE.md');
   fs.copyFileSync(path.join(__dirname,'..','references','gemini-2026-10-31','INDICE.md'),indexPath);
   fs.cpSync(path.join(__dirname,'..','gemini-modules'),path.join(root,'gemini-modules'),{recursive:true});
