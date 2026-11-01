@@ -156,6 +156,13 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     throw new Error('A inicialização incorreta de kawaiiState permaneceu na cópia gerada.');
   }
 
+  // Only the experimental output changes: archive and save identifiers stay
+  // untouched, while legacy visible dialogue and accessibility copy agree.
+  html=html.replace(/Damião/g,'Francisco');
+  html=html.replace('title="Sorda de João de Deus — Patrimônio Cultural de Belém/PB"',
+    'title="Padaria da Tia · pães e doces ilustrativos"');
+  html=html.replace('>3 Sordas</span>','>3 pães</span>');
+
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, html, 'utf8');
 
