@@ -70,10 +70,16 @@ test('C11: três camadas artísticas ficam verticais enquanto colisão mantém �
 
 test('denser decorative lots preserve the street coordinates and save format',()=>{
  const preprocess=source.slice(source.indexOf('function preprocess('),source.indexOf('function house('));
- assert.match(preprocess,/step=isClovisArea\?17:21/);
- assert.match(preprocess,/w:13\+r\*7/);
- assert.match(preprocess,/nearestRoad\(x,y\)\.d/);
- assert.match(preprocess,/occupied\.some\(/);
+ const generation=source.slice(source.indexOf('function generateHouseCandidates('),source.indexOf('function selectHouseCandidates('));
+ assert.match(preprocess,/treeRoadIndex=prepareTreeRoadIndex\(segments\)/);
+ assert.match(preprocess,/generateHouseCandidates\(segments,center,scenicScenes,areas,treeRoadIndex\)/);
+ assert.match(preprocess,/houses\.push\(\.\.\.selectHouseCandidates\(candidates,data\)\)/);
+ assert.match(generation,/const step=isClovisArea\?17:21/);
+ assert.match(generation,/w:13\+r\*7/);
+ assert.match(generation,/roadTooClose\(x,y,roadClearance,roadIndex/);
+ assert.match(generation,/houseOccupancyTooClose\(x,y,houseClearance,occupancyGrid/);
+ assert.match(generation,/distance<roadClearance/);
+ assert.match(generation,/Math\.hypot\(x-p\[0\],y-p\[1\]\)<houseClearance/);
  const house=source.slice(start,end);
  assert.match(house,/edge\+side\*3\.5/);
  assert.doesNotMatch(house,/data\.roads\s*=|localStorage|(?<!\.)save\(/);
