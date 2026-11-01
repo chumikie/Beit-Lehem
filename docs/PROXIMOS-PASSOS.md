@@ -44,15 +44,26 @@
 - O workflow tem permissão de leitura do repositório, não faz merge, não publica e não aciona Pages.
 - A execução oficial fica registrada no [GitHub Actions](https://github.com/chumikie/Beit-Lehem/actions/runs/41331595171).
 
-### 5. Build isolado — concluído; inspeção visual ainda pendente
+### 5. Build isolado — concluído
 
-- O workflow executou `buildGeminiPreview` em arquivo temporário fora do repositório, com sucesso: **952.971 bytes**. Validou 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais, 86 nomes de ruas e a inatividade dos rótulos viários não verificados.
-- No mesmo HEAD, `npm test` voltou a passar: **398/398 testes, zero falhas**, em 27,44 segundos (Node 22).
-- O passo de build não escreveu em `previews/`, não alterou `publicacao/index.html` e não gerou artefato publicado.
-- Execução registrada: [GitHub Actions — testes e build temporário](https://github.com/chumikie/Beit-Lehem/actions/runs/41331901166).
-- **Próxima validação:** abrir uma saída temporária no navegador e conferir nomes de ruas, distribuição das casas, POIs, fachadas, rotas e salvamento em desktop e móvel. Inspeção visual não deve ser declarada concluída apenas com testes de código.
+- O workflow executa `buildGeminiPreview` fora do repositório e valida 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais, 86 nomes de ruas e a inatividade dos rótulos viários não verificados.
+- No HEAD da inspeção visual, o build temporário teve **955.404 bytes**. Nenhum HTML em `previews/` ou `publicacao/` foi escrito pelo workflow.
+- O workflow não publica, não atualiza Pages e não faz merge.
 
-### 6. Modularizar o monólito de forma incremental
+### 6. Inspeção visual desktop/mobile — concluída com ajustes e observações restantes
+
+- Adicionado `scripts/visual-inspection.cjs`, executado em Chromium headless com viewport desktop **1440×960** e viewport móvel com toque **390×844**, ambos servidos de um HTML temporário fora do repositório.
+- O ensaio captura telas de boas-vindas, jogo, mapa ampliado e estado depois de interação, além de produzir `visual-report.json`. Artefato temporário: [capturas da Etapa 6](https://github.com/chumikie/Beit-Lehem/actions/runs/41334796719/artifacts/13094378479), com retenção de três dias.
+- As duas telas abriram o canvas de jogo com conteúdo desenhado, sem overflow horizontal. A etiqueta de localização exibiu **Rua Joaquim Rodrigues**, nome literal presente em `properties.name` da fonte OSM. O nome estava truncado no celular antes do ajuste; agora cabe integralmente.
+- O mapa ampliado abriu nas duas resoluções (desktop **796×480**, móvel **318×480**). Um toque/clique em cada mapa fechou o diálogo, selecionou um trecho viário e produziu a confirmação **“Caminho marcado pelas ruas”** (246 m aproximados no desktop; 139 m no móvel).
+- O controle direcional móvel ficou visível e recebeu evento de toque; o desktop recebeu entrada de teclado. Depois das interações, o armazenamento local manteve a chave experimental, `v: 3`, `mapSource: belem-osm-2026.geojson` e coordenadas finitas do jogador.
+- A revisão dos pets revelou agrupamento visual e plaquinhas sobrepostas. A fonte agora aplica afastamento apenas ao desenho dos sprites (sem mudar itinerários nem coordenadas salvas), posiciona as plaquinhas em faixas sem colisão e omite a placa quando não existe espaço livre. O nome das ruas no topo também ganhou largura móvel responsiva.
+- Regressões adicionadas/atualizadas em `tests/gemini-c15-pet-silhouette.test.cjs`, `tests/gemini-c15-pet-route-audit.test.cjs` e `tests/gemini-preview.test.cjs`; o inspetor também exige que nome oficial não esteja truncado e que o mapa realmente consiga marcar uma rota.
+- **Observação que permanece:** em zoom próximo alguns bichinhos ainda se reúnem em grupos densos, embora as placas testadas já não se sobreponham. Isso será avaliado como escolha de composição/vida cotidiana, sem deslocar rotas reais. A inspeção foi em Chromium emulado; não substitui teste em aparelhos físicos. As duas mensagens de console `net::ERR_FAILED` vieram de recursos remotos bloqueados pelo próprio ensaio; **não houve page errors JavaScript**.
+
+**Validação oficial do HEAD da Etapa 6:** `npm test` **400/400**, zero falhas (Node 22; 18,91 s); build temporário **955.404 bytes**; inspeção Chromium desktop/móvel concluída; artefato enviado com sucesso. [Execução completa no GitHub Actions](https://github.com/chumikie/Beit-Lehem/actions/runs/41334796719).
+
+### 7. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
 
@@ -66,12 +77,12 @@ Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inte
 
 A extração de `game-state.js` deve definir a criação/forma do estado sem transformá-lo em um novo objeto global onipresente. Não fazer a divisão em lote.
 
-### 5. Validação integrada
+### 8. Validação integrada contínua
 
 - Executar testes específicos do módulo alterado e depois `npm test`.
-- Executar `npm run build` e abrir a prévia gerada.
+- Executar build em destino temporário e abrir a prévia em navegador; só escrever HTMLs versionados quando houver autorização específica.
 - Testar rotas completas, salvamento/recarregamento e retomada de aba.
-- Fazer inspeção em desktop e em larguras móveis; não declarar acabamento móvel apenas porque existe um alias HTML com nome mobile.
+- Repetir inspeções em desktop e larguras móveis; testes Chromium emulados não substituem aparelhos físicos.
 - Relatar explicitamente quais testes foram executados e quais inspeções reais continuam pendentes.
 
 ## Restrições de escopo
