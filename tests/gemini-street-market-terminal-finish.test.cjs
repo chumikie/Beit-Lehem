@@ -10,7 +10,7 @@ const roads = game.slice(game.indexOf('function drawRoads('), game.indexOf('func
 assert.match(roads, /path\(c,r\.p\)/, 'Mapped road polylines remain the source of each visual stroke');
 assert.match(roads, /const width=widths\[r\.tags\.highway\]\|\|10/, 'Mapped road widths stay unchanged');
 assert.match(roads, /if\(simple\).*continue;/s, 'Simple minimap rendering is retained');
-assert.match(roads, /pavementWidth\+2\.5/, 'The widened road retains a soft verge');
+assert.match(roads, /pavementWidth\+\(street\?5\.2:1\.15\)/, 'Urban streets have a continuous pale sidewalk');
 assert.match(roads, /const pavementWidth=width\*\(street\?1\.2:1\)/, 'Urban roads widen only in the illustrated rendering');
 assert.match(roads, /z>=1\.35/, 'Wear details are only visible at closer zoom');
 

@@ -3,7 +3,7 @@
 (()=>{
 const $=id=>document.getElementById(id),canvas=$('world'),ctx=canvas.getContext('2d'),mini=$('minimap'),mc=mini.getContext('2d'),big=$('bigmap'),bc=big.getContext('2d');
 const STORE='roncador-expedition-v2-referencias-gemini',keys=new Set(),touches=new Map(),reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?1.85:2.3,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
+let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?2.35:2.85,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
 // Source-attributed polygons are inlined during the Gemini preview build.
 // This visual overlay never modifies the road graph or saved map source.
 const VERIFIED_HYDRO_GEOJSON=null;
@@ -437,9 +437,13 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  // The offset shadow reads as a shallow curb, beneath the same road centreline.
  c.save();c.translate(0,street?.85:.3);
  c.strokeStyle=trail?'#9d9c7950':'#5863483e';c.lineWidth=pavementWidth+3.5;c.stroke();c.restore();
- // Pale shoulders and a fine warm curb make the road a place, not a map line.
- c.strokeStyle=trail?'#9d9c7950':'#f1e3c6a0';c.lineWidth=pavementWidth+2.5;c.stroke();
- c.strokeStyle=trail?'#c8ba96a8':'#b9ad938a';c.lineWidth=pavementWidth+1.15;c.stroke();
+ // A continuous illustrated sidewalk on urban streets, with a warm outer
+ // edge and a fine curb. The mapped road centreline never moves.
+ c.strokeStyle=trail?'#9d9c7950':street?'#b8ab90':'#f1e3c6a0';
+ c.lineWidth=pavementWidth+(street?6:2.5);c.stroke();
+ c.strokeStyle=trail?'#c8ba96a8':street?'#eadcc3':'#b9ad938a';
+ c.lineWidth=pavementWidth+(street?5.2:1.15);c.stroke();
+ if(street){c.strokeStyle='#a69b826b';c.lineWidth=pavementWidth+.7;c.stroke();}
  c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
  if(z>=1.35&&!trail){
   // Residential streets have no repeated centre dashes; the softly shaded
@@ -465,7 +469,16 @@ function drawMappedPlaces(c,viewport){
  }
 }
 function drawPin(c,m,i,time,miniMode=false,subtle=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
- c.save();c.translate(p[0],p[1]);if(subtle){c.globalAlpha*=.68;c.scale(.72,.72);}const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done&&!subtle){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
+ c.save();c.translate(p[0],p[1]);if(subtle){c.globalAlpha*=.68;c.scale(.72,.72);}
+ const glow=reduce?0:Math.sin(time*2+i)*1.1;
+ c.fillStyle=done?'#70975d25':'#f4d58b35';c.beginPath();c.ellipse(0,5,15+glow,6+glow*.3,0,0,Math.PI*2);c.fill();
+ // A small wooden square marker, planted at the original mission coordinate.
+ c.fillStyle='#846b47';c.fillRect(-1.5,-22,3,25);
+ roundRect(c,-12,-31,24,17,3,done?'#b5c59b':'#f5e6bd','#6a7e55');
+ c.strokeStyle='#b392644d';c.lineWidth=.8;c.beginPath();c.moveTo(-9,-26);c.lineTo(9,-26);c.moveTo(-9,-18);c.lineTo(9,-18);c.stroke();
+ c.fillStyle=done?'#476944':'#725837';c.font='bold 10px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-22.5);
+ c.fillStyle='#f9e7ad';c.strokeStyle='#ba9b62';c.lineWidth=.65;c.beginPath();c.arc(0,-33,2.5,0,Math.PI*2);c.fill();c.stroke();
+ c.restore();}
 function spawnEmojiBurst(x,y,list=['✨','🌸','💖','⭐'],count=5){
  if(reduce)count=Math.min(2,count);
  for(let i=0;i<count;i++){
@@ -1637,7 +1650,16 @@ function render(time){
  window.RoncadorLandmarks?.drawMarkers(ctx,data.landmarks,{left,right,top,bottom},zoom);
  drawGeology(ctx,{left,right,top,bottom});
  // Low-key real street labels.
- ctx.textAlign='center';ctx.textBaseline='middle';for(const l of labels){if(l.x<left||l.x>right||l.y<top||l.y>bottom)continue;ctx.save();ctx.translate(l.x,l.y);let angle=l.angle;if(angle>Math.PI/2)angle-=Math.PI;if(angle<-Math.PI/2)angle+=Math.PI;ctx.rotate(angle);ctx.font=`500 ${Math.max(5,9/zoom)}px system-ui`;ctx.lineWidth=2/zoom;ctx.strokeStyle='#e5ddbd';ctx.strokeText(l.name,0,0);ctx.fillStyle='#7e8261';ctx.fillText(l.name,0,0);ctx.restore();}
+ ctx.textAlign='center';ctx.textBaseline='middle';for(const l of labels){if(l.x<left||l.x>right||l.y<top||l.y>bottom)continue;ctx.save();ctx.translate(l.x,l.y);let angle=l.angle;if(angle>Math.PI/2)angle-=Math.PI;if(angle<-Math.PI/2)angle+=Math.PI;ctx.rotate(angle);
+  if(zoom>=1.8){
+   ctx.translate(0,9);ctx.font='600 6.3px system-ui';
+   const width=ctx.measureText(l.name).width+9;
+   roundRect(ctx,-width/2,-6.5,width,13,3,'#fbf4e2d8','#536c50');
+   ctx.fillStyle='#435d46';ctx.fillText(l.name,0,.3);
+  }else{
+   ctx.font=`500 ${Math.max(5,9/zoom)}px system-ui`;ctx.lineWidth=2/zoom;ctx.strokeStyle='#e5ddbd';ctx.strokeText(l.name,0,0);ctx.fillStyle='#7e8261';ctx.fillText(l.name,0,0);
+  }
+  ctx.restore();}
  if(waypoint){const route=[{x:player.x,y:player.y},...waypoint.points.slice(waypoint.index)];ctx.strokeStyle='#f8f1cbbe';ctx.lineWidth=5/zoom;path(ctx,route.map(p=>[p.x,p.y]));ctx.stroke();ctx.strokeStyle='#487a5bc8';ctx.lineWidth=2.5/zoom;ctx.setLineDash([6/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#426d4b';ctx.lineWidth=2/zoom;ctx.beginPath();ctx.arc(waypoint.x,waypoint.y,5,0,Math.PI*2);ctx.stroke();}
  // When a larger character crosses a mission marker, keep the GPS pin at its
  // exact mapped coordinate but draw it behind the sprite instead of across a
