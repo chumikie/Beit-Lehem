@@ -1940,7 +1940,7 @@ function streetPetGroupOffset(pet,at,companions,people){
 function streetPetCrowdVisible(at,placed,zoom,screenWidth){
  // Correct the spacing of the existing sprites in screen space; route points stay untouched.
  // The illustrated animal bodies are wider than their anchor points, especially on phones.
- const compact=screenWidth<=600,minPixels=compact?88:56,minWorld=minPixels/Math.max(.5,zoom);
+ const compact=screenWidth<=600,minPixels=compact?104:80,minWorld=minPixels/Math.max(.5,zoom);
  if(placed.some(other=>Math.hypot(other.x-at.x,other.y-at.y)<minWorld))return false;
  placed.push({x:at.x,y:at.y});
  return true;

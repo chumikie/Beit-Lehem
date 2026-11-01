@@ -88,19 +88,22 @@ test('C15.3: reações são determinísticas, próximas e não alteram coordenad
 });
 
 test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota',()=>{
- const helpers=vm.runInNewContext(groupOffsetSource+
-  ';({streetPetCrowdVisible,streetPetNameplateVisible})',{Math});
+ const helpers=vm.runInNewContext(groupOffsetSource+';({streetPetCrowdVisible,streetPetNameplateVisible})',{Math});
  const original={x:12,y:24},snapshot=JSON.stringify(original),placed=[];
  assert.equal(helpers.streetPetCrowdVisible(original,placed,1,390),true);
  assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},placed,1,390),false,
-  'silhuetas a menos de 44 px não são empilhadas em viewport móvel');
- assert.equal(helpers.streetPetCrowdVisible({x:90,y:24},placed,1,390),false,
-  'o corpo ilustrado precisa de pelo menos 88 px de respiro no mobile');
- assert.equal(helpers.streetPetCrowdVisible({x:110,y:24},placed,1,390),true);
- assert.equal(helpers.streetPetCrowdVisible({x:70,y:24},[],1,1440),true,
-  'o desktop usa o intervalo visual menor de 56 px');
- assert.equal(helpers.streetPetCrowdVisible({x:60,y:24},[],2,390),true,
-  'em zoom alto a distância mínima em unidades do mundo diminui');
+  'silhuetas a menos de 104 px não são empilhadas em viewport móvel');
+ assert.equal(helpers.streetPetCrowdVisible({x:110,y:24},placed,1,390),false,
+  'o corpo ilustrado ainda precisa de respiro maior no mobile');
+ assert.equal(helpers.streetPetCrowdVisible({x:120,y:24},placed,1,390),true);
+ const desktopPlaced=[{x:12,y:24}];
+ assert.equal(helpers.streetPetCrowdVisible({x:80,y:24},desktopPlaced,1,1440),false,
+  'o desktop respeita o intervalo visual de 80 px');
+ assert.equal(helpers.streetPetCrowdVisible({x:100,y:24},desktopPlaced,1,1440),true);
+ const highZoomPlaced=[{x:12,y:24}];
+ assert.equal(helpers.streetPetCrowdVisible({x:40,y:24},highZoomPlaced,2,390),false,
+  'em zoom alto o limite convertido para unidades do mundo continua consistente');
+ assert.equal(helpers.streetPetCrowdVisible({x:70,y:24},highZoomPlaced,2,390),true);
  assert.equal(JSON.stringify(original),snapshot,'o ponto original nunca é alterado');
  assert.equal(placed.length,2);
  assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},1.5,true),false);
@@ -109,7 +112,6 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},3.5,true),false,
   'no celular os nomes dos demais pets permanecem no diário, sem disputar a câmera');
 });
-
 test('C15.5: a câmera usa a largura real do canvas para ativar o perfil compacto',()=>{
  const source=game.slice(game.indexOf('function drawStreetPets('),game.indexOf('function drawPuddles('));
  assert.match(source,/const compactViewport=w<=600/);
