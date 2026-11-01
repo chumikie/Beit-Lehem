@@ -117,6 +117,14 @@ Próximo passo: tratar o agrupamento de personagens e placas na câmera inicial,
 
 Próximo passo: avaliar os sprites ainda próximos no corredor central em zoom alto, sem aumentar os limites de deslocamento visual nem tocar nas posições de agenda; qualquer refinamento adicional deve continuar limitado à composição da câmera.
 
+### Subetapa 7.5 — hierarquia de placas e HUD compacto
+
+- No desktop, as placas de pets passam a ter orçamento de três por enquadramento: Bolt tem prioridade e as outras duas são dos pets nomeados mais próximos do jogador entre os que estão no campo visível. Em telas compactas permanece apenas a placa do Bolt, já disponível depois do zoom apropriado.
+- A seleção é calculada a partir dos pontos de rota recebidos e do retângulo visível; não desloca, remove ou reescreve pontos, agendas, itinerários, IDs ou estado salvo. O filtro de sprites da 7.4 permanece separado e inalterado.
+- No mobile, o cartão “Cidade viva” mantém o nome do encontro e continua sendo um botão para abrir o caderno completo; texto secundário e avatares deixam de ocupar o mapa em sobreposição. A informação detalhada continua no caderno dos moradores. O chip da manhã de Francisco recebe apenas espaçamento e tipografia compactos, sem alterar progresso ou missão.
+- `tests/gemini-c15-6-pet-nameplate-priority.test.cjs` cobre orçamento desktop/mobile, prioridade do Bolt, proximidade, descarte de pontos fora da tela, regra noturna e imutabilidade dos dados de entrada; também protege a ação do cartão no mobile.
+- Nenhuma alteração em geometria OSM, coordenadas de personagens/animais, horários, rotas, missões, saves ou HTML gerado. A inspeção visual desta subetapa deve comprovar o resultado em desktop e 390×844 antes de considerar a etapa encerrada.
+
 ### 8. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
