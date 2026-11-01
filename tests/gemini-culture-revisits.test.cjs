@@ -37,3 +37,18 @@ test('cartão indica opção registrada e impede falso anúncio de memória nova
  assert.match(source,/visit==='new'\?'Uma nova memória de Belém foi guardada no caderno!':'Seu registro de Belém foi atualizado no caderno\.'/);
  assert.match(source,/cultureNotes\[id\]=choice;chapterUI\(\);if\(id==='mercado'\)recordFairQuest\('mercado'\)/);
 });
+
+test('reabrir em outro dia mantém a escolha sem criar uma segunda lembrança',()=>{
+ const notes={};
+ for(const id of ['mercado','igreja','rodoviaria']){
+  const first=CULTURE[id].choices[0],other=CULTURE[id].choices[1];
+  assert.equal(cultureChoiceStatus(notes,id,first),'new');
+  notes[id]=first;
+  for(const day of [2,3,7]){
+   assert.equal(cultureChoiceStatus(notes,id,first),'recorded',id+' dia '+day);
+   assert.equal(cultureChoiceStatus(notes,id,other),'updated',id+' dia '+day);
+   assert.equal(notes[id],first);
+  }
+ }
+ assert.equal(Object.keys(notes).length,3);
+});

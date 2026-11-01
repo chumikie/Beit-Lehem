@@ -46,3 +46,18 @@ test('informação é passageira no cartão e não modifica mapa nem salvamento'
  assert.match(source,/const activity=reachable\?cultureDailyActivity\(id,living,window\.RoncadorLivingWorld,window\.RoncadorSecondaryNeighbors\):null/);
  assert.doesNotMatch(source,/cultureDailyActivity\([^)]*\);save\(\)/);
 });
+
+test('fechar e reabrir após mudança de turno consulta a agenda atual sem criar um encontro',()=>{
+ for(const id of ['mercado','igreja','rodoviaria']){
+  const morning=clock(2,10*60),afternoon=clock(2,16*60),nextDay=clock(3,10*60);
+  const states=[morning,afternoon,nextDay].map(s=>structuredClone(s));
+  const first=cultureDailyActivity(id,morning,world,neighbors);
+  const later=cultureDailyActivity(id,afternoon,world,neighbors);
+  const tomorrow=cultureDailyActivity(id,nextDay,world,neighbors);
+  assert.equal(cultureDailyActivity(id,morning,world,neighbors),first,id+' mantém a mesma leitura sem avançar tempo');
+  assert.notEqual(later,first,id+' troca a atividade entre manhã e tarde');
+  assert.equal(cultureDailyActivity(id,nextDay,world,neighbors),tomorrow,id+' reconsulta o novo dia');
+  assert.deepEqual([morning,afternoon,nextDay],states,id+' não altera o relógio nem as memórias');
+ }
+ assert.match(source,/if\(active&&!dialog&&!document\.hidden\)\{/);
+});
