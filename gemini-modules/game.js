@@ -35,7 +35,9 @@ let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x
 // Frame-only velocity: intentionally excluded from saves so older games reopen normally.
 let walkVelocity={x:0,y:0};
 function smoothWalkVelocity(current,target,dt,instant=false){
- const rate=target.x||target.y?13:19;
+ const turning=(target.x||target.y)&&(current.x||current.y)&&
+  current.x*target.x+current.y*target.y<.5*Math.hypot(current.x,current.y)*Math.hypot(target.x,target.y);
+ const rate=target.x||target.y?(turning?26:13):19;
  const blend=instant?1:1-Math.exp(-rate*Math.max(0,Math.min(dt,.05)));
  const next={x:current.x+(target.x-current.x)*blend,y:current.y+(target.y-current.y)*blend};
  if(Math.hypot(next.x,next.y)<.35&&!target.x&&!target.y)return{x:0,y:0};
