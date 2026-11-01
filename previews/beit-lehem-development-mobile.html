@@ -4691,6 +4691,7 @@ const SEASONAL_THEMES={
 let seasonalMemories=[];
 // A pause is a short-lived pose, not a saved quest or a claim about a mapped bench.
 let worldPause=null;
+let pauseVisualZoom=zoom;
 let belemContacts=window.RoncadorBelemContacts.fresh();
 let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;
 const treeCache=new Map();
@@ -6254,8 +6255,11 @@ function drawGuide(c,time){
  c.restore();
 }
 function render(time){
- ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#aac18d';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.scale(zoom,zoom);ctx.translate(-camera.x,-camera.y);
- const left=camera.x-w/2/zoom-60,right=camera.x+w/2/zoom+60,top=camera.y-h/2/zoom-60,bottom=camera.y+h/2/zoom+60;
+ const effectiveZoom=zoom*(worldPause?1.08:1);
+ pauseVisualZoom+=(effectiveZoom-pauseVisualZoom)*(reduce?1:.14);
+ const frameZoom=pauseVisualZoom;
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#aac18d';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.scale(frameZoom,frameZoom);ctx.translate(-camera.x,-camera.y);
+ const left=camera.x-w/2/frameZoom-60,right=camera.x+w/2/frameZoom+60,top=camera.y-h/2/frameZoom-60,bottom=camera.y+h/2/frameZoom+60;
  region(ctx,true);
  if(showTerrain)window.RoncadorTerrainRelief.draw(ctx,terrainLayer,{left,right,top,bottom},zoom);
  // Small seeded ground details stay attached to the geographic world.
@@ -7536,6 +7540,17 @@ function beginWorldPause(id){
  if(focus)player.dir=focus.x>=player.x?1:-1;
  player.moving=false;
 }
+const SIDEWALK_PAUSE_LINES={
+ sonho_doce:'🍰 Você observa a vitrine iluminada de doces e o movimento da Rua Feliciano Pedrosa.',
+ bar_prosa:'🎶 Você escuta o burburinho tranquilo perto das mesinhas amarelas da Rua Vicente Cado.',
+ praca_6_setembro:'🌿 Você respira fundo perto dos jardins e da cascata da Praça 6 de Setembro.',
+ parque_sao_luis:'🎡 Você contempla os brinquedos artesanais e a brisa do Parque São Luís.'
+};
+function nearbySidewalkPause(map,position){
+ const places=[...(map.landmarks||[]),...(map.cultureReferences||[])];
+ return places.find(place=>SIDEWALK_PAUSE_LINES[place.id]&&Array.isArray(place.p)&&
+  Math.hypot(position.x-place.p[0],position.y-place.p[1])<28)||null;
+}
 function recordStreetVignette(place){
  const id=nextStreetVignette(place,streetVignettes,{
   marketClaimed:marketMorning.claimed,
@@ -7551,6 +7566,11 @@ function recordStreetVignette(place){
  save();notify('✿ '+story.title+' — '+story.text);return true;
 }
 function observeWorldMoment(){
+ const nearby=nearbySidewalkPause(data,player);
+ if(nearby){
+  if(kawaiiState?.riding){notify('Desça da motinha para observar com calma.');return true;}
+  beginWorldPause(nearby.id);notify(SIDEWALK_PAUSE_LINES[nearby.id]);return true;
+ }
  const id=worldMomentAt(data,player);if(!id)return false;
  const moment=WORLD_MOMENTS[id];
  if(kawaiiState?.riding){notify('Desça da motinha para observar com calma.');return true;}
