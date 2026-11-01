@@ -538,7 +538,7 @@ function drawParkedMotosAndSorda(c,time,view){
  }
 }
 function drawPlayer(c,time){
- c.save();c.translate(player.x,player.y);const spriteScale=characterDrawScale(WORLD_CHARACTER_HEIGHT/34);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(player.x,player.y);const spriteScale=characterDrawScale(WORLD_CHARACTER_HEIGHT/34)*centralCharacterScale(player.x,player.y);c.scale(spriteScale,spriteScale);
  const riding=!!kawaiiState?.riding;
  const skin=window.RoncadorKawaiiMoto.currentSkin(kawaiiState);
  const acc=window.RoncadorKawaiiMoto.currentAccessory(kawaiiState);
@@ -985,8 +985,17 @@ function drawDailyGesture(c,person,time){
 // This is a visual ratio, not an assertion about building measurements.
 const WORLD_FACADE_HEIGHT=14,WORLD_CHARACTER_HEIGHT=WORLD_FACADE_HEIGHT*1.52;
 function characterDrawScale(base){return base*(zoom<=2?1:1-.12*Math.min(1,(zoom-2)/1.5));}
+// In the two dense central hubs, character silhouettes should not dwarf the
+// small illustrated facades. Only drawing scale changes; positions and routes do not.
+function centralCharacterScale(x,y){
+ if(typeof data==='undefined'||!data?.landmarks||!Number.isFinite(x)||!Number.isFinite(y))return 1;
+ const hubs=data.landmarks.filter(p=>p.id==='mercado'||p.id==='igreja');
+ if(!hubs.length)return 1;
+ const distance=Math.min(...hubs.map(p=>Math.hypot(x-p.p[0],y-p.p[1])));
+ return distance<=145?.86:distance>=225?1:.86+.14*(distance-145)/80;
+}
 // NPCs share a smaller visual scale; their accessories follow the same transform.
-function residentDrawScale(base){return characterDrawScale(base)*.88;}
+function residentDrawScale(base,x,y){return characterDrawScale(base)*.88*centralCharacterScale(x,y);}
 // Screen-space clutter is planned in world units so zoom changes cannot move
 // a label across another resident's face. A label may move sideways or vanish.
 function layoutResidentNameplates(people,playerPosition,scale,phone){
@@ -998,6 +1007,8 @@ function layoutResidentNameplates(people,playerPosition,scale,phone){
  const nearby=people.filter(p=>p.def&&!p.meeting&&!p.greeting&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)<105)
   .sort((a,b)=>Math.hypot(playerPosition.x-a.x,playerPosition.y-a.y)-Math.hypot(playerPosition.x-b.x,playerPosition.y-b.y));
  const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
+ const mappedHubs=typeof data==='undefined'?[]:data?.landmarks?.filter(p=>p.id==='mercado'||p.id==='igreja')||[];
+ const nearbyFacades=typeof houses==='undefined'?[]:houses.filter(b=>Math.hypot(b.x-playerPosition.x,b.y-playerPosition.y)<120);
  for(const p of nearby){
   if(placed.length>=limit||scale<(marketCrowd?1.65:1.3))break;
   if(marketCrowd&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)>65)continue;
@@ -1007,6 +1018,10 @@ function layoutResidentNameplates(people,playerPosition,scale,phone){
    const box={left:x-width/2-2,right:x+width/2+2,top:y-7,bottom:y+7};
    // All nearby faces reserve space, not only those with names.
    if(people.some(other=>other.id!==p.id&&overlaps(box,{left:other.x-12,right:other.x+12,top:other.y-34,bottom:other.y-6})))continue;
+   // Nameplates are optional; they should never cover a central facade or a
+   // map marker when the same resident can be identified in the diary.
+   if(nearbyFacades.some(b=>overlaps(box,{left:b.x-b.w/2-2,right:b.x+b.w/2+2,top:b.y-b.h/2-5,bottom:b.y+b.h/2+5})))continue;
+   if(mappedHubs.some(h=>overlaps(box,{left:h.p[0]-16,right:h.p[0]+16,top:h.p[1]-23,bottom:h.p[1]+12})))continue;
    if(used.some(other=>overlaps(box,other)))continue;
    placed.push({id:p.id,name:p.def.name,x,y,width});used.push(box);break;
   }
@@ -1034,7 +1049,7 @@ function drawKawaiiWalker(c,person,time){
  const wardrobe=named?Math.floor((living.day-1)/7)%3:person.variant%3;
  const gaze=Number.isFinite(person.gaze)?person.gaze:person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
  // Common human scale: leads remain expressive without dwarfing facades.
- c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(named?WORLD_CHARACTER_HEIGHT/31:.64);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(named?WORLD_CHARACTER_HEIGHT/31:.64,person.x,person.y);c.scale(spriteScale,spriteScale);
  c.fillStyle='#3853442b';c.beginPath();c.ellipse(0,6.9,person.walking?8.1:8.5,person.walking?2.25:2.7,0,0,7);c.fill();c.translate(0,bob);
  if(!reduce)c.rotate(person.lean??0);
  const outfit=person.def?.tone||['#85a88f','#d6a16e','#b98c9d'][person.variant%3];
@@ -1127,7 +1142,7 @@ function drawSecondaryWalker(c,person,time){
  const blend=person.walkBlend??Number(!!person.walking);
  const anim=reduce?0:Math.sin(phase)*blend+Math.sin(time*2+person.variant)*(1-blend),step=reduce?0:Math.sin(phase)*1.85*blend;
  const outfit=person.def.tone;
- c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.73);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.73,person.x,person.y);c.scale(spriteScale,spriteScale);
  c.fillStyle='#34544230';c.beginPath();c.ellipse(0,7.5,person.walking?7.8:8.1,person.walking?2.15:2.6,0,0,7);c.fill();
  c.translate(0,reduce?0:anim*.4);
  if(!reduce)c.rotate(person.lean??0);
@@ -1343,7 +1358,7 @@ function drawStreetLife(c,time,view){
    // A page-turning pocket notebook follows Bia's fictional routine along the
    // mapped streets; no reading spot or bench is added at invented coordinates.
    const turn=!reduce&&Math.sin(time*1.75)>.83;
-   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82,person.x,person.y);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
    c.fillStyle='#547d91';c.beginPath();c.moveTo(-9,-6);c.quadraticCurveTo(-4,-9,0,-5);c.quadraticCurveTo(5,-9,9,-6);c.lineTo(9,4);c.quadraticCurveTo(4,1,0,4);c.quadraticCurveTo(-4,1,-9,4);c.closePath();c.fill();
    c.fillStyle='#fcf8e8';c.beginPath();c.moveTo(-7,-5);c.quadraticCurveTo(-3,-7,0,-3);c.lineTo(0,2);c.quadraticCurveTo(-4,0,-7,2);c.closePath();c.fill();
    c.beginPath();c.moveTo(0,-3);c.quadraticCurveTo(4,-7,7,-5);c.lineTo(7,2);c.quadraticCurveTo(3,0,0,2);c.closePath();c.fill();
@@ -1355,7 +1370,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82,person.x,person.y);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
@@ -1368,7 +1383,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
    // Attached to the fictional character, not an invented vendor coordinate.
    const wiggle=reduce?0:Math.sin(time*2.5)*1.6;
-   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82,person.x,person.y);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
    c.fillStyle='#947458';c.beginPath();c.ellipse(3,8,10,3,0,0,7);c.fill();
    roundRect(c,-4,-5,15,11,2,'#b18b61','#806c4c');
    for(let k=0;k<3;k++){c.fillStyle=['#e7b85e','#c98c52','#97a66c'][k];c.beginPath();c.arc(-1+k*4,-7+wiggle*(k===1?1:0),2.5,0,7);c.fill();}
@@ -1545,7 +1560,7 @@ function drawGeology(c,view){
  }
 }
 function drawGuide(c,time){
- c.save();c.translate(guide.x,guide.y);const spriteScale=characterDrawScale(WORLD_CHARACTER_HEIGHT/38);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(guide.x,guide.y);const spriteScale=characterDrawScale(WORLD_CHARACTER_HEIGHT/38)*centralCharacterScale(guide.x,guide.y);c.scale(spriteScale,spriteScale);
  const bob=reduce?0:Math.sin(time*2.1)*1.2;
  c.fillStyle='#2947372d';c.beginPath();c.ellipse(0,8,11,5,0,0,7);c.fill();
  c.translate(0,bob);roundRect(c,-7,1,5,7,2,'#5b6474');roundRect(c,2,1,5,7,2,'#5b6474');
