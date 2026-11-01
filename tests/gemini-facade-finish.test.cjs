@@ -78,7 +78,7 @@ test('denser decorative lots preserve the street coordinates and save format',()
  assert.match(generation,/w:13\+r\*7/);
  assert.match(generation,/roadTooClose\(x,y,roadClearance,roadIndex/);
  assert.match(generation,/houseOccupancyTooClose\(x,y,houseClearance,occupancyGrid/);
- assert.match(generation,/distance<roadClearance/);
+ assert.match(generation,/nearRoad=nearest<roadClearance/);
  assert.match(generation,/Math\.hypot\(x-p\[0\],y-p\[1\]\)<houseClearance/);
  const house=source.slice(start,end);
  assert.match(house,/edge\+side\*3\.5/);
