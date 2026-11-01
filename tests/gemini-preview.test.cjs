@@ -7,6 +7,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const { buildGeminiPreview } = require('../scripts/build-gemini-preview.cjs');
+const { extractEmbeddedMap } = require('../scripts/current-geodata.cjs');
 
 const SOURCE_RELATIVE = path.join('references', 'gemini-2026-10-31', 'experimento-anonimizado.html.txt');
 const OUTPUT_RELATIVE = path.join('previews', 'gemini-preview.html');
@@ -44,6 +45,14 @@ test('gera uma prévia separada, corrige somente a inicialização e preserva o 
 
   const result = buildGeminiPreview(project.root);
   const preview = fs.readFileSync(project.outputPath, 'utf8');
+
+  const map = extractEmbeddedMap(preview);
+  assert.equal(map.roads.length, 462);
+  assert.equal(map.areas.length, 20);
+  assert.equal(map.points.length, 9, 'only OSM points remain in the OSM collection');
+  assert.equal(map.localPlaces.length, 9, 'author-curated POIs remain in their own layer');
+  assert.equal(map.streetNameCount, 86);
+  assert.ok(map.unverifiedRoadLabels.every(label => label.displayedAsStreetName === false));
 
   assert.equal(fs.readFileSync(project.sourcePath, 'utf8'), source);
   assert.equal(result.experimentalSaveKey, 'roncador-expedition-v2-referencias-gemini');
