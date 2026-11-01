@@ -18,5 +18,9 @@ test('C20.3.2: probes are CI-only and independently time movement, UI and drawin
   assert.match(harness, /for \(let round = 0; round < 3; round\+\+\)/);
   assert.match(harness, /over33ms/);
   assert.match(harness, /type: 'longtask'/);
+  assert.match(harness, /Profiler\.start/);
+  assert.match(harness, /Tracing\.start/);
+  assert.match(harness, /Tracing\.tracingComplete/);
+  assert.match(harness, /return \{ phase, rounds, cpuTrace: await captureCpuTrace\(\) \}/);
   assert.doesNotMatch(game, /__ciMoveSamples|__ciUiSamples|__ciRenderSamples/);
 });
