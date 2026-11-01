@@ -615,10 +615,22 @@ function streetLabelBlocked(l,width,height,visibleHouses,people){
   return true;
  };
  if(visibleHouses.some(b=>{
-  const angle=Number.isFinite(b.angle)?b.angle:0,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
-  const halfX=Math.max((b.w*cos+b.h*sin)/2,b.w/2)+9;
-  const halfY=Math.max((b.w*sin+b.h*cos)/2,b.h/2)+9;
-  return overlaps(b.x,b.y,halfX,halfY);
+  const angle=(Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0);
+  const houseX=[Math.cos(angle),Math.sin(angle)],houseY=[-Math.sin(angle),Math.cos(angle)];
+  const labelX=[cos,sin],labelY=[-sin,cos],dx=l.x-b.x,dy=l.y-b.y;
+  const halfHouseX=b.w/2+9,halfHouseY=b.h/2+9;
+  const axes=[labelX,labelY,houseX,houseY];
+  for(const axis of axes){
+   const projected=Math.abs(dx*axis[0]+dy*axis[1]);
+   const dotLX=Math.abs(labelX[0]*axis[0]+labelX[1]*axis[1]);
+   const dotLY=Math.abs(labelY[0]*axis[0]+labelY[1]*axis[1]);
+   const dotHX=Math.abs(houseX[0]*axis[0]+houseX[1]*axis[1]);
+   const dotHY=Math.abs(houseY[0]*axis[0]+houseY[1]*axis[1]);
+   const labelRadius=hw*dotLX+hh*dotLY;
+   const houseRadius=halfHouseX*dotHX+halfHouseY*dotHY;
+   if(projected>labelRadius+houseRadius)return false;
+  }
+  return true;
  }))return true;
  return people.some(p=>overlaps(p.x,p.y-8,8,12));
 }

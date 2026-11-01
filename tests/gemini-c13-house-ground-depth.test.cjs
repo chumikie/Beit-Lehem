@@ -14,7 +14,7 @@ test('C13: profundidade segue o chão da fachada, não o envelope de recorte gir
   const frontDepth=home.h*.13+7+(home.seed%4);
   const expected=home.y+Math.sin(angle)*frontDepth;
   assert.ok(Math.abs(depth(house)-expected)<1e-12);
-  assert.ok(bounds(house).bottom>frontBottom);
+  assert.ok(bounds(house).bottom>expected);
   // An actor behind the frontage remains covered; one past its foot is visible.
   assert.ok(Math.abs(depth(house)-expected)<1e-12);
  }
