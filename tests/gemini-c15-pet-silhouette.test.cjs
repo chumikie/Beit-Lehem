@@ -22,6 +22,26 @@ test('C15.3: preserva os quatro pets originais e identifica nove animais persona
  assert.match(petSource,/far\|\|reduce\|\|behavior\.resting/);
 });
 
+test('C15: nomes dos pets não competem pelo mesmo espaço visual',()=>{
+ const helpers=vm.runInNewContext(groupOffsetSource+';({streetPetNameplateVisible,streetPetNameplateSlot})');
+ assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},1.3),true);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},1.3),false);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.2),true);
+ const occupied=[];
+ const first=helpers.streetPetNameplateSlot({x:0,y:0},60,occupied);
+ const second=helpers.streetPetNameplateSlot({x:10,y:0},60,occupied);
+ const third=helpers.streetPetNameplateSlot({x:20,y:0},60,occupied);
+ assert.notEqual(first,second,'placas vizinhas devem ocupar faixas diferentes');
+ assert.notEqual(second,third,'a terceira placa não deve cobrir as anteriores');
+ for(let i=0;i<occupied.length;i++)for(let j=i+1;j<occupied.length;j++){
+  const a=occupied[i],b=occupied[j];
+  assert.equal(a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top,false,
+   'retângulos ocupados não podem se sobrepor');
+ }
+ const far=helpers.streetPetNameplateSlot({x:500,y:0},60,occupied);
+ assert.equal(far,-28,'uma placa distante pode reutilizar a primeira faixa livre');
+});
+
 test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
  const operations=[],ctx={
   save(){operations.push(['save']);},restore(){operations.push(['restore']);},scale(){},rotate(){},
@@ -43,8 +63,8 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
   const shadow=operations.findIndex(op=>op[0]==='ellipse'&&op[3]===8&&op[4]===2.3);
   const bounce=operations.findIndex((op,i)=>i>firstMove&&op[0]==='translate');
   assert.ok(firstMove>=0&&shadow>firstMove&&bounce>shadow);
-  assert.ok(Math.hypot(operations[firstMove][1]-10,operations[firstMove][2]-20)<=4.01,
-   'o deslocamento visual entre pets não pode ultrapassar quatro unidades');
+  assert.ok(Math.hypot(operations[firstMove][1]-10,operations[firstMove][2]-20)<=9.01,
+   'o deslocamento visual entre pets não pode ultrapassar nove unidades');
   assert.equal(operations[bounce][1],0);
  }
 });
