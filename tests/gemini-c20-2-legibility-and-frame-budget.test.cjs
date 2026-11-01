@@ -30,9 +30,11 @@ test('rótulos extensos não invadem as bordas ou HUD móvel',()=>{
  assert.equal(scenicCaptionFitsHud(320,640,160,500,210,true),true);
  assert.equal(scenicCaptionFitsHud(320,640,160,560,210,true),false);
  assert.equal(scenicCaptionFitsHud(320,640,160,210,210,true),false);
+ assert.equal(scenicCaptionFitsHud(320,640,160,275,210,true,18),false);
  assert.equal(scenicCaptionFitsHud(390,844,55,400,120,true),false);
  assert.equal(scenicCaptionFitsHud(390,844,200,400,120,true),true);
  assert.match(landmarks,/labelOptions\.allowCaption !== false/);
+ assert.match(game,/scenicCaptionFitsHud\(w,h,signX,signY,68\*zoom,w<=600,6\*zoom\)/);
 });
 
 test('os três balões usam coordenadas CSS e cedem espaço à fala prioritária',()=>{

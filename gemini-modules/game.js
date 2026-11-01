@@ -794,11 +794,14 @@ function drawParkedMotosAndSorda(c,time,view){
    // slides inside the mobile viewport instead of being cropped at an edge.
    if(s.x>=visibleLeft-6&&s.x<=visibleRight+6){
     const labelX=Math.max(visibleLeft+36,Math.min(visibleRight-36,s.x));
-    c.save();c.translate(labelX-s.x,0);
-    roundRect(c,-34,-22+steam*.3,68,12,5,'#fff9ebee','#d4a86a');
-    c.fillStyle='#784c24';c.font='bold 6.8px system-ui';c.textAlign='center';c.textBaseline='middle';
-    c.fillText('🥖 Pães da Tia',0,-16+steam*.3);
-    c.restore();
+    const signX=(labelX-camera.x)*zoom+w/2,signY=(s.y-camera.y-16+steam*.3)*zoom+h/2;
+    if(scenicCaptionFitsHud(w,h,signX,signY,68*zoom,w<=600,6*zoom)){
+     c.save();c.translate(labelX-s.x,0);
+     roundRect(c,-34,-22+steam*.3,68,12,5,'#fff9ebee','#d4a86a');
+     c.fillStyle='#784c24';c.font='bold 6.8px system-ui';c.textAlign='center';c.textBaseline='middle';
+     c.fillText('🥖 Pães da Tia',0,-16+steam*.3);
+     c.restore();
+    }
    }
   }
   c.restore();
@@ -1107,9 +1110,9 @@ function drawPedraLandscape(c,x,y){
  }
  c.restore();
 }
-function scenicCaptionFitsHud(canvasWidth,canvasHeight,x,y,textWidth,mobile){
+function scenicCaptionFitsHud(canvasWidth,canvasHeight,x,y,textWidth,mobile,verticalPadding=0){
  const edge=12,top=mobile?Math.min(300,canvasHeight*.42):12,bottom=mobile?Math.min(116,canvasHeight*.21):22;
- return x-textWidth/2>=edge&&x+textWidth/2<=canvasWidth-edge&&y>=top&&y<=canvasHeight-bottom;
+ return x-textWidth/2>=edge&&x+textWidth/2<=canvasWidth-edge&&y-verticalPadding>=top&&y+verticalPadding<=canvasHeight-bottom;
 }
 function drawScenicLayer(c,viewport,details=false){
  if(!showScenery)return;
