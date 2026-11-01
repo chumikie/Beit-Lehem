@@ -4,16 +4,6 @@ on:
   push:
     branches:
       - chore/consolidar-html-principal-2026-11-01
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'gemini-modules/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'dist/**'
-      - 'package.json'
-      - '.github/workflows/test.yml'
   workflow_dispatch:
 
 permissions:
