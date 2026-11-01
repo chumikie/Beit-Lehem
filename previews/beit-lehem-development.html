@@ -4774,7 +4774,7 @@ function preprocess(){
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
  if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
- const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway)||houses.length>=1350)continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?19:28,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:10+r*8,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
+ const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway)||houses.length>=1350)continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?17:21,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:13+r*7,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
  fairStalls=window.RoncadorFairStreets.layout(data,scenicScenes,houses);
  marketStall=window.RoncadorFairStreets.featured(fairStalls,data.landmarks.find(p=>p.id==='mercado')?.p);
@@ -4905,66 +4905,65 @@ function drawRuralShrub(c,x,y,r,seed){
  c.restore();
 }
 function house(c,b){
- c.save();c.translate(b.x,b.y);c.rotate(b.angle);
- // Both rows face the same street: mirror only the illustrated facade on the
- // left side. Centres, OSM segments and collision rectangles remain untouched.
- if(b.side===1)c.scale(1,-1);
- const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
+ c.save();c.translate(b.x,b.y);
+ const x=-b.w/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
- // A soft ground-contact shadow gives the house weight without inventing a
- // surveyed footprint or adding another object to the mapped street.
- c.fillStyle='#3b514321';c.beginPath();c.ellipse(1.5,b.h*.4,b.w*.57,b.h*.24,0,0,Math.PI*2);c.fill();
- roundRect(c,x+2,y+3,b.w+1,b.h+1,2,'#32503b20');
- const walls=['#f2e6cb','#e9dfc7','#e7d8bd','#f3e7d3'];
- roundRect(c,x,y,b.w,b.h,1.6,walls[b.seed%walls.length],'#ad9e8560');
+ const wallHeight=7+(b.seed%4),frontY=b.h*.06;
+ // World-space ground shadow follows the screen's light direction, not lot rotation.
+ c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();
+ // Side boundary: low plaster wall or hedge softens the gaps between neighboring
+ // illustrated homes. It never becomes a collision or mapped construction.
+ if(!far){
+  for(const side of [-1,1]){
+   const edge=side*(b.w/2+1);
+   c.strokeStyle=b.seed%3===0?'#638569ab':'#cbb796bd';c.lineWidth=b.seed%3===0?2.8:1.9;
+   c.beginPath();c.moveTo(edge,frontY+wallHeight-1);c.lineTo(edge+side*3.5,frontY+wallHeight-1);c.stroke();
+  }
+ }
+ // The roof remains oriented toward its mapped parcel; its decorative front
+ // is drawn afterward in screen coordinates, never flipped or upside down.
+ c.save();c.rotate(b.angle);
+ const roofY=-b.h*.5,roofDepth=b.h*.62;
  const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
- roundRect(c,x-1,y-(roofType===1?2:1),b.w+2,b.h*(roofType===2?.56:.62),roofType===1?2.5:1.5,roofs[b.color]);
- // Tiny overlapping tile rhythm and warm edge highlight: stylized, not surveyed facades.
- c.strokeStyle='#fff4d244';c.lineWidth=.65;
- if(!far)for(let row=2;row<b.h*.54;row+=roofType===2?4.2:3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
+ roundRect(c,x-1,roofY-1,b.w+2,roofDepth+2,roofType===1?2.6:1.8,roofs[b.color],'#79594b70');
  if(!far){
-  // A slight ridge, a shaded overhang and varied gable treatment separate
-  // individual roofs without changing their shape or size.
-  c.strokeStyle='#fff7db80';c.lineWidth=.85;c.beginPath();c.moveTo(x+1,y+.7);c.lineTo(x+b.w-1,y+.7);c.stroke();
-  c.strokeStyle='#704b4650';c.lineWidth=1.5;c.beginPath();c.moveTo(x-.7,y+b.h*.59);c.lineTo(x+b.w+.7,y+b.h*.59);c.stroke();
-  if(roofType===2){c.fillStyle='#fff1d075';c.beginPath();c.moveTo(x+b.w*.5,y+1.5);c.lineTo(x+b.w*.5,y+b.h*.48);c.lineTo(x+b.w*.55,y+b.h*.48);c.closePath();c.fill();}
+  c.strokeStyle='#f6d9a67c';c.lineWidth=.65;
+  for(let row=2;row<roofDepth-1;row+=3.2){
+   c.beginPath();c.moveTo(x,roofY+row);c.lineTo(x+b.w,roofY+row);c.stroke();
+   for(let col=x+2+(Math.floor(row/3.2)%2)*2;col<x+b.w;col+=5){
+    c.beginPath();c.moveTo(col,roofY+row-2);c.lineTo(col,roofY+row);c.stroke();
+   }
+  }
+  c.strokeStyle='#fff3d18f';c.lineWidth=.85;c.beginPath();c.moveTo(x,roofY+1);c.lineTo(x+b.w,roofY+1);c.stroke();
  }
- c.fillStyle='#fff4d9a8';c.fillRect(x,y+b.h*.57,b.w,1.2);
- // A slim illustrated foundation/step remains INSIDE the decorative lot;
- // it is not a mapped sidewalk and never adds a walkable road crossing.
- if(!far){c.fillStyle='#937e6760';c.fillRect(x+.4,y+b.h-1.6,b.w-.8,1.1);
- c.fillStyle='#fff6d7a0';c.fillRect(x+.8,y+b.h-2.5,b.w-1.6,.6);}
- if(!far){
-  // The roof overhang casts a slim shadow on the illustrated front wall;
-  // a shaded return face suggests volume without extending the lot.
-  c.fillStyle='#52443930';c.fillRect(x+.7,y+b.h*.62,b.w-1.4,Math.min(2,b.h*.1));
-  c.fillStyle='#574b3b25';c.fillRect(x+b.w-1.5,y+b.h*.64,1,b.h*.3);
- }
- if(flat){roundRect(c,x-1,y+b.h*.48,b.w+2,2.7,.5,'#f8e1bc','#ad9882');}
+ c.restore();
+ // A 7–10 px vertical south-facing wall gives the homes a readable 3/4 volume.
+ const walls=['#f2e6cb','#e9dfc7','#e7d8bd','#f3e7d3'];
+ roundRect(c,x,frontY,b.w,wallHeight,1,walls[b.seed%walls.length],'#ad9e85');
+ c.fillStyle='#6954473b';c.fillRect(x,frontY,b.w,1.4);
+ c.fillStyle='#f9f1d9aa';c.fillRect(x+1,frontY+wallHeight-1,b.w-2,.8);
+ if(flat){c.fillStyle='#f8e1bc';c.fillRect(x-1,frontY-.5,b.w+2,1.4);}
  if(shop){
-  roundRect(c,x+1,y+b.h*.61,b.w-2,3.3,.6,'#f9e7bf');
-  c.fillStyle='#9fb9a3';c.fillRect(x+2,y+b.h*.65,b.w-4,2.4);
-  c.fillStyle='#f4d5a1';for(let k=0;k<3;k++)c.fillRect(x+2+k*(b.w-4)/3,y+b.h*.59,(b.w-4)/5,1.6);
+  roundRect(c,x+2,frontY+2,b.w-4,3.7,.6,'#9fb9a3','#f9e7bf');
+  c.fillStyle='#f1d2a0';for(let k=0;k<3;k++)c.fillRect(x+2+k*(b.w-4)/3,frontY+1,(b.w-4)/5,1.7);
  }else{
-  const windowX=x+b.w*(doorLeft?.58:.2),doorX=x+b.w*(doorLeft?.17:.61);
+  const doorX=x+b.w*(doorLeft?.14:.66),windowX=x+b.w*(doorLeft?.60:.2);
   const glass=['#779d9a','#83a8a4','#9eaca0'][b.seed%3];
-  c.fillStyle=glass;c.fillRect(windowX,y+b.h*.7,3.2,2.7);
+  roundRect(c,windowX,frontY+2,3.8,3.5,.5,glass,'#f7edcf');
   if(!far){
-   c.strokeStyle='#f8f2df';c.lineWidth=.6;c.beginPath();c.moveTo(windowX+1.6,y+b.h*.7);c.lineTo(windowX+1.6,y+b.h*.7+2.7);c.stroke();
-   if(b.seed%3===0){c.fillStyle='#a1847188';c.fillRect(windowX-1,y+b.h*.7,1,3.2);c.fillRect(windowX+3.4,y+b.h*.7,1,3.2);}
-   if(b.w>19&&b.seed%5===0){const second=windowX+(doorLeft?-5.1:5.1);c.fillStyle=glass;c.fillRect(second,y+b.h*.7,2.5,2.7);}
+   c.strokeStyle='#f8f2df';c.lineWidth=.6;c.beginPath();c.moveTo(windowX+1.9,frontY+2);c.lineTo(windowX+1.9,frontY+5.5);c.stroke();
+   c.fillStyle='#9a886f';c.fillRect(windowX-.9,frontY+1.6,.8,4.2);c.fillRect(windowX+4,frontY+1.6,.8,4.2);
   }
-  if(!far){c.fillStyle='#53453730';c.fillRect(doorX-.7,y+b.h*.685,b.w*.19+1.4,b.h*.3);}
-  roundRect(c,doorX,y+b.h*.7,b.w*.19,b.h*.28,1,roofType===2?'#967e6c':'#8a7b67');
-  if(!far){
-   c.fillStyle='#f9edcfbd';c.fillRect(doorX+.7,y+b.h*.77,.7,1.3);
-   c.fillStyle='#a59b8066';c.fillRect(doorX-1,y+b.h*.96,b.w*.19+2,1.2);
-   if(b.seed%7===0){c.fillStyle='#e8c59b';c.fillRect(doorX-.6,y+b.h*.64,b.w*.19+1.2,1.2);}
-  }
+  roundRect(c,doorX,frontY+1.5,3.2,wallHeight-1.8,.6,'#93785e','#f8e7c4');
+  c.fillStyle='#f9df9e';c.fillRect(doorX+2.5,frontY+wallHeight*.62,.55,.55);
+  if(!far){c.fillStyle='#e8d8b9';c.fillRect(doorX-1,frontY+wallHeight-.25,5.2,1.3);}
  }
- c.fillStyle='#eabbb0';c.beginPath();c.arc(x+b.w+2,y+b.h*.78,1.8,0,7);c.fill();
- c.fillStyle='#67977b';c.beginPath();c.ellipse(x+b.w+2,y+b.h*.66,2.6,1.4,-.5,0,7);c.fill();
- if(b.seed%11===0){c.fillStyle='#f4e2c4';c.beginPath();c.arc(x+b.w*.38,y+b.h*.92,2.6,0,7);c.fill();c.fillStyle='#9c8f7e';c.fillRect(x+b.w*.38-1,y+b.h*.86,2,.9);}
+ // Porch pots are always upright in screen coordinates.
+ if(!far){
+  c.fillStyle='#bc866e';c.fillRect(x+b.w+1,frontY+wallHeight-2,3,2.7);
+  c.fillStyle='#67977b';c.beginPath();c.ellipse(x+b.w+2.5,frontY+wallHeight-3,2.8,2.2,-.3,0,Math.PI*2);c.fill();
+  if(b.seed%11===0){c.fillStyle='#bc9274';c.fillRect(x-4,frontY+wallHeight-2,2.6,2.5);c.fillStyle='#84a17f';c.beginPath();c.arc(x-2.7,frontY+wallHeight-3,2.2,0,Math.PI*2);c.fill();}
+ }
  c.restore();
  if(detailedFacades){
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);

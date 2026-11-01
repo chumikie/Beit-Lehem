@@ -26,7 +26,7 @@ test('wall and roof treatments vary deterministically between nearby houses',()=
  for(let seed=0;seed<12;seed++){
   const before=paintedHouse(seed,1.85),again=paintedHouse(seed,1.85);
   assert.deepEqual(before,again,'same seed must yield the same illustration');
-  colors.add(before.find(layer=>layer.width===24&&layer.height===16)?.fill);
+  colors.add(before.find(layer=>layer.width===24&&layer.height>=7&&layer.height<=10)?.fill);
  }
  assert.ok(colors.size>=3,'adjacent houses should not all have the same wall color');
 });
@@ -35,4 +35,25 @@ test('distant roofs omit small decoration without losing silhouette',()=>{
  const distant=paintedHouse(7,.9),near=paintedHouse(7,1.85);
  assert.ok(near.length>distant.length,'close view provides additional depth detail');
  assert.ok(distant.some(layer=>layer.width===26),'roof remains present from afar');
+});
+
+test('roof may follow the parcel but doors and windows remain upright on screen',()=>{
+ const section=source.slice(start,end);
+ assert.match(section,/c\.rotate\(b\.angle\)/);
+ assert.doesNotMatch(section,/c\.scale\(1,-1\)/);
+ assert.ok(section.indexOf('c.restore();\n // A 7–10 px vertical')>section.indexOf('c.rotate(b.angle)'),
+  'roof transform ends before the front wall');
+ assert.match(section,/wallHeight=7\+\(b\.seed%4\)/);
+ assert.match(section,/frontY\+1\.5/);
+});
+
+test('denser decorative lots preserve the street coordinates and save format',()=>{
+ const preprocess=source.slice(source.indexOf('function preprocess('),source.indexOf('function house('));
+ assert.match(preprocess,/step=isClovisArea\?17:21/);
+ assert.match(preprocess,/w:13\+r\*7/);
+ assert.match(preprocess,/nearestRoad\(x,y\)\.d/);
+ assert.match(preprocess,/occupied\.some\(/);
+ const house=source.slice(start,end);
+ assert.match(house,/edge\+side\*3\.5/);
+ assert.doesNotMatch(house,/data\.roads\s*=|localStorage|(?<!\.)save\(/);
 });
