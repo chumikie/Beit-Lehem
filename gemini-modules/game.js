@@ -237,13 +237,22 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  const width=widths[r.tags.highway]||10,materials={asphalt:'#cecfc1',paved:'#e2d9be',unpaved:'#d0c39a',paving_stones:'#e8d8ba',sett:'#deccaf'};
  path(c,r.p);
  if(simple){c.strokeStyle='#91a079';c.lineWidth=width+2;c.stroke();c.strokeStyle='#e6ddbc';c.lineWidth=width;c.stroke();continue;}
- // A narrow, translucent verge blends the paved surface into the grass.
- // These strokes are decorative only: the mapped path and collision width stay intact.
- c.strokeStyle=trail?'#9d9c7950':'#8a937452';c.lineWidth=width+2.5;c.stroke();
- c.strokeStyle=trail?'#c8ba96a8':'#c5b99c8a';c.lineWidth=width+1.15;c.stroke();
- c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
- // Fine worn edges appear up close; never draw a heavy outline around a street.
- if(z>=1.35&&!trail){c.strokeStyle='#fff4d526';c.lineWidth=Math.max(1,width-1.25);c.stroke();}
+ // Close-up illustration only: give urban carriageways breathing room without
+ // changing OSM geometry, navigation, sidewalks' coordinates or collision.
+ const street= !trail && r.tags.highway!=='service';
+ const pavementWidth=width*(street?1.2:1);
+ // The offset shadow reads as a shallow curb, beneath the same road centreline.
+ c.save();c.translate(0,street?.85:.3);
+ c.strokeStyle=trail?'#9d9c7950':'#5863483e';c.lineWidth=pavementWidth+3.5;c.stroke();c.restore();
+ // Pale shoulders and a fine warm curb make the road a place, not a map line.
+ c.strokeStyle=trail?'#9d9c7950':'#f1e3c6a0';c.lineWidth=pavementWidth+2.5;c.stroke();
+ c.strokeStyle=trail?'#c8ba96a8':'#b9ad938a';c.lineWidth=pavementWidth+1.15;c.stroke();
+ c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
+ if(z>=1.35&&!trail){
+  c.strokeStyle='#fff7e05e';c.lineWidth=.7;c.setLineDash([5,7]);c.stroke();c.setLineDash([]);
+  // Light surface wear stays sparse even at the closest zoom.
+  if(z>=1.85){c.strokeStyle='#9c998319';c.lineWidth=Math.max(1,pavementWidth-3.2);c.stroke();}
+ }
  if(major){c.strokeStyle='#f2edcf88';c.lineWidth=.65;c.setLineDash([7,8]);c.stroke();c.setLineDash([]);}
  if(trail){c.strokeStyle='#b5a87c99';c.lineWidth=.85;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
