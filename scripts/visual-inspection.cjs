@@ -16,7 +16,7 @@ const outputDir = path.join(
 );
 fs.mkdirSync(outputDir, { recursive: true });
 
-const htmlPath = path.join(outputDir, 'beit-lehem-temporary.html');
+const htmlPath = path.join(os.tmpdir(), 'beit-lehem-visual-temporary.html');
 const result = buildGeminiPreview(root, path.relative(root, htmlPath));
 const html = fs.readFileSync(result.outputPath, 'utf8');
 const map = extractEmbeddedMap(html);
@@ -42,7 +42,7 @@ const report = {
   viewports: {},
   pageErrors,
   consoleErrors,
-  generatedFiles: ['beit-lehem-temporary.html'],
+  generatedFiles: ['temporary build outside the repository'],
   versionedPreviewsWritten: false
 };
 
