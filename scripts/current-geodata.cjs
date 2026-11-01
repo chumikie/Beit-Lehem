@@ -36,7 +36,11 @@ function assertGeometryParity(templateMap, roads, areas) {
   }
 
   const previousRoads = new Map(templateMap.roads.map(road => [road.id, road]));
-  if (previousRoads.size !== templateMap.roads.length || previousRoads.size !== roads.length) {
+  const currentRoadIds = new Set(roads.map(road => road.id));
+  if (previousRoads.size !== templateMap.roads.length ||
+      currentRoadIds.size !== roads.length ||
+      currentRoadIds.size !== previousRoads.size ||
+      [...previousRoads.keys()].some(id => !currentRoadIds.has(id))) {
     throw new Error('A quantidade ou os identificadores de vias OSM mudaram. Revisão geográfica necessária antes do build.');
   }
 
