@@ -55,7 +55,7 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
   streetPetBehavior:()=>({resting:false,bounce:.78,tailRate:3.2,curious:false,observing:false}),
   streetPetVisualOffset:()=>({x:0,y:0}),streetPetCrowdVisible:()=>true,
   streetPetGesture:()=> 'none',roundRect:()=>{}};
- const draw=vm.runInNewContext(groupOffsetSource+'\n'+petSource+';drawStreetPets',scope);
+ const draw=vm.runInNewContext(groupOffsetSource+'\n'+petSource+'\nstreetPetCrowdVisible=()=>true;drawStreetPets',scope);
  const queue=[];draw(ctx,1,{left:-100,right:100,top:-100,bottom:100},[],queue);
  assert.equal(queue.length,13);
  for(const item of queue){
