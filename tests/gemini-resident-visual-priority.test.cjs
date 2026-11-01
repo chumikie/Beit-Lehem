@@ -39,6 +39,29 @@ test('a greeting takes precedence over a redundant name', () => {
   assert.equal(nameplates(people, { x: 0, y: 0 }, 1.85, true).length, 0);
 });
 
+test('nomes opcionais não atravessam fachadas ou marcadores da Matriz e Mercado',()=>{
+ const start=source.indexOf('function layoutResidentNameplates(');
+ const end=source.indexOf('function drawDistantResident(',start);
+ const context={data:{landmarks:[{id:'mercado',p:[0,0]}]},houses:[{x:75,y:-34,w:18,h:18}]};
+ const layout=vm.runInNewContext(`${source.slice(start,end)};layoutResidentNameplates`,context);
+ const labels=layout([{id:'a',x:75,y:0,def:{name:'Francisco'}}],{x:75,y:0},2.3,false);
+ for(const label of labels)assert.ok(label.x+label.width/2<=64||label.x-label.width/2>=86||label.y+7<=-48||label.y-7>=-20,'nome não cruza fachada');
+ const marker=layout([{id:'b',x:0,y:30,def:{name:'Lúcia'}}],{x:0,y:30},2.3,false);
+ for(const label of marker)assert.ok(label.x+label.width/2<=-16||label.x-label.width/2>=16||label.y+7<=-23||label.y-7>=12,'nome não cruza marcador');
+});
+
+test('escala central suaviza silhuetas sem alterar posições ou porte fora dos núcleos',()=>{
+ const start=source.indexOf('const WORLD_FACADE_HEIGHT=');
+ const end=source.indexOf('// Screen-space clutter',start);
+ const evaluate=vm.runInNewContext(`${source.slice(start,end)};({x,y})=>centralCharacterScale(x,y)`,{
+  zoom:2.3,data:{landmarks:[{id:'mercado',p:[0,0]},{id:'igreja',p:[250,0]}]}
+ });
+ assert.equal(evaluate({x:0,y:0}),.86);
+ assert.equal(evaluate({x:250,y:0}),.86);
+ assert.equal(evaluate({x:900,y:900}),1);
+ assert.ok(evaluate({x:125,y:130})>.86&&evaluate({x:125,y:130})<1);
+});
+
 test('nearer conversation has visual priority without changing its state', () => {
   const people = [
     { id: 'a', x: 0, y: 0 }, { id: 'b', x: 10, y: 0 },
