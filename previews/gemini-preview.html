@@ -5252,15 +5252,20 @@ function drawVerifiedWater(c,shores=true){
    c.strokeStyle='#638f67b0';c.lineWidth=1.15;c.beginPath();c.moveTo(x,y);c.lineTo(x-2.5,y-7);c.moveTo(x,y);c.lineTo(x+2.6,y-5);c.stroke();}
  }
 }
-function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoin='round';for(const r of roads){if(viewport&&r.bounds&&(r.bounds[2]<viewport.left||r.bounds[0]>viewport.right||r.bounds[3]<viewport.top||r.bounds[1]>viewport.bottom))continue;let major=/^(primary|secondary|trunk)/.test(r.tags.highway),trail=['path','footway','track','steps'].includes(r.tags.highway);
+function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoin='round';
+ const visible=roads.filter(r=>!viewport||!r.bounds||!(r.bounds[2]<viewport.left||r.bounds[0]>viewport.right||r.bounds[3]<viewport.top||r.bounds[1]>viewport.bottom));
+ // Paint all curbs before all road surfaces. Otherwise the round cap of a
+ // later OSM segment erases the surface of an earlier connected crossing.
+ for(const pass of [0,1])for(const r of visible){let major=/^(primary|secondary|trunk)/.test(r.tags.highway),trail=['path','footway','track','steps'].includes(r.tags.highway);
  const widths={primary:15,secondary:14,tertiary:11.7,primary_link:10.7,residential:9.6,unclassified:10,service:6.5,path:4.5,footway:4.5,track:5.5,steps:4};
  const width=widths[r.tags.highway]||10,materials={asphalt:'#cecfc1',paved:'#e2d9be',unpaved:'#d0c39a',paving_stones:'#e8d8ba',sett:'#deccaf'};
  path(c,r.p);
- if(simple){c.strokeStyle='#91a079';c.lineWidth=width+2;c.stroke();c.strokeStyle='#e6ddbc';c.lineWidth=width;c.stroke();continue;}
+ if(simple){c.strokeStyle=pass===0?'#91a079':'#e6ddbc';c.lineWidth=width+(pass===0?2:0);c.stroke();continue;}
  // Close-up illustration only: give urban carriageways breathing room without
  // changing OSM geometry, navigation, sidewalks' coordinates or collision.
  const street= !trail && r.tags.highway!=='service';
  const pavementWidth=width*(street?1.2:1);
+ if(pass===0){
  // The offset shadow reads as a shallow curb, beneath the same road centreline.
  c.save();c.translate(0,street?.85:.3);
  c.strokeStyle=trail?'#9d9c7950':'#5863483e';c.lineWidth=pavementWidth+3.5;c.stroke();c.restore();
@@ -5271,6 +5276,8 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  c.strokeStyle=trail?'#c8ba96a8':street?'#eadcc3':'#b9ad938a';
  c.lineWidth=pavementWidth+(street?5.2:1.15);c.stroke();
  if(street){c.strokeStyle='#a69b826b';c.lineWidth=pavementWidth+.7;c.stroke();}
+ continue;
+ }
  c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
  if(z>=1.35&&!trail){
   // Residential streets have no repeated centre dashes; the softly shaded

@@ -94,7 +94,8 @@ test('player, guide and residents use the same facade-relative world scale', () 
 test('illustrative home and terminal refinements preserve geography and have coherent shadows', () => {
   const landmarks = fs.readFileSync(path.join(__dirname, '../gemini-modules/landmarks.js'), 'utf8');
   assert.match(source, /const roofType=b\.seed%3,doorLeft=b\.seed%2===0/);
-  assert.match(source, /c\.lineWidth=width\+2/);
+  assert.match(source, /c\.lineWidth=width\+\(pass===0\?2:0\)/);
+  assert.match(source, /for\(const pass of \[0,1\]\)for\(const r of visible\)/);
   assert.match(landmarks, /rounded\(c, -31, -13, 66, 39, 5, '#425f4930'\)/);
   assert.doesNotMatch(source.slice(source.indexOf('function house('), source.indexOf('function region(')), /houses\.push|\.at\s*=/);
 });
