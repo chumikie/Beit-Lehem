@@ -22,7 +22,9 @@ Para abrir localmente: baixe o HTML principal e abra no navegador. O progresso p
 - **`scripts/build-development-preview.cjs`** — gera o principal e as duas cópias de compatibilidade.
 - **`previews/`** — artefatos gerados; não editar diretamente.
 - **`references/gemini-2026-10-31/`** — material original arquivado para consulta de sistemas que ainda não foram extraídos.
-- **`source/`, `import_belem_osm.py`, `prepare_map.py`** — fluxo geográfico da preparação antiga; sua integração com o mapa embutido atual ainda precisa ser consolidada.
+- **`source/belem-osm-2026.geojson`** — fonte OSM canônica lida no build atual.
+- **`scripts/current-geodata.cjs`** — projeção, validação de geometria e separação entre tags OSM, aparência visual e aliases locais.
+- **`import_belem_osm.py` / `prepare_map.py`** — ferramentas de reconstrução do extrato e do mapa projetado de apoio; `dist/map.json` não é a fonte normativa do jogo atual.
 - **`tests/`** — testes por sistema e regressões.
 - **`baseline/`** — arquivo histórico V2.27 e integridade do snapshot.
 - **`dist/`** — módulos/artefatos da linha antiga; não usar como fonte normativa do jogo atual.
