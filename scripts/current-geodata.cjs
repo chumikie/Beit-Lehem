@@ -44,9 +44,14 @@ function assertGeometryParity(templateMap, roads, areas) {
     throw new Error('A quantidade ou os identificadores de vias OSM mudaram. Revisão geográfica necessária antes do build.');
   }
 
-  for (const road of roads) {
+  for (let index = 0; index < roads.length; index++) {
+    const road = roads[index];
+    const previousInOrder = templateMap.roads[index];
     const previous = previousRoads.get(road.id);
-    if (!previous || JSON.stringify(previous.p) !== JSON.stringify(road.p)) {
+    if (!previous || previousInOrder?.id !== road.id) {
+      throw new Error('A ordem dos segmentos OSM mudou em ' + road.id + '. Revisão geográfica necessária antes do build.');
+    }
+    if (JSON.stringify(previous.p) !== JSON.stringify(road.p)) {
       throw new Error('A geometria OSM mudou em ' + road.id + '. Revisão geográfica necessária antes do build.');
     }
   }
