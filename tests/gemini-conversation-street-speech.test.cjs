@@ -17,8 +17,14 @@ test('conversa separa a fala dos desdobramentos e conserva 24 notas',()=>{
 
 test('balão temporário acompanha o morador por seis segundos sem persistir no save',()=>{
  assert.match(meeting,/streetPerson\.streetSpeech=talkLine/);
- assert.match(meeting,/performance\.now\(\)\+6000/);
+ assert.match(meeting,/until:0,pending:true/);
+ assert.match(source,/\$\('lifeDialog'\)\.addEventListener\('close',[\s\S]*?streetConversation\.until=performance\.now\(\)\+6000/);
+ assert.match(street,/!streetConversation\.pending&&performance\.now\(\)<streetConversation\.until/);
  assert.match(street,/person\.streetSpeech=streetConversation\.text/);
  assert.match(street,/speechOverlays\.push\(drawTalk\)/);
+ assert.match(street,/speechWidth=Math\.min\(132,Math\.max\(50,view\.right-view\.left-12\)\)/);
+ assert.match(street,/if\(speechActive&&speaker&&Math\.abs\(label\.x-speechX\)/);
+ assert.match(street,/if\(!person\.streetSpeech&&zoom>=1\.3/);
+ assert.match(street,/if\(!person\.streetSpeech&&zoom>=1\.2/);
  assert.doesNotMatch(meeting,/save\([^)]*streetSpeech/);
 });

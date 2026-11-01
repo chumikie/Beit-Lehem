@@ -5966,10 +5966,15 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  ambientHitTargets=ambientPeople;
  const people=[...ambientPeople,...residents,...secondaries].sort((a,b)=>a.y-b.y);
  for(const person of people)person.visibility=person.secondary?residentMotion.appearance(person.id,!person.crowded,elapsed):1;
+ const speechActive=streetConversation&&!streetConversation.pending&&performance.now()<streetConversation.until;
+ const speaker= speechActive?people.find(person=>person.id===streetConversation.id):null;
+ const speechWidth=Math.min(132,Math.max(50,view.right-view.left-12));
+ const speechX=speaker?Math.max(view.left+speechWidth/2+5,Math.min(view.right-speechWidth/2-5,speaker.x)):0;
+ const speechBottom=speaker?Math.max(view.top+50,speaker.y-48):0;
  // Labels are a proximity aid, not a second layer of billboards over the town.
  const nameplates=layoutResidentNameplates(people.filter(person=>person.visibility>.5),player,zoom,matchMedia('(max-width:800px)').matches);
  for(const person of people){
-  if(streetConversation?.id===person.id&&performance.now()<streetConversation.until)person.streetSpeech=streetConversation.text;
+  if(speechActive&&streetConversation.id===person.id)person.streetSpeech=streetConversation.text;
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
    const age=elapsed-(marketReaction.until-5.5);
    if(age<2)person.social={pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,age/.3,(2-age)/.4)),react:true};
@@ -5988,7 +5993,7 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
   else if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
   c.restore();
-  const drawGreeting=()=>{if(zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
+  const drawGreeting=()=>{if(!person.streetSpeech&&zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
    const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
    const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
    const label=parting?'Até já! ♡':afternoon?'Boa tardinha ♡':'Oi! ♡';
@@ -6004,11 +6009,18 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
    const drawTalk=()=>{
     const remaining=Math.max(0,(streetConversation.until-performance.now())/6000);
     if(!remaining)return;
-    const phrase=person.streetSpeech.length>80?person.streetSpeech.slice(0,77)+'…':person.streetSpeech;
-    c.save();c.globalAlpha*=Math.min(1,remaining*4);c.font='8px system-ui';
-    const width=Math.min(230,Math.max(60,c.measureText(phrase).width+16));
-    roundRect(c,person.x-width/2,person.y-76,width,22,7,'#fff8e9','#bba98b');
-    c.fillStyle='#645848';c.textAlign='center';c.textBaseline='middle';c.fillText(phrase,person.x,person.y-65,width-12);c.restore();
+    const phrase=person.streetSpeech.length>110?person.streetSpeech.slice(0,107)+'…':person.streetSpeech;
+    c.save();c.globalAlpha*=Math.min(1,remaining*4);c.font='8.5px system-ui';
+    const lines=[''];
+    for(const word of phrase.split(/\s+/)){
+     const current=lines.length-1,candidate=lines[current]?(lines[current]+' '+word):word;
+     if(c.measureText(candidate).width>speechWidth-16&&lines[current]&&lines.length<3)lines.push(word);
+     else lines[current]=candidate;
+    }
+    const height=lines.length*12+12;
+    roundRect(c,speechX-speechWidth/2,speechBottom-height,speechWidth,height,8,'#fff8e9','#bba98b');
+    c.fillStyle='#645848';c.textAlign='center';c.textBaseline='middle';
+    lines.forEach((line,i)=>c.fillText(line,speechX,speechBottom-height+11+i*12,speechWidth-16));c.restore();
    };
    if(speechOverlays)speechOverlays.push(drawTalk);else drawTalk();
   }
@@ -6049,7 +6061,7 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
    c.fillStyle='#fff8e8';c.font='bold 6px system-ui';c.textAlign='center';c.fillText(marketMorning.claimed?'♥':'♪',3,-17);
    c.restore();
   }
-  const drawReaction=()=>{if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
+  const drawReaction=()=>{if(!person.streetSpeech&&zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Francisco!',person.x,person.y-71);
   }};
   if(speechOverlays)speechOverlays.push(drawReaction);else drawReaction();
@@ -6059,6 +6071,7 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // Labels are the last resident layer: another passing sprite cannot cut them
  // in half, and the higher-priority conversation overlay comes after them.
  const drawNameplates=()=>{for(const label of nameplates){
+  if(speechActive&&speaker&&Math.abs(label.x-speechX)<speechWidth/2+label.width/2+3&&label.y>=speechBottom-55&&label.y<=speechBottom+8)continue;
   roundRect(c,label.x-label.width/2,label.y-6.5,label.width,13,5,'#fffcf1ed','#b4c2a1');
   c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(label.name,label.x,label.y);
  }};
@@ -7908,7 +7921,7 @@ function meetResident(id){
  $('lifeConversation').textContent=talkLine;
  if(result.newMemory)$('lifeConversation').textContent+=' ♥ Uma lembrança entrou no diário.';
  const streetPerson=residentsInStreets().find(person=>person.id===id);
- if(streetPerson){streetPerson.streetSpeech=talkLine;streetConversation={id,text:talkLine,until:performance.now()+6000};}
+ if(streetPerson){streetPerson.streetSpeech=talkLine;streetConversation={id,text:talkLine,until:0,pending:true};}
  const weekStory=result.newMemory?window.RoncadorLivingWorld.lastWeekRoutine(living,id):'';
  if(weekStory){
   $('lifeConversation').textContent+=' ☀ '+weekStory;
@@ -8869,6 +8882,9 @@ $('downloadHtmlLink').onclick=e=>{e.preventDefault();const blob=new Blob([docume
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='c'&&!e.repeat&&!anyDialog()&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){e.preventDefault();showContacts();}});
 $('openLife').onclick=showLife;
 $('lifeDialog').addEventListener('close',()=>{if(!loaded)return;lastJournalDay=living.day;save();});
+$('lifeDialog').addEventListener('close',()=>{
+ if(streetConversation?.pending){streetConversation.pending=false;streetConversation.until=performance.now()+6000;}
+});
 $('encounterVisit').onclick=visitStreetEncounter;
 $('communityWatchAction').onclick=visitCommunityEncounter;
 $('momentAction').onclick=exploreMoment;
