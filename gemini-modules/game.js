@@ -533,9 +533,17 @@ function drawParkedMotosAndSorda(c,time,view){
   }
   const steam=reduce?0:Math.sin(time*3+s.x)*1.5;
   if(zoom>1.2){
-   roundRect(c,-34,-22+steam*.3,68,12,5,'#fff9ebee','#d4a86a');
-   c.fillStyle='#784c24';c.font='bold 6.8px system-ui';c.textAlign='center';c.textBaseline='middle';
-   c.fillText('🥖 Pães da Tia',0,-16+steam*.3);
+   const visibleLeft=camera.x-w/(2*zoom),visibleRight=camera.x+w/(2*zoom);
+   // Keep the basket anchored to its mapped spot; only its optional sign
+   // slides inside the mobile viewport instead of being cropped at an edge.
+   if(s.x>=visibleLeft-6&&s.x<=visibleRight+6){
+    const labelX=Math.max(visibleLeft+36,Math.min(visibleRight-36,s.x));
+    c.save();c.translate(labelX-s.x,0);
+    roundRect(c,-34,-22+steam*.3,68,12,5,'#fff9ebee','#d4a86a');
+    c.fillStyle='#784c24';c.font='bold 6.8px system-ui';c.textAlign='center';c.textBaseline='middle';
+    c.fillText('🥖 Pães da Tia',0,-16+steam*.3);
+    c.restore();
+   }
   }
   c.restore();
  }
