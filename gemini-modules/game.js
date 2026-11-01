@@ -490,10 +490,13 @@ function drawRuralShrub(c,x,y,r,seed){
  c.fillStyle='#36503b26';c.beginPath();c.ellipse(2,3,r*.78,r*.28,0,0,Math.PI*2);c.fill();
  const palette=['#728e60','#809a66','#637f58','#92a778'];
  const color=palette[seed%palette.length];
+ // Three compact outlines break up repeated scrub at both zoom levels.
+ // Ground anchor, palette and overall footprint remain unchanged.
+ const profile=seed%3;
  c.fillStyle=color;c.beginPath();
- c.ellipse(-r*.33,-r*.2,r*.48,r*.38,-.3,0,Math.PI*2);
- c.ellipse(r*.25,-r*.24,r*.53,r*.42,.25,0,Math.PI*2);
- c.ellipse(0,-r*.43,r*.47,r*.43,0,0,Math.PI*2);c.fill();
+ c.ellipse(-r*(profile===1?.29:.33),-r*.2,r*(profile===1?.43:.48),r*.38,-.3,0,Math.PI*2);
+ c.ellipse(r*.25,-r*(profile===2?.3:.24),r*(profile===2?.48:.53),r*.42,.25,0,Math.PI*2);
+ c.ellipse(0,-r*(profile===1?.48:.43),r*.47,r*(profile===1?.38:.43),0,0,Math.PI*2);c.fill();
  if(!far){
   c.strokeStyle='#526d4c';c.lineWidth=.85;c.lineCap='round';
   c.beginPath();c.moveTo(0,0);c.lineTo(-r*.28,-r*.38);
