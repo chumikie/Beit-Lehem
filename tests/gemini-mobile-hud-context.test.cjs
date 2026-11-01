@@ -4,6 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const src=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+const html=fs.readFileSync(require.resolve('../previews/beit-lehem-development.html'),'utf8');
 const setup=src.slice(src.indexOf('function setupMobileWalkingHud(){'),src.indexOf('setupMobileWalkingHud();')+24);
 const summary=src.slice(src.indexOf('function lifeSummary(){'),src.indexOf('function rememberedLandscapeLine('));
 
@@ -18,9 +19,9 @@ test('minimapa começa aberto, alterna sem perder canvas e oferece estado acess�
  assert.match(setup,/\.mini-wrap\.is-collapsed #minimap/);
  assert.doesNotMatch(setup,/remove\(|localStorage|save\(/);
  const states=new Set(),attrs={};
- const panel={classList:{contains:key=>states.has(key),toggle:key=>states.has(key)?states.delete(key):states.add(key)},append:button=>{panel.button=button;}};
+ const panel={classList:{contains:key=>states.has(key),add:key=>states.add(key),toggle:key=>states.has(key)?states.delete(key):states.add(key)},append:button=>{panel.button=button;}};
  const mini={closest:()=>panel},document={createElement:tag=>({tag,setAttribute:(key,value)=>{attrs[key]=value;}}),head:{append:style=>{panel.style=style.textContent;}}};
- vm.runInNewContext(setup,{mini,document});
+ vm.runInNewContext(setup,{mini,document,matchMedia:()=>({matches:false})});
  assert.equal(attrs['aria-expanded'],'true');
  panel.button.onclick();
  assert.equal(attrs['aria-expanded'],'false');
@@ -29,6 +30,43 @@ test('minimapa começa aberto, alterna sem perder canvas e oferece estado acess�
  assert.equal(attrs['aria-expanded'],'true');
  assert.ok(!states.has('is-collapsed'));
  assert.match(panel.style,/@media\(max-width:800px\)/);
+});
+
+test('C12: em 320px o minimapa começa recolhido e abre com alvo de toque de 44px',()=>{
+ const states=new Set(),attrs={};
+ const panel={classList:{contains:key=>states.has(key),add:key=>states.add(key),toggle:key=>states.has(key)?states.delete(key):states.add(key)},append:button=>{panel.button=button;}};
+ const mini={closest:()=>panel};
+ const document={createElement:tag=>({tag,setAttribute:(key,value)=>{attrs[key]=value;}}),head:{append:style=>{panel.style=style.textContent;}}};
+ vm.runInNewContext(setup,{mini,document,matchMedia:()=>({matches:true})});
+ assert.equal(attrs['aria-expanded'],'false');
+ assert.ok(states.has('is-collapsed'));
+ assert.match(panel.style,/\.mini-wrap\.is-collapsed\{width:58px;height:58px/);
+ assert.match(panel.style,/\.mini-wrap\.is-collapsed \.mini-toggle\{[^}]*width:44px;height:44px/);
+ panel.button.onclick();
+ assert.equal(attrs['aria-expanded'],'true');
+ assert.ok(!states.has('is-collapsed'));
+});
+
+test('C12: a redução do minimapa melhora a área livre sem retirar o canvas',()=>{
+ // Estimativa por CSS: viewport 320x640, barra superior 68, minimapa 112x~130.
+ const world=320*(640-68),expanded=112*130,collapsed=58*58;
+ const gain=(expanded-collapsed)/world;
+ assert.ok(gain>.05&&gain<.08);
+ assert.match(setup,/if\(matchMedia\('\(max-width:380px\)'\)\.matches\)/);
+ assert.doesNotMatch(setup,/remove\(|localStorage|save\(/);
+ console.info(`C12: 320×640, minimapa estimado ${(expanded/world*100).toFixed(1)}% → ${(collapsed/world*100).toFixed(1)}%; liberação aproximada ${(gain*100).toFixed(1)} p.p.`);
+});
+
+test('C12: diário de desktop e gaveta móvel mantêm a área jogável prevista',()=>{
+ assert.match(html,/\.layout\{display:grid;grid-template-columns:minmax\(0,1fr\) 330px/);
+ assert.match(html,/\.layout\{grid-template-columns:minmax\(0,1fr\) 290px\}/);
+ assert.match(html,/\.sidebar\{position:fixed;z-index:15;right:0;bottom:0;top:68px/);
+ assert.match(src,/\$\('sidebar'\)\.inert=matchMedia\('\(max-width:800px\)'\)\.matches&&!open/);
+ const samples=[[1280,330,950/1280],[1024,290,734/1024],[390,0,1],[320,0,1]];
+ for(const [width,panel,share] of samples){
+  assert.equal((width-panel)/width,share);
+  console.info(`C12: ${width}px de largura — painel ${panel}px, mundo ${(share*100).toFixed(1)}%`);
+ }
 });
 
 test('cartão contextual prioriza proximidade, encontro ativo e caminhada sem ocultar o Caderno',()=>{
