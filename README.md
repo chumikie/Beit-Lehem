@@ -47,12 +47,16 @@ npm run play:legacy
 
 ## Geografia e nomes
 
-- **Nomes de ruas:** manter a grafia real, exatamente como consta na fonte geográfica validada, incluindo acentos. Não renomear ruas para acomodar fachadas ou elementos de ficção.
-- **Pontos de interesse e estabelecimentos:** o nome exibido no jogo pode ser um alias ficcional. Quando houver nome de origem, manter separado do nome de exibição; não alterar os dados da rua para renomear um POI.
-- **Proveniência:** distinguir geometrias e nomes vindos de OSM de informações locais verificadas pelo autor e de elementos puramente ilustrativos.
-- **Precisão:** não inventar coordenadas, acessos, contornos de lotes ou nomes. Uma fachada ilustrativa não é um levantamento cadastral.
+O mapa ativo é composto durante o build a partir de `source/belem-osm-2026.geojson`, usando `scripts/current-geodata.cjs` e a projeção local já adotada pelo jogo.
 
-Há dois fluxos geográficos que ainda precisam ser consolidados: a preparação OSM usada pela linha antiga e os dados de mapa embutidos na base atual. Portanto, uma mudança em `source/belem-osm-2026.geojson` não deve ser presumida como automaticamente refletida na prévia atual.
+- **Ruas e geometria:** identificadores, traçados e `properties.name` vêm da fonte OSM. O build verifica igualdade exata da geometria das 462 vias e dos 20 polígonos com o mapa revisado atual; se a quantidade, os IDs ou as coordenadas mudarem, ele interrompe a geração para revisão.
+- **Nomes de ruas:** só um `name` presente na feição OSM pode virar rótulo de rua. Grafia, acentos e valores são copiados sem correção automática.
+- **Aparência:** superfícies usadas apenas para manter o acabamento visual ficam em `roadAppearance`, sem alterar as tags geográficas OSM.
+- **POIs locais:** ficam em `localPlaces`, com `displayName`, `sourceName`, proveniência e estado da posição. O nome exibido no jogo pode ser um alias, mas não substitui o nome original da fonte.
+- **Rótulos de via não confirmados:** ficam em `unverifiedRoadLabels` com estado de revisão e não são exibidos como nome de rua.
+- **Limites da fonte:** o recorte OSM/IBGE é uma referência de cobertura, não garantia de que todas as vias, acessos ou condições atuais estejam mapeadas.
+
+O extrato consultado registra 491 feições: 462 linhas viárias, 20 polígonos e 9 pontos. São 86 nomes distintos em vias nomeadas nessa captura. Isso descreve o arquivo consultado, não certifica a completude do município.
 
 ## Salvamento e compatibilidade
 
