@@ -97,7 +97,7 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  assert.equal(helpers.streetPetCrowdVisible({x:50,y:24},placed,1,390),true);
  assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},[],1,1440),true,
   'a densidade desktop mantém o intervalo menor');
- assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},[],2,390),true,
+ assert.equal(helpers.streetPetCrowdVisible({x:50,y:24},[],2,390),true,
   'em zoom alto a distância mínima em unidades do mundo diminui');
  assert.equal(JSON.stringify(original),snapshot,'o ponto original nunca é alterado');
  assert.equal(placed.length,2);
