@@ -6,15 +6,19 @@ const vm=require('node:vm');
 const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
 const petSource=game.slice(game.indexOf('function drawCozyPetSprite('),game.indexOf('function drawPuddles('));
 
-test('C15.1: preserva os quatro pets e identifica cinco novos animais por nome e pelagem',()=>{
+test('C15.2: preserva os quatro pets originais e identifica os sete animais personalizados',()=>{
  const candidates=petSource.match(/\{id:'[^']+'[^}]+\}/g)||[];
- assert.equal(candidates.length,9);
+ assert.equal(candidates.length,11);
  assert.equal(candidates.filter(p=>p.includes('cat:true')).length,6);
- assert.equal(candidates.filter(p=>p.includes('cat:false')).length,3);
- for(const name of ['catito','artemis','mimi','hani','jekki'])assert.match(petSource,new RegExp("id:'"+name+"'"));
+ assert.equal(candidates.filter(p=>p.includes('cat:false')).length,5);
+ for(const name of ['catito','artemis','mimi','hani','jekki','bethowen','bob'])assert.match(petSource,new RegExp("id:'"+name+"'"));
  assert.match(petSource,/if\(coat==='artemis'\)/);
  assert.match(petSource,/const paws=/);
  assert.match(petSource,/if\(coat==='jekki'&&!far\)/);
+ assert.match(petSource,/if\(coat==='bethowen'\)/);
+ assert.match(petSource,/coat==='bob'\?\.78/);
+ assert.match(petSource,/if\(far\)/);
+ assert.match(petSource,/far\|\|reduce\|\|behavior\.resting/);
 });
 
 test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
@@ -31,7 +35,7 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
   streetPetVisualOffset:()=>({x:0,y:0}),roundRect:()=>{}};
  const draw=vm.runInNewContext(petSource+';drawStreetPets',scope);
  const queue=[];draw(ctx,1,{left:-100,right:100,top:-100,bottom:100},[],queue);
- assert.equal(queue.length,9);
+ assert.equal(queue.length,11);
  for(const item of queue){
   operations.length=0;item.draw();
   const firstMove=operations.findIndex(op=>op[0]==='translate');
