@@ -2767,6 +2767,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
     if(!home.centralBlock)return;
     const block=home.centralBlock,seed=home.seed||0,wall=colors[block][seed%4];
     c.save();c.translate(home.x,home.y);c.rotate(home.angle);
+    // Decorative houses are generated on both sides of a road. Their entrances
+    // must face that road, regardless of the segment's drawing direction.
+    if(home.side===1)c.scale(1,-1);
     const left=-home.w/2,top=-home.h/2,base=top+home.h*.63;
     // The visible strip faces its generative street, but it is not a real facade.
     c.fillStyle='#5b5b4a24';c.fillRect(left+1,base+2,home.w+1,home.h*.36+2);
@@ -2792,6 +2795,30 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
       c.fillStyle='#65564d36';c.fillRect(left-1.3,base+.25,home.w+2.6,.65);
       c.strokeStyle='#fff5dc';c.lineWidth=.65;
       for(let i=2;i<home.w;i+=4){c.beginPath();c.moveTo(left+i,base-2.2);c.lineTo(left+i,base+1);c.stroke();}
+    }
+    if(block==='feliciano'){
+      // Fictional storefront study only: no brand, surveyed entrance or
+      // pavement polygon is inferred from the commercial address listings.
+      const storefront=seed%5!==0;
+      const height=home.h*.36;
+      c.fillStyle='#514b423d';c.fillRect(left+.8,base+1.1,home.w-1.6,1.35);
+      if(storefront){
+        const glassX=left+1.5,glassW=home.w*.49;
+        c.fillStyle='#506f73';c.fillRect(glassX,base+2,glassW,height*.76);
+        c.fillStyle='#a7d1cb90';c.fillRect(glassX+.65,base+2.5,glassW*.31,height*.62);
+        c.fillStyle='#f8e9ce9c';c.fillRect(glassX+glassW*.58,base+2.5,.55,height*.61);
+        c.fillStyle='#f4dfb7';c.fillRect(glassX,base+height*.72,glassW,.65);
+      }
+      // Three proportional awning heights create a modest commercial rhythm.
+      const awningRise=[1.9,2.6,3.2][seed%3];
+      c.fillStyle='#45443c32';c.fillRect(left-.45,base+.45,home.w+.9,1.25);
+      c.fillStyle=['#bb8570','#849b8c','#c3a27b'][seed%3];
+      c.fillRect(left-.3,base-awningRise,home.w+.6,awningRise+.45);
+      c.fillStyle='#fff6df8a';c.fillRect(left-.1,base-awningRise+.2,home.w+.2,.55);
+      c.fillStyle='#5f544533';c.fillRect(left-.2,base+.05,home.w+.4,.7);
+      // Threshold sits within the illustrated facade, not the street.
+      c.fillStyle='#ead9bb';c.fillRect(left+home.w*.61,base+height-.8,home.w*.25,.8);
+      c.fillStyle='#715e4c66';c.fillRect(left+home.w*.61,base+height-.12,home.w*.25,.4);
     }
     if(block==='matriz'){
       // Quiet stucco reveals and eave shadows on existing illustrative houses.
