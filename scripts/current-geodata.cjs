@@ -47,7 +47,9 @@ function assertGeometryParity(templateMap, roads, areas) {
     }
   }
 
-  if (JSON.stringify(templateMap.areas) !== JSON.stringify(areas)) {
+  const previousAreaGeometry = templateMap.areas.map(area => area.p);
+  const currentAreaGeometry = areas.map(area => area.p);
+  if (JSON.stringify(previousAreaGeometry) !== JSON.stringify(currentAreaGeometry)) {
     throw new Error('A geometria dos polígonos OSM mudou. Revisão geográfica necessária antes do build.');
   }
 }
