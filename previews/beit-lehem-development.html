@@ -6018,6 +6018,36 @@ function nearbyResidentReaction(person,playerPosition,context){
  if(distance>=42)return null;
  return {pose:'smile',stage:'nearby',facing:playerPosition.x>=person.x?1:-1,intensity:Math.min(.45,(42-distance)*.018),react:true};
 }
+function createPlayerPresenceGestures(){
+ const visits=new Map();
+ return function(person,playerPosition,context,now){
+  const smile=nearbyResidentReaction(person,playerPosition,context);
+  const previous=visits.get(person.id);
+  if(!smile&&!previous)return null;
+  // An encounter, errand or scripted gesture always takes precedence.
+  if(context.worldPause||person.walking||person.arriving||person.meeting||person.travel||person.social||person.greeting||person.moment||person.crowded){
+   visits.delete(person.id);return null;
+  }
+  if(previous&&(!Number.isFinite(now)||now<previous.entered||now-previous.entered>60)){
+   visits.delete(person.id);return smile;
+  }
+  const distance=Math.hypot(person.x-playerPosition.x,person.y-playerPosition.y);
+  if(smile){
+   if(!previous)visits.set(person.id,{entered:now,inside:true,departed:false});
+   else if(!previous.departed)previous.inside=true;
+   return smile;
+  }
+  if(!previous||distance>=64){visits.delete(person.id);return null;}
+  if(previous.inside){
+   previous.inside=false;
+   if(now-previous.entered>=1.4){previous.departed=true;previous.farewellUntil=now+.85;}
+  }
+  if(!previous.departed||now>=previous.farewellUntil)return null;
+  return {pose:'wave',stage:'farewell',facing:playerPosition.x>=person.x?1:-1,
+   intensity:Math.min(.38,(previous.farewellUntil-now)*.55),react:false};
+ };
+}
+const playerPresenceGestures=createPlayerPresenceGestures();
 function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
  const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere(),elapsed);
@@ -6078,7 +6108,8 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
    if(age<2)person.social={pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,age/.3,(2-age)/.4)),react:true};
   }
   // Recognition is an expression on an existing stop, never a new stop or route.
-  if(!person.social)person.social=nearbyResidentReaction(person,player,{living,sideNeighbors,worldPause});
+  const presenceGesture=playerPresenceGestures(person,player,{living,sideNeighbors,worldPause},elapsed);
+  if(!person.social)person.social=presenceGesture;
   residentMotion.present(person,elapsed,reduce);
   // A nearby friend can share a quiet smile when already stopped; do not
   // interrupt a route, a scripted greeting or another resident's encounter.

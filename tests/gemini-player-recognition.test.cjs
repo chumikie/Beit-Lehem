@@ -6,6 +6,7 @@ const path=require('node:path');
 const source=fs.readFileSync(path.join(__dirname,'../gemini-modules/game.js'),'utf8');
 const fragment=source.slice(source.indexOf('function nearbyResidentReaction('),source.indexOf('function drawStreetLife('));
 const nearbyResidentReaction=new Function(fragment+';return nearbyResidentReaction;')();
+const createPlayerPresenceGestures=new Function('nearbyResidentReaction',fragment+';return createPlayerPresenceGestures;')(nearbyResidentReaction);
 const player={x:20,y:0};
 const context={living:{people:{damiao:{bond:2},lucia:{bond:1},bia:{bond:1}}},sideNeighbors:{seen:['cica','nara']},worldPause:null};
 const resident=(id,extra={})=>({id,def:{id},x:0,y:0,...extra});
@@ -52,4 +53,50 @@ test('a reação usa os gestos existentes e não altera posição ou progresso',
  assert.deepEqual(person,snapshot);
  assert.deepEqual(Object.keys(reaction).sort(),['facing','intensity','pose','react','stage']);
  assert.match(source,/residentMotion\.present\(person,elapsed,reduce\)/);
+});
+
+test('chegada e permanência mantêm o sorriso sem pausar o trajeto',()=>{
+ const gesture=createPlayerPresenceGestures(),person=resident('damiao',{routeProgress:.4});
+ for(const seconds of [10,10.4,12.2]){
+  const reaction=gesture(person,player,context,seconds);
+  assert.equal(reaction.pose,'smile');
+  assert.equal(reaction.stage,'nearby');
+ }
+ assert.equal(person.routeProgress,.4);
+});
+
+test('despedida curta só surge após permanência e saída gradual',()=>{
+ const gesture=createPlayerPresenceGestures(),person=resident('cica');
+ assert.equal(gesture(person,player,context,10).pose,'smile');
+ assert.equal(gesture(person,player,context,12).pose,'smile');
+ const outside={x:52,y:0};
+ const farewell=gesture(person,outside,context,12.1);
+ assert.equal(farewell.pose,'wave');
+ assert.equal(farewell.stage,'farewell');
+ assert.ok(farewell.intensity>0&&farewell.intensity<=.38);
+ assert.ok(gesture(person,outside,context,12.6).intensity<farewell.intensity);
+ assert.equal(gesture(person,outside,context,13.1),null);
+ assert.equal(gesture(person,outside,context,14),null);
+ assert.equal(gesture(person,{x:65,y:0},context,14.1),null);
+ assert.equal(gesture(person,player,context,15).pose,'smile');
+});
+
+test('passagem rápida e distância grande não provocam despedida',()=>{
+ const gesture=createPlayerPresenceGestures(),person=resident('nara');
+ assert.equal(gesture(person,player,context,2).pose,'smile');
+ assert.equal(gesture(person,{x:53,y:0},context,2.5),null);
+ assert.equal(gesture(person,{x:80,y:0},context,2.6),null);
+ assert.equal(gesture(person,player,context,3).pose,'smile');
+ assert.equal(gesture(person,{x:80,y:0},context,5),null);
+});
+
+test('atividade prioritária cancela uma despedida e não cria dado de save',()=>{
+ const gesture=createPlayerPresenceGestures(),person=resident('bia');
+ gesture(person,player,context,20);
+ gesture(person,player,context,22);
+ const snapshot=structuredClone(person);
+ assert.equal(gesture({...person,moment:{pose:'read'}},{x:52,y:0},context,22.1),null);
+ assert.equal(gesture(person,{x:52,y:0},context,22.3),null);
+ assert.deepEqual(person,snapshot);
+ assert.doesNotMatch(source,/playerPresenceGestures[,:]\s*(?:save|saved|JSON\.stringify)/);
 });
