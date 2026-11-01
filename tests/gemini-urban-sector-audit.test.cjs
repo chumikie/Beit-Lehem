@@ -81,13 +81,17 @@ test('classificação de fachadas não depende de pinos locais sem posição con
 });
 
 test('fachada ilustrada gira junto ao rumo viário e aponta para a rua conforme o lado',()=>{
- const start=game.indexOf('function streetFacingAngle(b)');
- const end=game.indexOf('\nfunction house(c,b)',start);
+ const start=game.indexOf('function house(c,b)');
+ const end=game.indexOf('function houseVisualBounds(b)',start);
  assert.ok(start>=0&&end>start);
- const fn=vm.runInNewContext(game.slice(start,end)+';streetFacingAngle');
+ const source=game.slice(start,end);
+ const angleFor=vm.runInNewContext(
+  'function angleFor(b){return (Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0)};angleFor'
+ );
  const heading=.72;
- assert.ok(Math.abs(fn({angle:heading,side:-1})-heading)<1e-12);
- assert.ok(Math.abs(fn({angle:heading,side:1})-(heading+Math.PI))<1e-12);
- assert.match(game,/c\.translate\(b\.x,b\.y\);c\.rotate\(streetFacingAngle\(b\)\)/);
- assert.match(game,/c\.rotate\(streetFacingAngle\(b\)\);c\.translate\(-b\.x,-b\.y\)/);
+ assert.ok(Math.abs(angleFor({angle:heading,side:-1})-heading)<1e-12);
+ assert.ok(Math.abs(angleFor({angle:heading,side:1})-(heading+Math.PI))<1e-12);
+ assert.match(source,/c\.rotate\(streetAngle\)/);
+ assert.match(source,/c\.rotate\(-streetAngle\)/);
+ assert.match(game,/c\.rotate\(\(Number\.isFinite\(b\.angle\)\?b\.angle:0\)\+\(b\.side>0\?Math\.PI:0\)\)/);
 });

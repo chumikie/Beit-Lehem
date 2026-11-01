@@ -508,11 +508,11 @@ function drawRuralShrub(c,x,y,r,seed){
  }
  c.restore();
 }
-function streetFacingAngle(b){return (Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0);}
 function house(c,b){
  // Roof and frontage follow the road tangent; the frontage faces the road side.
  // This changes only the Canvas transform, never the house's generated coordinates.
- c.save();c.translate(b.x,b.y);c.rotate(streetFacingAngle(b));
+ const streetAngle=(Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0);
+ c.save();c.translate(b.x,b.y);c.rotate(streetAngle);
  const x=-b.w/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
  // A distant neighborhood needs a roof silhouette, not hundreds of tiny
@@ -522,7 +522,7 @@ function house(c,b){
  // Keep the far roof colors opaque enough to remain recognizable as tiles.
  if(zoom<1.05)c.globalAlpha*=.82+.18*Math.max(0,(zoom-.65)/.4);
  // Keep the soft ground shadow screen-aligned while the building turns to the street.
- c.save();c.rotate(-streetFacingAngle(b));
+ c.save();c.rotate(-streetAngle);
  c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();c.restore();
  // Side boundary: low plaster wall or hedge softens the gaps between neighboring
  // illustrated homes. It never becomes a collision or mapped construction.
@@ -582,7 +582,7 @@ function house(c,b){
  if(detailedFacades){
   // The facade must face the source street, not the screen's fixed down direction.
   // This transform is render-only: house coordinates, route graph and saves do not move.
-  c.save();c.translate(b.x,b.y);c.rotate(streetFacingAngle(b));c.translate(-b.x,-b.y);
+  c.save();c.translate(b.x,b.y);c.rotate((Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0));c.translate(-b.x,-b.y);
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);
   window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute,zoom);
   c.restore();
@@ -598,7 +598,8 @@ function houseVisualBounds(b){
 function houseGroundDepth(b){
  // The front contact edge rotates with the street and determines painter's order.
  const frontDepth=b.h*.13+7+(b.seed%4);
- return b.y+Math.sin(streetFacingAngle(b))*frontDepth;
+ const angle=(Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0);
+ return b.y+Math.sin(angle)*frontDepth;
 }
 function streetLabelBlocked(l,width,height,visibleHouses,people){
  // Test the oriented text rectangle against rotated facade bounds and actors.
@@ -614,9 +615,10 @@ function streetLabelBlocked(l,width,height,visibleHouses,people){
   return true;
  };
  if(visibleHouses.some(b=>{
-  const bounds=houseVisualBounds(b);
-  return overlaps((bounds.left+bounds.right)/2,(bounds.top+bounds.bottom)/2,
-   (bounds.right-bounds.left)/2,(bounds.bottom-bounds.top)/2);
+  const angle=Number.isFinite(b.angle)?b.angle:0,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+  const halfX=Math.max((b.w*cos+b.h*sin)/2,b.w/2)+9;
+  const halfY=Math.max((b.w*sin+b.h*cos)/2,b.h/2)+9;
+  return overlaps(b.x,b.y,halfX,halfY);
  }))return true;
  return people.some(p=>overlaps(p.x,p.y-8,8,12));
 }

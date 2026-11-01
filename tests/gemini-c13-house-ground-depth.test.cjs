@@ -11,12 +11,12 @@ test('C13: profundidade segue o chão da fachada, não o envelope de recorte gir
  const home={x:100,y:200,w:22,h:14,seed:7};
  for(const angle of [0,Math.PI/6,Math.PI/2,-Math.PI/3]){
   const house={...home,angle};
-  const frontBottom=home.y+home.h*.13+7+(home.seed%4);
-  assert.equal(depth(house),frontBottom);
+  const frontDepth=home.h*.13+7+(home.seed%4);
+  const expected=home.y+Math.sin(angle)*frontDepth;
+  assert.ok(Math.abs(depth(house)-expected)<1e-12);
   assert.ok(bounds(house).bottom>frontBottom);
   // An actor behind the frontage remains covered; one past its foot is visible.
-  assert.ok(depth(house)>frontBottom-1);
-  assert.ok(depth(house)<frontBottom+1);
+  assert.ok(Math.abs(depth(house)-expected)<1e-12);
  }
  assert.match(game,/renderables\.push\(\{sortY:houseGroundDepth\(b\),draw:\(\)=>house\(ctx,b\)\}\)/);
 });

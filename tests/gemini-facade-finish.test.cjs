@@ -57,14 +57,17 @@ test('C11: três camadas artísticas ficam verticais enquanto colisão mantém �
  }
  assert.match(collision,/Math\.cos\(house\.angle\)/);
  assert.match(collision,/Math\.abs\(lx\)<house\.w\/2\+5/);
- // Every visible layer remains upright at horizontal, diagonal and vertical lots.
+ // Roof and wall share the street-facing bearing; the soft shadow returns to screen space.
  for(const zoomLevel of [.65,1.15,1.85,2.85,3.5])for(const angle of [0,Math.PI/6,Math.PI/3,Math.PI/2,-Math.PI/3]){
   const transforms=[];
   const ctx={save(){},restore(){},translate(){},rotate:a=>transforms.push(a),scale(){},
    beginPath(){},ellipse(){},arc(){},fill(){},moveTo(){},lineTo(){},stroke(){},fillRect(){}};
   const draw=vm.runInNewContext(base+';house',{zoom:zoomLevel,detailedFacades:false,roundRect(){}});
   draw(ctx,{x:0,y:0,w:18,h:13,angle,side:1,seed:4,color:2});
-  assert.deepEqual(transforms,[],'illustrated house remains screen-upright');
+  const facing=angle+Math.PI;
+  assert.equal(transforms.length,2);
+  assert.ok(Math.abs(transforms[0]-facing)<1e-12,'frontage faces the generating street');
+  assert.ok(Math.abs(transforms[1]+facing)<1e-12,'ground shadow remains screen-aligned');
  }
 });
 
