@@ -7971,7 +7971,7 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  // primary resident can hide a closer neighbour's conversation button.
  const closestSpeaker=residentSnapshot.concat(secondarySnapshot).reduce((best,p)=>{
   const d=Math.hypot(player.x-p.x,player.y-p.y);
-  return d<42&&(!best||d<best.d)?{person:p,d}:best;
+  return speakerWithinReach(p)&&(!best||d<best.d)?{person:p,d}:best;
  },null);
  nearResident=closestSpeaker&&!closestSpeaker.person.secondary?closestSpeaker.person:null;
  nearSecondary=closestSpeaker?.person.secondary?closestSpeaker.person:null;
@@ -7990,6 +7990,7 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  $('cozyGuideHint').hidden=!active||w<600||zoom<1.15||guideDistance>85||guideDistance<32||Math.abs((guide.x-camera.x)*zoom)>w/2-30||Math.abs((guide.y-camera.y)*zoom)>h/2-30||anyDialog();
  const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();observeWeeklyVisit();observeSmallWalk();observeSeasonalEncounter();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();syncContactsUI();syncKawaiiUI();observeMarketChange(secondarySnapshot);drawMini();}
 function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('Chegue perto de um marco dourado para guardar o selo.');return;}const i=near,m=missions[i];collected.add(i);target=missions.findIndex((_,j)=>!collected.has(j));for(let n=0;n<22;n++){const a=n/22*Math.PI*2;particles.push({x:m.p[0],y:m.p[1]-16,vx:Math.cos(a)*18,vy:Math.sin(a)*18-10,life:1.5,r:1.2+hash(n)*2,color:n%2?'#f3d586':'#faf0be'});}note(523,0,.2);note(659,.1,.2);note(784,.2,.35);notify('Selo '+(collected.size)+'/6 · '+m.name+' — '+m.description);renderMissions();updateUI();save();if(collected.size===missions.length)setTimeout(()=>{if(collected.size===6){$('winTime').textContent=formatTime(elapsed);showDialog('winDialog');note(1046,.1,.4);}},950);}
+function speakerWithinReach(person){return !!person&&Math.hypot(player.x-person.x,player.y-person.y)<(person.secondary?44:43);}
 function gpsFor(p){const proj=data.projection;return{lat:proj.originLat-p[1]/proj.metersPerDegreeLat,lon:proj.originLon+p[0]/proj.metersPerDegreeLon};}
 function locationLinks(p){const {lat,lon}=gpsFor(p),at=lat.toFixed(6)+','+lon.toFixed(6);return{maps:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(at),streetView:'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+encodeURIComponent(at)};}
 const CULTURE={
@@ -8236,7 +8237,7 @@ function meetResident(id){
 function talkResident(id){
  if(!active)return;
  const person=residentsInStreets().find(p=>p.id===id);
- if(!person||Math.hypot(player.x-person.x,player.y-person.y)>=43){notify('Chegue perto do morador para conversar.');return;}
+ if(!speakerWithinReach(person)){notify('Chegue perto do morador para conversar.');return;}
  careResidentId=id;
  meetResident(id);
  renderLife();showDialog('lifeDialog');
@@ -8525,7 +8526,7 @@ function renderSecondaryDialog(def,feedback){
 function talkSecondary(id){
  if(!active||anyDialog())return;
  const person=secondaryInStreets().find(p=>p.id===id);
- if(!person||Math.hypot(player.x-person.x,player.y-person.y)>=44){notify('Chegue mais perto para ouvir essa história.');return;}
+ if(!speakerWithinReach(person)){notify('Chegue mais perto para ouvir essa história.');return;}
  selectedSecondaryId=id;
  const tradition=hearFriendshipTradition(id);
  const ending=rememberStoryEnding(id);
@@ -9016,7 +9017,7 @@ function clickWorld(e){
  crowd.sort((a,b)=>Math.hypot(x-a.x,y-(a.y-21))-Math.hypot(x-b.x,y-(b.y-21)));
  if(crowd.length){
   const person=crowd[0];
-  if(Math.hypot(player.x-person.x,player.y-person.y)<44){if(person.secondary)talkSecondary(person.id);else talkResident(person.id);}
+  if(speakerWithinReach(person)){if(person.secondary)talkSecondary(person.id);else talkResident(person.id);}
   else setRoute(person.x,person.y,26);
   return;
  }
