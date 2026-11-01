@@ -30,7 +30,7 @@ assert.match(landmarks, /c\.translate\(landmark\.p\[0\], landmark\.p\[1\]\)/, 'L
 assert.match(landmarks, /labelOptions\.zoom >= 1\.65 && labelOptions\.distance <= 105/, 'World labels only appear at readable camera distance');
 assert.match(landmarks, /!labelOptions \|\|/, 'Postcard labels remain visible without camera context');
 assert.match(game, /sceneDistance<=90/, 'Exact-location disclaimers do not crowd distant architecture');
-assert.match(game, /drawDetails\(c,\[prop\].*\{zoom,distance:sceneDistance\}/, 'World composition passes the same zoom and distance to each landmark');
+assert.match(game, /drawDetails\(c,\[prop\].*\{zoom,distance:sceneDistance,allowCaption\}/, 'World composition passes zoom and distance while bounding captions inside the visible screen');
 assert.match(game, /pc\.translate\(46,91\);pc\.scale\(2\.5,2\.5\)/, 'Portrait canvas gives established residents a legible face without changing world sprites');
 
 console.log('Gemini visual finish: mapped roads, varied market canopies and original terminal anchor retained.');

@@ -1107,6 +1107,10 @@ function drawPedraLandscape(c,x,y){
  }
  c.restore();
 }
+function scenicCaptionFitsHud(canvasWidth,canvasHeight,x,y,textWidth,mobile){
+ const edge=12,top=mobile?110:12,bottom=mobile?Math.min(116,canvasHeight*.21):22;
+ return x-textWidth/2>=edge&&x+textWidth/2<=canvasWidth-edge&&y>=top&&y<=canvasHeight-bottom;
+}
 function drawScenicLayer(c,viewport,details=false){
  if(!showScenery)return;
  for(const scene of scenicScenes){const [x,y]=scene.at;
@@ -1119,7 +1123,13 @@ function drawScenicLayer(c,viewport,details=false){
   c.save();c.translate(x,y);c.scale(scene.scale,scene.scale);
   const prop={p:[0,0],kind:scene.kind,name:scene.name};
   const sceneDistance=Math.hypot(player.x-x,player.y-y);
-  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60,{zoom,distance:sceneDistance});
+  if(details){
+   c.font='bold 7.2px system-ui';
+   const transform=c.getTransform(),screenX=transform.e/dpr;
+   const captionY=(transform.f+transform.d*46)/dpr;
+   const captionWidth=c.measureText(scene.name||'').width*transform.a/dpr;
+   const allowCaption=scenicCaptionFitsHud(w,h,screenX,captionY,captionWidth,w<=600);
+   window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60,{zoom,distance:sceneDistance,allowCaption});
    if(scene.positionStatus!=='osm_point'&&zoom>=1.85&&sceneDistance<=90){
     c.fillStyle='#fff9e8';c.strokeStyle='#ac986d';c.lineWidth=1;
     c.beginPath();c.roundRect(-48,49,96,13,4);c.fill();c.stroke();
@@ -1545,6 +1555,43 @@ function wrapEncounterSpeech(speech,limit,maxRows=3){
  if(rows.length>maxRows){rows.length=maxRows;rows[maxRows-1]=rows[maxRows-1].replace(/[.,;:!? ]+$/,'')+'…';}
  return rows;
 }
+// Dialogue cards are drawn in CSS pixels, independently of world zoom. A
+// close camera may enlarge the characters, but should not enlarge their text
+// beyond the mobile viewport or compete with the touch controls.
+function speechCardRect(anchorX,anchorY,cardWidth,cardHeight,canvasWidth,canvasHeight,mobile){
+ const margin=12,topSafe=mobile?Math.min(150,canvasHeight*.25):12;
+ const bottomSafe=mobile?Math.min(116,canvasHeight*.21):20;
+ const left=Math.max(margin,Math.min(canvasWidth-margin-cardWidth,anchorX-cardWidth/2));
+ const lowerLimit=Math.max(topSafe,canvasHeight-bottomSafe-cardHeight);
+ const top=Math.max(topSafe,Math.min(lowerLimit,anchorY-cardHeight-24));
+ return {left,top,width:cardWidth,height:cardHeight};
+}
+function drawScreenSpeechCard(c,x,y,who,spoken,style='street',opacity=1){
+ const mobile=w<=600,width=Math.min(mobile?248:282,w-24);
+ if(width<80)return;
+ c.save();
+ const m=c.getTransform(),screenX=(m.a*x+m.c*y+m.e)/dpr;
+ const screenY=(m.b*x+m.d*y+m.f)/dpr;
+ c.setTransform(dpr,0,0,dpr,0,0);
+ c.font='13px system-ui';
+ const maxTextWidth=width-24,words=String(spoken).split(/\s+/),rows=[''];
+ for(const word of words){
+  const i=rows.length-1,candidate=rows[i]?rows[i]+' '+word:word;
+  if(rows[i]&&c.measureText(candidate).width>maxTextWidth&&rows.length<4)rows.push(word);
+  else rows[i]=candidate;
+ }
+ const height=(who?40:22)+rows.length*17;
+ const rect=speechCardRect(screenX,screenY,width,height,w,h,mobile);
+ c.globalAlpha*=opacity;
+ c.shadowColor='#526c5938';c.shadowBlur=5;c.shadowOffsetY=2;
+ roundRect(c,rect.left,rect.top,width,height,10,'#fff9e9f5',style==='community'?'#d6b8a2':'#b7c6aa');
+ c.shadowBlur=0;c.shadowOffsetY=0;
+ c.textAlign='center';c.textBaseline='middle';
+ if(who){c.font='bold 13px system-ui';c.fillStyle=style==='community'?'#a46e65':'#6e8a72';c.fillText(who,rect.left+width/2,rect.top+18,width-20);}
+ c.font='13px system-ui';c.fillStyle='#58614e';
+ rows.forEach((line,i)=>c.fillText(line,rect.left+width/2,rect.top+(who?36:16)+i*17,maxTextWidth));
+ c.restore();
+}
 function drawStreetEncounter(c,time,residents,view){
  const encounter=window.RoncadorStreetEncounters.current(living);
  if(!encounter||encounter.phase!=='visit')return;
@@ -1572,15 +1619,8 @@ function drawStreetEncounter(c,time,residents,view){
  if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105){c.restore();return;}
  const phrase=window.RoncadorStreetEncounters.line(living,encounter),colon=phrase.indexOf(':');
  const who=colon<0?'Encontro':phrase.slice(0,colon),spoken=colon<0?phrase:phrase.slice(colon+1).trim();
- const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(spoken,phone?21:28);
- const height=28+rows.length*10,top=cy-83-(reduce?0:Math.sin(time*1.4)*1.1),width=phone?119:151;
- c.shadowColor='#526c5938';c.shadowBlur=5;c.shadowOffsetY=2;
- roundRect(c,cx-width/2,top,width,height,8,'#fff9e9f5','#b7c6aa');
- c.shadowBlur=0;c.shadowOffsetY=0;
- c.fillStyle='#fff9e9';c.beginPath();c.moveTo(cx-5,top+height-1);c.lineTo(cx+3,top+height+7);c.lineTo(cx+10,top+height-1);c.fill();
- c.textAlign='center';c.textBaseline='middle';c.fillStyle='#6e8a72';c.font='bold 8px system-ui';c.fillText(who,cx,top+10);
- c.fillStyle='#58614e';c.font='7.3px system-ui';
- rows.forEach((line,i)=>c.fillText(line,cx,top+22+i*10));
+ if(!streetConversation||streetConversation.pending||performance.now()>=streetConversation.until)
+  drawScreenSpeechCard(c,cx,cy-45,who,spoken);
  c.restore();
 }
 function drawCommunityEncounter(c,time,people,view){
@@ -1602,13 +1642,8 @@ function drawCommunityEncounter(c,time,people,view){
  if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105){c.restore();return;}
  const phrase=window.RoncadorStreetCommunity.line(living,event),separator=phrase.indexOf(':');
  const speaker=separator>=0?phrase.slice(0,separator):'Amigos',speech=separator>=0?phrase.slice(separator+1).trim():phrase;
- const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(speech,phone?20:26);
- const width=phone?108:124,height=27+rows.length*9,top=cy-87+bounce;
- c.shadowColor='#344c4230';c.shadowBlur=5;c.shadowOffsetY=2;
- roundRect(c,cx-width/2,top,width,height,9,'#fff9edf5','#d6b8a2');c.shadowBlur=0;c.shadowOffsetY=0;
- c.fillStyle='#fff9ed';c.beginPath();c.moveTo(cx-6,top+height-1);c.lineTo(cx,top+height+6);c.lineTo(cx+7,top+height-1);c.fill();
- c.fillStyle='#a46e65';c.font='bold 8px system-ui';c.fillText(speaker,cx,top+9);
- c.fillStyle='#5a6655';c.font='7px system-ui';rows.forEach((row,i)=>c.fillText(row,cx,top+21+i*9));
+ if(!streetConversation||streetConversation.pending||performance.now()>=streetConversation.until)
+  drawScreenSpeechCard(c,cx,cy-45+bounce,speaker,speech,'community');
  c.restore();
 }
 function chooseConversationLayer(streetEvent,communityEvent,people,playerPosition){
@@ -1781,17 +1816,7 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
     const remaining=Math.max(0,(streetConversation.until-performance.now())/6000);
     if(!remaining)return;
     const phrase=person.streetSpeech.length>110?person.streetSpeech.slice(0,107)+'…':person.streetSpeech;
-    c.save();c.globalAlpha*=Math.min(1,remaining*4);c.font='8.5px system-ui';
-    const lines=[''];
-    for(const word of phrase.split(/\s+/)){
-     const current=lines.length-1,candidate=lines[current]?(lines[current]+' '+word):word;
-     if(c.measureText(candidate).width>speechWidth-16&&lines[current]&&lines.length<3)lines.push(word);
-     else lines[current]=candidate;
-    }
-    const height=lines.length*12+12;
-    roundRect(c,speechX-speechWidth/2,speechBottom-height,speechWidth,height,8,'#fff8e9','#bba98b');
-    c.fillStyle='#645848';c.textAlign='center';c.textBaseline='middle';
-    lines.forEach((line,i)=>c.fillText(line,speechX,speechBottom-height+11+i*12,speechWidth-16));c.restore();
+    drawScreenSpeechCard(c,speechX,speechBottom,null,phrase,'street',Math.min(1,remaining*4));
    };
    if(speechOverlays)speechOverlays.push(drawTalk);else drawTalk();
   }
@@ -4846,7 +4871,18 @@ function move(dt,time){
  if(uiClock>.15){updateUI();uiClock=0;}
  if(saveClock>3){save();saveClock=0;}
 }
-function frame(t){const dt=last?Math.min((t-last)/1000,.045):.016;last=t;if(loaded){move(dt,t/1000);render(t/1000);}requestAnimationFrame(frame);}
+// Mobile canvas redraws dominate the first screen even before the player starts.
+// Keep elapsed game time tied to real frame timestamps, while doing less work.
+function mobileFrameInterval(width,playing){return width<=600?(playing?1000/30:1000/8):0;}
+let lastPaint=0,renderedFrames=0;
+function frame(t){
+ const interval=mobileFrameInterval(w,active);
+ if(loaded&&(!interval||!lastPaint||t-lastPaint>=interval)){
+  const dt=last?Math.min((t-last)/1000,.045):.016;
+  last=t;lastPaint=t;move(dt,t/1000);render(t/1000);renderedFrames++;
+ }
+ requestAnimationFrame(frame);
+}
 function canvasWorldPoint(clientX,clientY,rect,width,height,view,scale){
  return {x:(clientX-rect.left-width/2)/scale+view.x,y:(clientY-rect.top-height/2)/scale+view.y};
 }
@@ -5045,6 +5081,6 @@ const embeddedTerrain=$('embedded-terrain-data');
 const terrainPromise=Promise.resolve().then(()=>embeddedTerrain?JSON.parse(embeddedTerrain.textContent):null).catch(()=>null);
 Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;applyUserPublicPlaceCorrections();terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
 // Small read-only inspection surface for diagnostics; does not mutate game state.
-Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},cameraPosition:{x:camera.x,y:camera.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),streetPopulation:lastStreetPopulation.map(p=>({id:p.id,x:p.x,y:p.y,hub:p.hub||null,secondary:!!p.secondary,ambient:p.id?.startsWith('passeio-')||false,crowded:!!p.crowded,visibility:p.visibility??1,houseBlocked:blockedByHouse(p.x,p.y)})),streetPets:lastPetPopulation.filter(p=>p.at).map(p=>({id:p.id,x:p.at.x,y:p.at.y,houseBlocked:blockedByHouse(p.at.x,p.at.y)})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
+Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,renderedFrames,renderIntervalMs:mobileFrameInterval(w,active),spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},cameraPosition:{x:camera.x,y:camera.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),streetPopulation:lastStreetPopulation.map(p=>({id:p.id,x:p.x,y:p.y,hub:p.hub||null,secondary:!!p.secondary,ambient:p.id?.startsWith('passeio-')||false,crowded:!!p.crowded,visibility:p.visibility??1,houseBlocked:blockedByHouse(p.x,p.y)})),streetPets:lastPetPopulation.filter(p=>p.at).map(p=>({id:p.id,x:p.at.x,y:p.at.y,houseBlocked:blockedByHouse(p.at.x,p.at.y)})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
 })();
 

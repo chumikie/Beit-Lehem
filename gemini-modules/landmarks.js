@@ -518,7 +518,7 @@
       if (landmark.kind === 'rockview') drawRockviewDetails(c, night);
       // At city scale the mapped POI glyph stays visible, while full captions
       // wait until the player approaches. Postcards omit options and keep labels.
-      if (!labelOptions || (labelOptions.zoom >= 1.65 && labelOptions.distance <= 105)) label(c, landmark);
+      if (!labelOptions || (labelOptions.zoom >= 1.65 && labelOptions.distance <= 105 && labelOptions.allowCaption !== false)) label(c, landmark);
       c.restore();
     }
   }

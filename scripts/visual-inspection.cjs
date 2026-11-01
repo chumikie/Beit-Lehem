@@ -151,7 +151,9 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   await page.route('https://**/*', route => route.abort());
   await page.goto(baseUrl, { waitUntil: 'load', timeout: 60000 });
   await page.locator('#world').waitFor({ state: 'visible', timeout: 20000 });
+  const welcomeBegin = await page.evaluate(() => ({ at: performance.now(), count: expeditionState.renderedFrames }));
   await page.waitForTimeout(900);
+  const welcomeEnd = await page.evaluate(() => ({ at: performance.now(), count: expeditionState.renderedFrames }));
   const initial = await collectLayout(page, name + '-welcome');
   await page.screenshot({
     path: path.join(outputDir, name + '-welcome.png'),
@@ -164,7 +166,19 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     const welcome = document.querySelector('#welcome');
     return welcome && getComputedStyle(welcome).display === 'none';
   }, null, { timeout: 15000 });
+  const gameBegin = await page.evaluate(() => ({ at: performance.now(), count: expeditionState.renderedFrames }));
   await page.waitForTimeout(800);
+  const gameEnd = await page.evaluate(() => ({ at: performance.now(), count: expeditionState.renderedFrames, interval: expeditionState.renderIntervalMs }));
+  const renderMetrics = {
+    welcome: { frames: welcomeEnd.count - welcomeBegin.count, seconds: +(welcomeEnd.at - welcomeBegin.at).toFixed(1) / 1000 },
+    gameplay: { frames: gameEnd.count - gameBegin.count, seconds: +(gameEnd.at - gameBegin.at).toFixed(1) / 1000 },
+    intervalMs: gameEnd.interval
+  };
+  if (mobile) {
+    assert.ok(renderMetrics.welcome.frames <= Math.ceil(renderMetrics.welcome.seconds * 8) + 3, name + ': welcome excedeu orçamento de 8 fps');
+    assert.ok(renderMetrics.gameplay.frames <= Math.ceil(renderMetrics.gameplay.seconds * 30) + 3, name + ': jogo excedeu orçamento de 30 fps');
+    assert.ok(renderMetrics.gameplay.frames > 0, name + ': jogo ainda precisa desenhar no celular');
+  }
 
   // C19.2: attempt the actual nearby E/touch conversation, without teleporting
   // a resident or changing the simulated day. A missing reachable speaker is
@@ -549,7 +563,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters, cameraAudit
+    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters, cameraAudit, renderMetrics
   };
   report.viewports[name] = result;
 
