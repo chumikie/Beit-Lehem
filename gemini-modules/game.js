@@ -32,6 +32,17 @@ function setupMobileWalkingHud(){
 }
 setupMobileWalkingHud();
 let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?2.35:2.85,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
+// Frame-only velocity: intentionally excluded from saves so older games reopen normally.
+let walkVelocity={x:0,y:0};
+function smoothWalkVelocity(current,target,dt,instant=false){
+ const rate=target.x||target.y?13:19;
+ const blend=instant?1:1-Math.exp(-rate*Math.max(0,Math.min(dt,.05)));
+ const next={x:current.x+(target.x-current.x)*blend,y:current.y+(target.y-current.y)*blend};
+ if(Math.hypot(next.x,next.y)<.35&&!target.x&&!target.y)return{x:0,y:0};
+ return next;
+}
+window.addEventListener('blur',()=>{walkVelocity={x:0,y:0};});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)walkVelocity={x:0,y:0};});
 // Source-attributed polygons are inlined during the Gemini preview build.
 // This visual overlay never modifies the road graph or saved map source.
 const VERIFIED_HYDRO_GEOJSON=null;
@@ -4216,21 +4227,29 @@ function move(dt,time){
    if(waypoint&&waypoint.index>=waypoint.points.length)waypoint=null;
   }
   const length=Math.hypot(dx,dy);
-  player.moving=length>0;
-  if(length){
-   const road=nearestRoad(player.x,player.y);
-   const speed=kawaiiState?.riding?(keys.has('shift')?210:155):(keys.has('shift')?105:67);
-   const factor=waypoint||road.d<12?1:.78;
-   const vx=dx/length*speed*factor*dt,vy=dy/length*speed*factor*dt;
+  const road=nearestRoad(player.x,player.y);
+  const speed=kawaiiState?.riding?(keys.has('shift')?210:155):(keys.has('shift')?105:67);
+  const factor=waypoint||road.d<12?1:.78;
+  const desired=length?{x:dx/length*speed*factor,y:dy/length*speed*factor}:{x:0,y:0};
+  walkVelocity=smoothWalkVelocity(walkVelocity,desired,dt,reduce);
+  player.moving=Math.hypot(walkVelocity.x,walkVelocity.y)>.35;
+  if(player.moving){
+   const vx=walkVelocity.x*dt,vy=walkVelocity.y*dt;
    const nx=Math.max(data.bounds[0],Math.min(data.bounds[2],player.x+vx));
    const ny=Math.max(data.bounds[1],Math.min(data.bounds[3],player.y+vy));
    const onMappedRoute=!!waypoint;
    const fromRoadDistance=road.d;
+   const oldX=player.x;
    const xBlocked=blockedByHouse(nx,player.y);
    if(mayAdvanceOnMappedRoute(xBlocked,onMappedRoute,fromRoadDistance,xBlocked?nearestRoad(nx,player.y).d:0))player.x=nx;
+   else walkVelocity.x=0;
+   if(player.x===oldX&&vx)walkVelocity.x=0;
+   const oldY=player.y;
    const yBlocked=blockedByHouse(player.x,ny);
    if(mayAdvanceOnMappedRoute(yBlocked,onMappedRoute,fromRoadDistance,yBlocked?nearestRoad(player.x,ny).d:0))player.y=ny;
-   if(dx)player.dir=dx>0?1:-1;
+   else walkVelocity.y=0;
+   if(player.y===oldY&&vy)walkVelocity.y=0;
+   if(walkVelocity.x)player.dir=walkVelocity.x>0?1:-1;
    step+=dt;
    if(step>(kawaiiState?.riding?.16:.34)){
     step=0;
@@ -4247,9 +4266,13 @@ function move(dt,time){
     }
    }
   }
- }else player.moving=false;
+ }else{walkVelocity={x:0,y:0};player.moving=false;}
  const lerp=reduce?1:1-Math.exp(-7*dt);
- camera.x+=(player.x-camera.x)*lerp;camera.y+=(player.y-camera.y)*lerp;
+ // A restrained look-ahead reveals the street ahead without changing the map scale.
+ const lead=reduce?0:Math.min(9,Math.hypot(walkVelocity.x,walkVelocity.y)*.08);
+ const heading=Math.hypot(walkVelocity.x,walkVelocity.y)||1;
+ camera.x+=(player.x+walkVelocity.x/heading*lead-camera.x)*lerp;
+ camera.y+=(player.y+walkVelocity.y/heading*lead-camera.y)*lerp;
  for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=10*dt;}
  particles=particles.filter(p=>p.life>0);
  for(const ep of emojiParticles){ep.life-=dt;ep.x+=ep.vx*dt+Math.sin(time*5+ep.size)*4*dt;ep.y+=ep.vy*dt;ep.vy-=6*dt;}
