@@ -58,3 +58,30 @@ test('C5: sete dias oferecem encontros de todos os 19 vizinhos e 14 passeantes',
  assert.ok(busyCounts.every(n=>n>=6),'manhã e fim de tarde não ficam sem vida');
  console.info(`C5: passeantes planejados ${plannedPassers}, posições desobstruídas ${accessiblePassers}, bloqueios ${plannedPassers-accessiblePassers}; vizinhos acessíveis ${seen.size}/19.`);
 });
+
+test('C5.1: camada real de vizinhos não esconde sistematicamente morador escalado',()=>{
+ const start=game.indexOf('function secondaryInStreets('),end=game.indexOf('\nfunction drawSocialGesture(',start);
+ const code=game.slice(start,end);
+ let world={day:1,minute:9*60},elapsed=140;
+ const context={Math,window:{RoncadorSecondaryNeighbors:neighbors,RoncadorStreetLife:street,
+  RoncadorStreetMoments:{choose:()=>null}},streetPaths,
+  get living(){return world;},get elapsed(){return elapsed;},skyMode:'sol',walkingPoint,
+  communityMeetingPoint:()=>null,encounterRoadPoint:()=>null,
+  residentMotion:{resolve:person=>person}};
+ const distribute=vm.runInNewContext('('+code+')',context);
+ const planned=new Map(),rendered=new Map();
+ for(let day=1;day<=7;day++)for(const minute of [7,9,11,13,16,18,21].map(hour=>hour*60)){
+  world={day,minute};elapsed=140+day*37+minute/43;
+  const actual=distribute([]);
+  assert.equal(new Set(actual.map(person=>person.id)).size,actual.length,'sem duplicar vizinhos');
+  for(const def of neighbors.RESIDENTS){
+   if(!neighbors.agenda(world,def).present)continue;
+   planned.set(def.id,(planned.get(def.id)||0)+1);
+   if(actual.some(person=>person.id===def.id))rendered.set(def.id,(rendered.get(def.id)||0)+1);
+  }
+ }
+ const absent=neighbors.RESIDENTS.filter(def=>!rendered.has(def.id)).map(def=>def.id);
+ assert.deepEqual(absent,[],'ninguém pode ficar invisível em todos os turnos');
+ const blocked=[...planned].reduce((sum,[id,count])=>sum+count-(rendered.get(id)||0),0);
+ console.info(`C5.1: ${[...planned.values()].reduce((a,b)=>a+b,0)} turnos previstos, ${[...rendered.values()].reduce((a,b)=>a+b,0)} posições renderizadas, ${blocked} sem posição; invisíveis persistentes ${absent.length}.`);
+});
