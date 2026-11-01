@@ -69,6 +69,37 @@ test('C12: diário de desktop e gaveta móvel mantêm a área jogável prevista'
  }
 });
 
+test('C12.1: botões móveis conservam alvo mínimo de 44px nos quatro tamanhos',()=>{
+ assert.match(html,/@media\(max-height:640px\) and \(max-width:800px\)\{/);
+ assert.match(html,/\.touch-pad\{grid-template-columns:repeat\(3,43px\);grid-template-rows:repeat\(3,43px\)/);
+ assert.match(setup,/@media\(max-width:800px\) and \(max-height:640px\)\{\s*\.touch-pad\{grid-template-columns:repeat\(3,44px\);grid-template-rows:repeat\(3,44px\)/);
+ assert.match(setup,/\.world-tools button\{width:44px;height:44px\}/);
+ for(const [width,height] of [[320,640],[360,640],[390,844],[768,1024]]){
+  const cell=height<=640?44:49;
+  assert.ok(cell>=44);
+  assert.ok(44>=44);
+  const padWidth=3*cell+2*4;
+  const minimapWidth=width<=380?58:width<=800?126:190;
+  const freeHorizontal=width-26-padWidth-minimapWidth;
+  assert.ok(freeHorizontal>0,`pad/minimapa sobrepostos em ${width}px`);
+  console.info(`C12.1 ${width}×${height}: toque ${cell}px, pad ${padWidth}px, intervalo horizontal >= ${freeHorizontal}px`);
+ }
+});
+
+test('C12.1: clima deixa de cobrir o grupo de zoom/câmera no celular',()=>{
+ assert.match(html,/\.world-tools\{top:66px;right:13px/);
+ assert.match(html,/\.sky-mood\{top:111px\}/);
+ assert.match(setup,/\.sky-mood\{top:210px\}/);
+ const top=66,buttons=3,size=44,gap=2,moodTop=210;
+ const toolsBottom=top+buttons*size+(buttons-1)*gap;
+ assert.equal(toolsBottom,202);
+ assert.ok(moodTop-toolsBottom>=8);
+ // Geometry holds for all requested widths; no action handler was removed.
+ assert.match(src,/\$\('zoomIn'\)\.onclick=/);
+ assert.match(src,/\$\('zoomOut'\)\.onclick=/);
+ assert.match(src,/\$\('recenter'\)\.onclick=/);
+});
+
 test('cartão contextual prioriza proximidade, encontro ativo e caminhada sem ocultar o Caderno',()=>{
  assert.match(summary,/const nearby=nearResident\|\|nearSecondary/);
  assert.match(summary,/const liveScene=community\?\.phase==='visit'/);

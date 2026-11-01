@@ -28,8 +28,13 @@ function setupMobileWalkingHud(){
    .mini-wrap.is-collapsed{width:58px;height:58px;padding:6px}
    .mini-wrap.is-collapsed .mini-toggle{position:relative;top:auto;right:auto;width:44px;height:44px}
    .mini-wrap.is-collapsed .mini-title,.mini-wrap.is-collapsed #minimap,.mini-wrap.is-collapsed .mini-footer{display:none}
+   .world-tools button{width:44px;height:44px}
+   .sky-mood{top:210px}
    .street-pulse.is-walking{padding:7px 10px;gap:2px}
    .street-pulse.is-walking #streetResidentsHint,.street-pulse.is-walking #streetMomentHint{display:none}
+  }
+  @media(max-width:800px) and (max-height:640px){
+   .touch-pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)}
   }`;
  document.head.append(style);
 }
