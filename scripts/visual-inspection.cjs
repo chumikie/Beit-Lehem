@@ -150,6 +150,26 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   }, null, { timeout: 15000 });
   await page.waitForTimeout(800);
 
+  // C19.2: attempt the actual nearby E/touch conversation, without teleporting
+  // a resident or changing the simulated day. A missing reachable speaker is
+  // reported as such, not manufactured as a successful encounter.
+  const conversation = { available: false, opened: false, dialog: null, returned: false };
+  const nearbyInteract = page.locator('#interact');
+  conversation.available = await nearbyInteract.isVisible().catch(() => false);
+  if (conversation.available) {
+    await nearbyInteract.click();
+    conversation.dialog = await page.locator('#guideDialog, #secondaryDialog, #lifeDialog')
+      .evaluateAll(nodes => nodes.find(dialog => dialog.open)?.id || null);
+    conversation.opened = !!conversation.dialog;
+    if (conversation.opened) {
+      assert.equal(await page.locator('dialog[open]').count(), 1,
+        name + ': conversa real não deve sobrepor outras janelas');
+      await page.keyboard.press('Escape');
+      conversation.returned = await page.locator('dialog[open]').count() === 0;
+      assert.ok(conversation.returned, name + ': Escape deve devolver à caminhada');
+    }
+  }
+
   // Zoom one notch for a close inspection of houses, vegetation and street labels.
   const zoomIn = page.locator('#zoomIn');
   if (await zoomIn.isVisible().catch(() => false)) {
@@ -255,7 +275,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   // C19: verify real control transitions and recovery before resumed walking.
   const interactionAudit = { album: false, help: false, observation: false, mobileRoute: false,
     mapEscape: false, sidebarEscape: false, modalIsolation: false, saveRestored: false,
-    residentNotebook: false, culturalActivity: false, contactsShortcut: false };
+    residentNotebook: false, culturalActivity: false, contactsShortcut: false,
+    routeBeforeNotebook: null, routeDuringNotebook: null, routePreserved: null };
   if (mobile) {
     if (await page.locator('#mobileRoute').isVisible()) {
       await page.locator('#mobileRoute').click();
@@ -265,9 +286,11 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       assert.equal(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')),
         false, name + ': painel móvel deve fechar');
       await page.locator('#mobileRoute').click();
+      interactionAudit.routeBeforeNotebook = await page.evaluate(() => expeditionState.routeRemaining);
       await page.locator('#openLife').click();
       interactionAudit.residentNotebook = await page.locator('#lifeDialog').evaluate(el => el.open);
       assert.ok(interactionAudit.residentNotebook, name + ': Caderno deve abrir pelo diário tátil');
+      interactionAudit.routeDuringNotebook = await page.evaluate(() => expeditionState.routeRemaining);
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#lifeDialog').evaluate(el => el.open), false,
         name + ': Escape deve devolver ao diário após abrir o Caderno');
@@ -298,9 +321,11 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#helpDialog').evaluate(el => el.open), false,
       'Escape deve fechar a ajuda');
+    interactionAudit.routeBeforeNotebook = await page.evaluate(() => expeditionState.routeRemaining);
     await page.locator('#openLife').click();
     interactionAudit.residentNotebook = await page.locator('#lifeDialog').evaluate(el => el.open);
     assert.ok(interactionAudit.residentNotebook, 'Caderno dos moradores deve abrir');
+    interactionAudit.routeDuringNotebook = await page.evaluate(() => expeditionState.routeRemaining);
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#lifeDialog').evaluate(el => el.open), false,
       'Escape deve fechar o Caderno');
@@ -315,6 +340,9 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     assert.ok(interactionAudit.contactsShortcut, 'atalho C deve abrir contatos');
     await page.keyboard.press('Escape');
   }
+  interactionAudit.routePreserved = interactionAudit.routeBeforeNotebook === 0 ||
+    interactionAudit.routeDuringNotebook === interactionAudit.routeBeforeNotebook;
+  assert.ok(interactionAudit.routePreserved, name + ': o Caderno não deve descartar destino ativo');
 
   // The expanded map must also recover via Escape without losing the selected route.
   if (await mapButton.isVisible().catch(() => false)) await mapButton.click();
@@ -388,7 +416,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, routeSelection, movement, interactionAudit
+    mapDialog, routeSelection, movement, interactionAudit, conversation
   };
   report.viewports[name] = result;
 
