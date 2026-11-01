@@ -480,10 +480,26 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   await page.keyboard.press('Escape');
   interactionAudit.mapEscape = !(await page.locator('#mapDialog').evaluate(el => el.open));
   assert.ok(interactionAudit.mapEscape, name + ': Escape deve fechar o mapa');
-  const routeBeforeRecenter = await page.evaluate(() => expeditionState.routeRemaining);
+  // Observe the real key event within a single event-loop turn. Reading the
+  // route in separate browser round trips can mistake natural arrival for R
+  // cancelling a route when the final waypoint finishes between those reads.
+  await page.evaluate(() => {
+    const audit = {};
+    window.__c20RecenterAudit = audit;
+    window.addEventListener('keydown', event => {
+      if (event.key.toLowerCase() !== 'r') return;
+      audit.before = expeditionState.routeRemaining;
+      queueMicrotask(() => { audit.after = expeditionState.routeRemaining; });
+    }, { capture: true, once: true });
+  });
   await page.keyboard.press('r');
-  const routeAfterRecenter = await page.evaluate(() => expeditionState.routeRemaining);
-  interactionAudit.cameraShortcutPreservesRoute = routeBeforeRecenter === 0 || routeAfterRecenter > 0;
+  const recenterAudit = await page.evaluate(() => {
+    const result = window.__c20RecenterAudit;
+    delete window.__c20RecenterAudit;
+    return result;
+  });
+  interactionAudit.recenterRoute = recenterAudit;
+  interactionAudit.cameraShortcutPreservesRoute = recenterAudit.before === recenterAudit.after;
   assert.ok(interactionAudit.cameraShortcutPreservesRoute,
     name + ': R não deve descartar o destino de caminhada');
 
