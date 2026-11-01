@@ -455,9 +455,10 @@
   }
   function label(c, landmark) {
     const title = landmark.kind === 'square' ? 'Praça 6 de Setembro*' : landmark.name;
-    const y = landmark.kind === 'church' ? 33 : landmark.kind === 'square' ? 43 : 36;
-    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 8px system-ui';
-    c.lineWidth = 3; c.strokeStyle = '#fff9df'; c.strokeText(title, 0, y);
+    // Keep captions clear of the market counters and the terminal waiting bay.
+    const y = landmark.kind === 'church' ? 37 : landmark.kind === 'square' ? 43 : landmark.kind === 'market' || landmark.kind === 'terminal' ? 46 : 39;
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 7.2px system-ui';
+    c.lineWidth = 2.4; c.strokeStyle = '#fff9df'; c.strokeText(title, 0, y);
     c.fillStyle = '#476b55'; c.fillText(title, 0, y);
   }
 
@@ -481,7 +482,7 @@
       c.restore();
     }
   }
-  function drawDetails(c, landmarks, viewport, marketDay, time = 0, night = false) {
+  function drawDetails(c, landmarks, viewport, marketDay, time = 0, night = false, labelOptions = null) {
     for (const landmark of landmarks || []) {
       if (!visible(landmark, viewport)) continue;
       c.save(); c.translate(landmark.p[0], landmark.p[1]);
@@ -498,7 +499,9 @@
       if (landmark.kind === 'chapel') drawChapelDetails(c);
       if (landmark.kind === 'amusement') drawAmusementDetails(c, night, time);
       if (landmark.kind === 'rockview') drawRockviewDetails(c, night);
-      label(c, landmark);
+      // At city scale the mapped POI glyph stays visible, while full captions
+      // wait until the player approaches. Postcards omit options and keep labels.
+      if (!labelOptions || (labelOptions.zoom >= 1.65 && labelOptions.distance <= 105)) label(c, landmark);
       c.restore();
     }
   }
