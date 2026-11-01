@@ -17,13 +17,15 @@
 - Marcar avaliações anteriores de privacidade/publicação como supersedidas quando não refletirem as decisões atuais.
 - Não fazer merge nem atualizar GitHub Pages nesta etapa.
 
-### 2. Unificar o fluxo geográfico atual
+### 2. Fluxo geográfico canônico — integração de código concluída, inspeção local pendente
 
-- Mapear a origem exata da geometria de ruas que chega à prévia atual e comparar com `source/belem-osm-2026.geojson`.
-- Definir um fluxo canônico para atualizar o mapa do jogo atual; evitar manter dois mapas que evoluem separadamente sem sinalização.
-- Preservar os nomes reais das ruas byte a byte/grafia a grafia, inclusive acentos, de acordo com a fonte validada.
-- Modelar POIs separadamente: nome de origem, alias no jogo, coordenadas e proveniência. Alias não pode modificar metadados da rua.
-- Criar testes que detectem perda ou alteração acidental de nomes viários e que distingam dados OSM, confirmações locais e ficção.
+- O build atual agora lê diretamente `source/belem-osm-2026.geojson` por `scripts/current-geodata.cjs` e injeta o mapa composto durante a geração offline.
+- Ruas, áreas e pontos são reconstruídos a partir das feições OSM. O nome da rua é copiado literalmente de `properties.name`, sem normalização ou correção de acentos.
+- A geometria das 462 vias e dos 20 polígonos é comparada com a base revisada embutida; divergências de contagem, IDs ou coordenadas interrompem o build para revisão.
+- Superfícies usadas apenas pelo estilo foram separadas em `roadAppearance`; nove pontos locais foram movidos para `localPlaces`, com `displayName`, `sourceName`, proveniência e estado; seis rótulos herdados sem correspondência OSM estão em `unverifiedRoadLabels` e não são exibidos como ruas.
+- A preparação antiga de `dist/map.json` deixa de ser o caminho de composição do mapa ativo. O HTML arquivado e os HTMLs gerados não foram editados diretamente.
+
+**Próxima validação necessária:** executar `npm test` e `npm run build` em ambiente com Node.js, abrir a prévia gerada e comparar visualmente nomes de ruas, POIs, rotas, fachadas e salvamento. O HTML versionado ainda não foi regenerado nesta etapa. Mudanças futuras na geometria OSM exigem revisão explícita e atualização deliberada da referência geométrica; não desativar o guard para aprová-las automaticamente.
 
 ### 3. Reduzir o custo de geração de casas
 
