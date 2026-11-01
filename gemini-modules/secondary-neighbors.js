@@ -70,6 +70,17 @@
   if(kind==='conversa')return person==='damiao'?'Francisco lembra da conversa sem pressa que vocês tiveram depois de arrumar a banca.':person==='cica'?'Ciça comenta: “Francisco gostou tanto daquela conversa tranquila na feira.”':'';
   return '';
  }
+ // The following-day reply is derived solely from a saved help choice.
+ // It does not create a new memory, reward, or assertion of an unseen event.
+ const NEXT_DAY_REPLIES={
+  cica:{fitas:'As fitas que organizamos ontem continuam bem arrumadinhas. Obrigada!',cores:'Ainda estou pensando nas cores que escolhemos ontem.',banca:'A fita que preparamos ontem ficou guardada com carinho.'},
+  nara:{desenho:'Voltei a olhar a janelinha que desenhamos ontem.',sombra:'A luz de hoje me fez lembrar das sombras que observamos ontem.','janela-bia':'Guardei o desenho da janela que fizemos ontem para a carta de Bia.','paisagem-bia':'Ainda lembro da paisagem que desenhamos ontem para os planos de Bia.'}
+ };
+ function nextDayReply(state,clock,id){
+  const day=Number(clock?.day),last=state?.lastHelp?.[id],choice=state?.choices?.[id];
+  if(!Number.isInteger(day)||!Number.isInteger(last)||day!==last+1)return '';
+  return NEXT_DAY_REPLIES[id]?.[choice]||'';
+ }
  function rememberConnection(state,key){
   if(!['damiaoTeo','biaTeo'].includes(key)||!state||typeof state!=='object')return false;
   state.connections=state.connections||{damiaoTeo:false,biaTeo:false};
@@ -159,6 +170,6 @@
   if(threadAdvanced){state.recados=state.recados||{stage:0};state.recados.stage=stage+1;}
   return{ok:true,first,reply:choice.reply+(threadAdvanced?' ✉️ '+step.story:''),unlocked:coreProgress(state)===3,threadAdvanced,threadComplete:threadAdvanced&&stage===2};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine,nextDayReply};
 })(typeof window!=='undefined'?window:globalThis);
 

@@ -3782,10 +3782,11 @@ function renderSecondaryDialog(def,feedback){
  $('secondaryActivity').textContent='Hoje: '+duty.activity+'.';
  const recadoMemory=window.RoncadorSecondaryNeighbors.recadoLine(sideNeighbors,def.id);
  const fairMemory=window.RoncadorSecondaryNeighbors.fairMemoryLine(sideNeighbors,def.id);
+ const nextDayMemory=window.RoncadorSecondaryNeighbors.nextDayReply(sideNeighbors,living,def.id);
  const zecaRemembers=def.id==='zeca'&&sideNeighbors.connections?.zecaLucia===true&&
   window.RoncadorLuciaGarden.growth(luciaGarden,living.day).stage>=1&&living.day>(sideNeighbors.connections.zecaLuciaDay||0);
  const zecaLine=zecaRemembers?'🌱 '+gardenStageDialogue('zeca',window.RoncadorLuciaGarden.growth(luciaGarden,living.day)):'';
- $('secondaryLine').textContent=feedback||(fairMemory?'♡ '+fairMemory:zecaLine||recadoMemory?' '+zecaLine+(recadoMemory?' ✉️ '+recadoMemory:''):scene?.phase==='visit'&&window.RoncadorStreetCommunity.participant(scene,def.id)?scene.summary+' '+window.RoncadorStreetCommunity.line(living,scene)+(recollection?.remembered?' ♡ '+recollection.line:''):'“'+greeting+'”');
+ $('secondaryLine').textContent=feedback||(nextDayMemory?'♡ '+nextDayMemory:fairMemory?'♡ '+fairMemory:zecaLine||recadoMemory?' '+zecaLine+(recadoMemory?' ✉️ '+recadoMemory:''):scene?.phase==='visit'&&window.RoncadorStreetCommunity.participant(scene,def.id)?scene.summary+' '+window.RoncadorStreetCommunity.line(living,scene)+(recollection?.remembered?' ♡ '+recollection.line:''):'“'+greeting+'”');
  $('secondaryStatus').textContent=already?'♥ Um gesto compartilhado hoje. Outros momentos chegam com o calendário fictício.':'Escolha uma gentileza para compartilhar uma vez neste dia.';
  const wrap=$('secondaryPortrait');wrap.replaceChildren();
  const portrait=document.createElement('canvas');portrait.width=110;portrait.height=107;portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Ilustração original de '+def.name);
