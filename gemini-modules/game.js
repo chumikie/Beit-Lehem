@@ -1164,7 +1164,7 @@ function communityMeetingPoint(id,hub){
  const key='comunidade:'+hub;
  if(!streetPaths.has(key))streetPaths.set(key,window.RoncadorStreetLife.itinerary(pathfinder,landmark.p,3,145));
  // One street route, staggered feet: the scene reads as a conversation, not a pile of sprites.
- const offset={damiao:9,lucia:9,bia:9,cica:44,nara:44,teo:44}[id]||9;
+ const offset={damiao:9,lucia:25,bia:41,cica:52,nara:65,teo:78}[id]||9;
  const point=window.RoncadorStreetLife.sample(streetPaths.get(key),offset);
  return point?{...point,walking:false}:null;
 }
@@ -1218,7 +1218,7 @@ function residentsInStreets(){
    if(!streetPaths.has(key))streetPaths.set(key,window.RoncadorStreetLife.itinerary(pathfinder,hub.p,3,140));
    // Each person stands on a distinct, mapped street position (rather than
    // overlapping three enlarged sprites in the same few metres).
-   const separation=schedule.encounter?.cast?13+i*27:def.id==='damiao'?13:41;
+   const separation=schedule.encounter?.cast?13+i*27:13+i*15;
    point=window.RoncadorStreetLife.sample(streetPaths.get(key),separation+9);
    if(point)point.walking=false;
   }else{
@@ -2082,15 +2082,15 @@ function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
 }
 function drawStreetPets(c,time,view,people=[],renderables=null){
  const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true},
-  {id:'catito',name:'Catito',hub:'inicio',variant:10,cat:true,coat:'catito'},
-  {id:'artemis',name:'Ártemis',hub:'inicio',variant:11,cat:true,coat:'artemis'},
+  {id:'catito',name:'Catito',hub:'igreja',variant:10,cat:true,coat:'catito'},
+  {id:'artemis',name:'Ártemis',hub:'igreja',variant:11,cat:true,coat:'artemis'},
   {id:'mimi',name:'Mimi',hub:'mercado',variant:12,cat:true,coat:'mimi'},
   {id:'hani',name:'Hani',hub:'mercado',variant:13,cat:true,coat:'hani'},
-  {id:'jekki',name:'Jekki',hub:'inicio',variant:14,cat:false,coat:'jekki'},
+  {id:'jekki',name:'Jekki',hub:'rodoviaria',variant:14,cat:false,coat:'jekki'},
   {id:'bethowen',name:'Bethowen',hub:'inicio',variant:15,cat:false,coat:'bethowen'},
-  {id:'bob',name:'Bob',hub:'inicio',variant:16,cat:false,coat:'bob'},
-  {id:'goku',name:'Goku',hub:'inicio',variant:17,cat:false,coat:'goku'},
-  {id:'princesa',name:'Princesa',hub:'inicio',variant:18,cat:false,coat:'princesa'}];
+  {id:'bob',name:'Bob',hub:'rodoviaria',variant:16,cat:false,coat:'bob'},
+  {id:'goku',name:'Goku',hub:'mercado',variant:17,cat:false,coat:'goku'},
+  {id:'princesa',name:'Princesa',hub:'rodoviaria',variant:18,cat:false,coat:'princesa'}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
  const occupiedNameplates=[],drawnPetCenters=[];
@@ -4414,10 +4414,13 @@ function renderLife(){
   const needs=document.createElement('small');needs.className='resident-needs';needs.textContent='Fome '+Math.round(person.hunger)+' · Cansaço '+Math.round(person.fatigue)+' · Companhia '+Math.round(person.company);
   const button=document.createElement('button');button.type='button';button.className='resident-action';
   button.disabled=!active||!agenda.present||!place;
-  button.textContent=!active?'Comece a expedição':!agenda.present?'Em outra atividade':near?'💬 '+def.topic:'⌖ Encontrar pelo mapa';
+  button.textContent=!active?'Comece a expedição':!agenda.present?'Em outra atividade':near?'💬 '+def.topic:'⌖ Ir até '+def.name+' para conversar';
   button.onclick=()=>{
-   if(near){careResidentId=def.id;meetResident(def.id);renderLife();}
-   else if(streetPerson){$('lifeDialog').close();setRoute(streetPerson.x,streetPerson.y);}
+   if(near){careResidentId=def.id;meetResident(def.id);renderLife();requestAnimationFrame(()=>{
+    const response=$('lifeConversation');response.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+    response.setAttribute('tabindex','-1');response.focus({preventScroll:true});
+   });}
+   else if(streetPerson){$('lifeDialog').close();if(setRoute(streetPerson.x,streetPerson.y))notify('Indo até '+def.name+' pelas ruas. Ao chegar, toque Falar ou pressione E.');}
   };
   text.append(name,role,activity,mood,memory,needs);card.append(badge,text,button);grid.append(card);
  }
@@ -5033,6 +5036,6 @@ const embeddedTerrain=$('embedded-terrain-data');
 const terrainPromise=Promise.resolve().then(()=>embeddedTerrain?JSON.parse(embeddedTerrain.textContent):null).catch(()=>null);
 Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;applyUserPublicPlaceCorrections();terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
 // Small read-only inspection surface for diagnostics; does not mutate game state.
-Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
+Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},cameraPosition:{x:camera.x,y:camera.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
 })();
 
