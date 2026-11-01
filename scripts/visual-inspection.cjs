@@ -254,7 +254,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
 
   // C19: verify real control transitions and recovery before resumed walking.
   const interactionAudit = { album: false, help: false, observation: false, mobileRoute: false,
-    mapEscape: false, sidebarEscape: false, modalIsolation: false, saveRestored: false };
+    mapEscape: false, sidebarEscape: false, modalIsolation: false, saveRestored: false,
+    residentNotebook: false, culturalActivity: false, contactsShortcut: false };
   if (mobile) {
     if (await page.locator('#mobileRoute').isVisible()) {
       await page.locator('#mobileRoute').click();
@@ -263,6 +264,13 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       await page.locator('#closeRoute').click();
       assert.equal(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')),
         false, name + ': painel móvel deve fechar');
+      await page.locator('#mobileRoute').click();
+      await page.locator('#openLife').click();
+      interactionAudit.residentNotebook = await page.locator('#lifeDialog').evaluate(el => el.open);
+      assert.ok(interactionAudit.residentNotebook, name + ': Caderno deve abrir pelo diário tátil');
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#lifeDialog').evaluate(el => el.open), false,
+        name + ': Escape deve devolver ao diário após abrir o Caderno');
       await page.locator('#mobileRoute').click();
       await page.keyboard.press('Escape');
       interactionAudit.sidebarEscape = !(await page.locator('#sidebar').evaluate(el => el.classList.contains('open')));
@@ -290,6 +298,22 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#helpDialog').evaluate(el => el.open), false,
       'Escape deve fechar a ajuda');
+    await page.locator('#openLife').click();
+    interactionAudit.residentNotebook = await page.locator('#lifeDialog').evaluate(el => el.open);
+    assert.ok(interactionAudit.residentNotebook, 'Caderno dos moradores deve abrir');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#lifeDialog').evaluate(el => el.open), false,
+      'Escape deve fechar o Caderno');
+    await page.locator('#openFestival').click();
+    interactionAudit.culturalActivity = await page.locator('#festivalDialog').evaluate(el => el.open);
+    assert.ok(interactionAudit.culturalActivity, 'atividade cultural deve abrir');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#festivalDialog').evaluate(el => el.open), false,
+      'Escape deve fechar a atividade cultural');
+    await page.keyboard.press('c');
+    interactionAudit.contactsShortcut = await page.locator('#contactsDialog').evaluate(el => el.open);
+    assert.ok(interactionAudit.contactsShortcut, 'atalho C deve abrir contatos');
+    await page.keyboard.press('Escape');
   }
 
   // The expanded map must also recover via Escape without losing the selected route.
