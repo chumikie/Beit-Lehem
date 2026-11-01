@@ -76,6 +76,19 @@
 
 - Próximas subetapas: passeios e limites visuais interpretativos, composição de quarteirões e diversidade de fachadas; só serão desenhados como arte quando não houver lotes/edifícios verificados. Não inventar calçadas mapeadas, entradas ou muros cadastrais.
 
+### Subetapa 7.2 — frentes de rua e ritmo de quarteirões
+
+- `gemini-modules/facade-studio.js` ganhou uma camada determinística de frentes ilustrativas: recuos rasos, faixa de quintal, caminho de acesso cenográfico, muros baixos e portões residenciais; nas áreas comerciais, ritmo de vitrines, vãos e toldos anônimos.
+- A camada distingue Matriz, Feira, João Pessoa, Clovis Bezerra e travessas, Feliciano Pedrosa e Vicente Cado. Feira e Feliciano recebem ritmo comercial mais contínuo; Vicente recebe apenas variações pontuais de pequena frente comercial; João Pessoa e Clovis permanecem predominantemente residenciais. A Matriz usa acabamento mais sóbrio e claro.
+- O desenho é recortado pelo envelope das casas já ilustradas e não cria footprint, lote, edifício, entrada ou obstáculo. Calçadas e meios-fios continuam como traços de Canvas da camada viária; não são tags OSM nem medições de largura.
+- Nenhum eixo, geometria, nome, ID, coordenada, rota, horário, missão ou campo/chave de save foi editado. Nenhum HTML gerado versionado foi alterado.
+- `tests/gemini-street-frontage-layer.test.cjs` acrescenta três regressões: cobertura dos seis setores com preservação de posição/dimensão/ângulo, determinismo por semente e diferenciação de tipologia sem nomes comerciais inventados. Os testes geográficos e de colisão existentes continuam ativos.
+- **Validação do HEAD `0ac298a` (CI #47):** `npm test` **415/415**, zero falhas. Build temporário **964.079 bytes**, com 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais e 86 nomes; `versionedPreviewsWritten=false`.
+- Playwright/Chromium passou em desktop **1440×960** e móvel com toque **390×844**: canvas desenhado, sem overflow horizontal, nomes OSM canônicos sem truncamento, mapa ampliado interativo, seleção de rota e save experimental isolado válidos. Rotas de verificação: ~246 m no desktop e ~139 m no móvel. Nenhum erro JavaScript de página; duas mensagens `net::ERR_FAILED` correspondem a recursos externos bloqueados pelo harness.
+- [CI da subetapa 7.2](https://github.com/chumikie/Beit-Lehem/actions/runs/41342123915) · [capturas e relatório temporários](https://github.com/chumikie/Beit-Lehem/actions/runs/41342123915/artifacts/13098185589).
+
+Próxima subetapa: revisar transições visuais entre frentes residenciais e comerciais, especialmente em zoom próximo, e avaliar sobreposições aparentes entre quintais, muros e casas ilustradas sem alterar a geometria ou a lógica de colisão.
+
 ### 8. Modularizar o monólito de forma incremental
 
 Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
