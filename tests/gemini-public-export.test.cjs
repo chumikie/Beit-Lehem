@@ -32,10 +32,18 @@ test('a cidade ficcional não expõe links documentais e fotos de Belém na inte
  assert.ok(!source.includes('Ver referência histórica ↗'));
  assert.ok(source.includes('Ateliê'));
 });
-test('mapa original é idêntico no pacote público',()=>{
- assert.equal(mapData(publicHtml),mapData(source));
- const map=JSON.parse(mapData(publicHtml));
- assert.equal(map.roads.length,462);
+test('snapshot público mantém a geometria, sem ser confundido com o mapa ativo ainda não regenerado',()=>{
+ const publicMap=JSON.parse(mapData(publicHtml));
+ const activeMap=JSON.parse(mapData(source));
+ assert.equal(publicMap.roads.length,462);
+ assert.equal(activeMap.roads.length,462);
+ assert.deepEqual(publicMap.roads.map(road=>({id:road.id,p:road.p})),
+  activeMap.roads.map(road=>({id:road.id,p:road.p})));
+ assert.deepEqual(publicMap.areas.map(area=>area.p),activeMap.areas.map(area=>area.p));
+ assert.equal(activeMap.points.length,9,'o mapa ativo contém apenas pontos OSM canônicos');
+ assert.equal(activeMap.localPlaces.length,9,'POIs autorais ficam em camada separada');
+ assert.notEqual(mapData(publicHtml),mapData(source),
+  'o HTML público é um snapshot anterior e não deve ser tratado como exportação atual');
 });
 test('scripts do pacote público mantêm sintaxe válida',()=>{
  const scripts=[...publicHtml.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
