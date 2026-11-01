@@ -1322,7 +1322,7 @@ function layoutResidentNameplates(people,playerPosition,scale,phone){
  const marketCrowd=!!market&&Math.hypot(playerPosition.x-market.p[0],playerPosition.y-market.p[1])<145;
  // Allow two nearby residents at the market while retaining facade and
  // marker collision checks below.
- const limit=marketCrowd?2:phone?2:3,placed=[],used=[];
+ const limit=phone?1:marketCrowd?2:3,placed=[],used=[];
  const nearby=people.filter(p=>p.def&&!p.meeting&&!p.greeting&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)<105)
   .sort((a,b)=>Math.hypot(playerPosition.x-a.x,playerPosition.y-a.y)-Math.hypot(playerPosition.x-b.x,playerPosition.y-b.y));
  const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
@@ -1915,8 +1915,16 @@ function streetPetGroupOffset(pet,at,companions,people){
  const distance=Math.hypot(x,y);
  return distance>9?{x:x*9/distance,y:y*9/distance}:{x,y};
 }
-function streetPetNameplateVisible(pet,zoom){
- return !!pet.name&&(pet.bolt?zoom>1.2:zoom>2.1);
+function streetPetCrowdVisible(at,placed,zoom,screenWidth){
+ // Keep the original road point and itinerary; this is screen-space decluttering.
+ // On phones reserve a little more breathing room between visible silhouettes.
+ const compact=screenWidth<=600,minPixels=compact?34:26,minWorld=minPixels/Math.max(.5,zoom);
+ if(placed.some(other=>Math.hypot(other.x-at.x,other.y-at.y)<minWorld))return false;
+ placed.push({x:at.x,y:at.y});
+ return true;
+}
+function streetPetNameplateVisible(pet,zoom,compact=false){
+ return !!pet.name&&(pet.bolt?zoom>(compact?2:1.2):zoom>(compact?2.8:2.1));
 }
 function streetPetNameplateSlot(at,width,occupied){
  // Try a few compact vertical lanes around a pet; hide the label if every
@@ -2061,7 +2069,8 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   {id:'princesa',name:'Princesa',hub:'inicio',variant:18,cat:false,coat:'princesa'}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
- const occupiedNameplates=[];
+ const occupiedNameplates=[],drawnPetCenters=[];
+ const compactViewport=view.width*zoom<=600;
  for(const [index,pet] of candidates.entries()){
   if(!daylight&&pet.variant!==7)continue;
   const at=companions[index].at;if(!at)continue;
@@ -2069,9 +2078,11 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   const gesture=streetPetGesture(pet,at,companions,living.minute,skyMode,player);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
   const spriteOffset=streetPetGroupOffset(pet,at,companions,people);
+  const visualCenter={x:at.x+spriteOffset.x,y:at.y+spriteOffset.y};
+  if(!streetPetCrowdVisible(visualCenter,drawnPetCenters,zoom,view.width*zoom))continue;
   const labelWidth=pet.name?Math.max(24,pet.name.length*4.6+8):0;
-  const labelY=streetPetNameplateVisible(pet,zoom)
-   ? streetPetNameplateSlot({x:at.x+spriteOffset.x,y:at.y+spriteOffset.y},labelWidth,occupiedNameplates)
+  const labelY=streetPetNameplateVisible(pet,zoom,compactViewport)
+   ? streetPetNameplateSlot(visualCenter,labelWidth,occupiedNameplates)
    : null;
   const drawPet=()=>{
   // Character-specific rhythm, without changing street positions or save data.

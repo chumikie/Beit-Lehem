@@ -85,3 +85,29 @@ test('C15.3: reações são determinísticas, próximas e não alteram coordenad
  assert.equal(gesture({coat:'artemis'},{...at,walking:true},[{id:'catito',at}],600,'sol',null),'none');
  assert.equal(JSON.stringify(at),snapshot);
 });
+
+test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota',()=>{
+ const helpers=vm.runInNewContext(groupOffsetSource+
+  ';({streetPetCrowdVisible,streetPetNameplateVisible})',{Math});
+ const original={x:12,y:24},snapshot=JSON.stringify(original),placed=[];
+ assert.equal(helpers.streetPetCrowdVisible(original,placed,1,390),true);
+ assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},placed,1,390),false,
+  'silhuetas a menos de 34 px não são empilhadas em viewport móvel');
+ assert.equal(helpers.streetPetCrowdVisible({x:50,y:24},placed,1,390),true);
+ assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},[],1,1440),true,
+  'a densidade desktop mantém o intervalo menor');
+ assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},[],2,390),true,
+  'em zoom alto a distância mínima em unidades do mundo diminui');
+ assert.equal(JSON.stringify(original),snapshot,'o ponto original nunca é alterado');
+ assert.equal(placed.length,2);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},1.5,true),false);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},2.1,true),true);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.5,true),false);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.9,true),true);
+});
+
+test('C15.5: nomes de moradores ficam limitados a uma placa no mobile',()=>{
+ const source=game.slice(game.indexOf('function layoutResidentNameplates('),
+  game.indexOf('function drawDistantResident('));
+ assert.match(source,/const limit=phone\?1:marketCrowd\?2:3/);
+});
