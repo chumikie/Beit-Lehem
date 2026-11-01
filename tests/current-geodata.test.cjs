@@ -111,6 +111,20 @@ test('o build bloqueia alterações geométricas OSM não revisadas', () => {
   assert.throws(() => composeCurrentMap(osm, changed), /geometria OSM mudou/);
 });
 
+test('o build bloqueia mudanças de ordem ou IDs duplicados na malha viária', () => {
+  const reordered = structuredClone(templateMap);
+  [reordered.roads[0], reordered.roads[1]] = [reordered.roads[1], reordered.roads[0]];
+  assert.throws(() => composeCurrentMap(osm, reordered), /ordem dos segmentos OSM mudou/);
+
+  const duplicated = structuredClone(osm);
+  const firstRoad = duplicated.features.find(feature =>
+    feature.geometry?.type === 'LineString' && feature.properties?.highway);
+  const secondRoad = duplicated.features.find(feature =>
+    feature.geometry?.type === 'LineString' && feature.properties?.highway && feature !== firstRoad);
+  secondRoad.properties['@id'] = firstRoad.properties['@id'];
+  assert.throws(() => composeCurrentMap(duplicated, templateMap), /identificadores de vias OSM mudaram/);
+});
+
 test('o bloco embedded-map-data recebe o mapa composto sem tocar no resto do HTML', () => {
   const map = composeCurrentMap(osm, templateMap);
   const prefix = '<script type="application/json" id="embedded-map-data">';
