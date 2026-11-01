@@ -65,6 +65,12 @@ test('POIs locais são mantidos como aliases separados dos pontos OSM', () => {
   assert.equal(map.points.length, osmPointFeatures.length);
   assert.equal(map.points.length, 9);
   assert.equal(map.localPlaces.length, 9);
+  const osmPointNames = new Set(osmPointFeatures.map(feature => feature.properties.name));
+  assert.ok(map.points.every(point => osmPointNames.has(point.tags.name)));
+  const game = fs.readFileSync(path.join(root, 'gemini-modules/game.js'), 'utf8');
+  const corrections = game.slice(game.indexOf('function applyUserPublicPlaceCorrections()'), game.indexOf('function preprocess()'));
+  assert.match(corrections, /for\(const point of \(data\.localPlaces\|\|\[\]\)\)/);
+  assert.doesNotMatch(corrections, /data\.points/, 'local corrections cannot move canonical OSM points');
   assert.ok(map.localPlaces.some(place => place.displayName === 'Bar da Prosa (R. Vicente Cado, 354)'));
   assert.ok(map.localPlaces.some(place => place.displayName === 'Confeitaria Sonho Doce (R. Feliciano Pedrosa, 1401)'));
   assert.ok(map.localPlaces.every(place => place.landmarkId && map.landmarks.some(landmark => landmark.id === place.landmarkId)));
