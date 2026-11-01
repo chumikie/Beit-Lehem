@@ -468,7 +468,12 @@ function drawTree(c,x,y,r,seed,tone='street'){
  c.arc(x+r*.37*spread,y-r*rightLift,r*(crown===2?.53:.58),0,7);
  c.fill();
  c.fillStyle=lightPhase==='tarde'?'#e2d59b4a':lightPhase==='anoitecer'?'#98b28e38':'#bad2a05e';c.beginPath();c.ellipse(x-r*.22,y-r*.87,r*.37,r*.24,-.2,0,7);c.fill();
- c.fillStyle='#eff3cc70';for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
+ // Rare warm blossoms reuse the four existing highlights; no new plant points,
+ // canopy geometry or mapped species are implied by this illustrative accent.
+ const urban=tone==='street'||tone==='shade';
+ const bloom=urban&&lightPhase!=='anoitecer'?(seed%13===2?1:seed%17===5?2:0):0;
+ c.fillStyle=bloom===1?'#e8c879b8':bloom===2?'#d8947bad':'#eff3cc70';
+ for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
  c.restore();
 }
 function drawCordeiroCactus(c,x,y,r,seed){
