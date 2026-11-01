@@ -3807,6 +3807,7 @@ function lifeSummary(){
  $('lifeClock').textContent=world.label(living);
  $('lifeBrief').textContent=world.event(living);
  const encounters=window.RoncadorStreetEncounters,encounter=encounters.current(living),upcoming=encounters.next(living),community=window.RoncadorStreetCommunity.current(living);
+ const dawn=window.RoncadorSecondaryNeighbors.dawnReturn(living,'teo');
  $('streetEncounter').classList.toggle('is-live',!!(community||encounter));
  $('streetEncounterIcon').textContent=(community||encounter||upcoming)?.icon||'♡';
  if(community){
@@ -3815,6 +3816,9 @@ function lifeSummary(){
  }else if(encounter){
   $('streetEncounterTitle').textContent=encounter.title+(encounter.phase==='visit'?' · juntos agora!':' · pelas ruas');
   $('streetEncounterLine').textContent=encounter.phase==='visit'?encounters.line(living,encounter):encounter.phase==='approach'?'Uma visita segue pelas ruas do centro até o Mercado.':'A visita volta para casa pelo mesmo caminho.';
+ }else if(dawn){
+  $('streetEncounterTitle').textContent='☀ Alvorada das 05h54 · cena ficcional';
+  $('streetEncounterLine').textContent='Ciça, Nara e Téo voltam de uma festa por caminhos mapeados. Aproxime-se para ouvir como viram o céu clarear.';
  }else if(upcoming){
   const nextDay=world.DAYS[upcoming.weekday],at=String(Math.floor(upcoming.start/60)).padStart(2,'0')+':'+String(upcoming.start%60).padStart(2,'0');
   $('streetEncounterTitle').textContent='Próxima cena · '+upcoming.title;
@@ -4226,7 +4230,7 @@ function renderSideJournal(){
 function renderSecondaryDialog(def,feedback){
  const duty=window.RoncadorSecondaryNeighbors.agenda(living,def),already=sideNeighbors.lastHelp[def.id]===living.day;
  const scene=window.RoncadorStreetCommunity.current(living);
- const recollection=affectionSnapshot(def.id),greeting=recollection?.remembered||recollection?.close?recollection.line:def.greeting;
+ const recollection=affectionSnapshot(def.id),dawn=window.RoncadorSecondaryNeighbors.dawnReturn(living,def.id),greeting=dawn?.line||(recollection?.remembered||recollection?.close?recollection.line:def.greeting);
  $('secondaryName').textContent=def.name;
  $('secondaryRole').textContent=def.role+' · ficção cozy';
  $('secondaryActivity').textContent='Hoje: '+duty.activity+'.';
@@ -4236,7 +4240,7 @@ function renderSecondaryDialog(def,feedback){
  const zecaRemembers=def.id==='zeca'&&sideNeighbors.connections?.zecaLucia===true&&
   window.RoncadorLuciaGarden.growth(luciaGarden,living.day).stage>=1&&living.day>(sideNeighbors.connections.zecaLuciaDay||0);
  const zecaLine=zecaRemembers?'🌱 '+gardenStageDialogue('zeca',window.RoncadorLuciaGarden.growth(luciaGarden,living.day)):'';
- $('secondaryLine').textContent=feedback||(nextDayMemory?'♡ '+nextDayMemory:fairMemory?'♡ '+fairMemory:zecaLine||recadoMemory?' '+zecaLine+(recadoMemory?' ✉️ '+recadoMemory:''):scene?.phase==='visit'&&window.RoncadorStreetCommunity.participant(scene,def.id)?scene.summary+' '+window.RoncadorStreetCommunity.line(living,scene)+(recollection?.remembered?' ♡ '+recollection.line:''):'“'+greeting+'”');
+ $('secondaryLine').textContent=feedback||(dawn?'“'+dawn.line+'”':nextDayMemory?'♡ '+nextDayMemory:fairMemory?'♡ '+fairMemory:zecaLine||recadoMemory?' '+zecaLine+(recadoMemory?' ✉️ '+recadoMemory:''):scene?.phase==='visit'&&window.RoncadorStreetCommunity.participant(scene,def.id)?scene.summary+' '+window.RoncadorStreetCommunity.line(living,scene)+(recollection?.remembered?' ♡ '+recollection.line:''):'“'+greeting+'”');
  $('secondaryStatus').textContent=already?'♥ Um gesto compartilhado hoje. Outros momentos chegam com o calendário fictício.':'Escolha uma gentileza para compartilhar uma vez neste dia.';
  const wrap=$('secondaryPortrait');wrap.replaceChildren();
  const portrait=document.createElement('canvas');portrait.width=110;portrait.height=107;portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Ilustração original de '+def.name);

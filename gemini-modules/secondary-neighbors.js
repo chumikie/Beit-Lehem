@@ -182,7 +182,21 @@
   const morning=(Number(clock?.minute)||0)<12*60;
   return scenes[morning?'morning':'afternoon'][weekday%3];
  }
+ // A short fictional return from a celebration. All three walkers keep their
+ // existing OSM street itineraries and hubs; no new landmark or save state.
+ const DAWN_LINES=Object.freeze({
+  cica:'Ainda estou lembrando das risadas da festa. Olha só: já tem um fio de luz no céu!',
+  nara:'Voltando da festa, vi o céu clarear devagar. Dá vontade de guardar essa cor no caderno.',
+  teo:'São cinco e cinquenta e quatro! A festa ficou para trás, mas a conversa ainda acompanha a volta.'
+ });
+ function dawnReturn(clock,id){
+  const minute=Number(clock?.minute);
+  if(!Number.isFinite(minute)||minute<350||minute>=410||!Object.hasOwn(DAWN_LINES,id))return null;
+  return {line:DAWN_LINES[id],activity:minute<354?'voltando da festa pelas ruas':minute<390?'voltando da festa e vendo o céu clarear':'despedindo-se dos amigos ao amanhecer'};
+ }
  function agenda(clock,def){
+  const dawn=dawnReturn(clock,def.id);
+  if(dawn)return{present:true,hub:def.hub,activity:dawn.activity,walking:Number(clock.minute)%30<22,dawn:true};
   const community=root?.RoncadorStreetCommunity?.agenda(clock,def.id);
   if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
@@ -248,6 +262,6 @@
   if(threadAdvanced){state.recados=state.recados||{stage:0};state.recados.stage=stage+1;}
   return{ok:true,first,reply:choice.reply+(threadAdvanced?' ✉️ '+step.story:''),unlocked:coreProgress(state)===3,threadAdvanced,threadComplete:threadAdvanced&&stage===2};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine,nextDayReply};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,dawnReturn,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine,nextDayReply};
 })(typeof window!=='undefined'?window:globalThis);
 
