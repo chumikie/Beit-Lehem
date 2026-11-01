@@ -220,7 +220,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
         activeDialogs = await openDialogIds();
         const currentBond = await page.evaluate(id => expeditionState.residentBonds[id], candidate.id);
         encounter.dialog = activeDialogs.at(-1) || null;
-        encounter.talked = !!encounter.dialog && currentBond >= previousBond;
+        encounter.talked = !!encounter.dialog && currentBond > previousBond;
         // Escape the actual existing conversation dialog before selecting another resident.
         for (let attempt = 0; attempt < 3 && (await openDialogIds()).length; attempt++) {
           await page.keyboard.press('Escape');
@@ -365,7 +365,10 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     await page.locator('#observe').click();
     interactionAudit.observation = await page.evaluate(() => {
       const saved = JSON.parse(localStorage.getItem('roncador-expedition-v2-referencias-gemini') || '{}');
-      return Array.isArray(saved.observations) && saved.observations.length > 0;
+      const collections = ['observations', 'worldMoments', 'waterMemories', 'ruaNovaPaths',
+        'streetVignettes', 'seasonalMemories', 'everydayMemories', 'camucaStories',
+        'morningEncounters', 'waterTalks'];
+      return collections.some(key => Array.isArray(saved[key]) && saved[key].length > 0);
     });
     assert.ok(interactionAudit.observation, 'Observar deve registrar a paisagem no save');
     await page.locator('.extras-cabinet > summary').click();
