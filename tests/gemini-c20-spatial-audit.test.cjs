@@ -67,3 +67,14 @@ test('C20: audit 36 fictional people across existing scheduled periods and stree
   assert.equal(snapshots.at(-1).known, 0);
   assert.ok(snapshots.find(s => s.hour === 9).hubs >= 10);
 });
+
+test('C20: pets avoid measured same-point phases without new anchors or broken companion pairs', () => {
+  const segment = game.slice(game.indexOf('function drawStreetPets('), game.indexOf('function drawPuddles('));
+  const match = segment.match(/const petPathStagger=(\{[^;]+\});/);
+  assert.ok(match);
+  const phases = vm.runInNewContext('(' + match[1] + ')');
+  assert.ok(Object.values(phases).every(value => Number.isFinite(value) && Math.abs(value) <= 30));
+  assert.ok(Math.abs(phases.mimi - phases.hani) <= 24);
+  assert.ok(Math.abs(phases.bob - phases.princesa) <= 24);
+  assert.match(segment, /walkingPoint\(pet\.id,pet\.hub,pet\.variant,petPathStagger\[pet\.id\]\|\|0\)/);
+});
