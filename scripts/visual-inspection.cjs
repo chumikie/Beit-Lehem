@@ -164,6 +164,27 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     animations: 'disabled'
   });
 
+  // Inspect the densest facade scale as a separate capture. Zoom is transient
+  // presentation state: no world geometry, route or save data is rewritten.
+  let closeupZoomClicks = 0;
+  if (await zoomIn.isVisible().catch(() => false)) {
+    for (let i = 0; i < 5; i++) {
+      await zoomIn.click();
+      closeupZoomClicks++;
+      await page.waitForTimeout(90);
+    }
+  }
+  const closeup = await collectLayout(page, name + '-closeup');
+  await page.screenshot({
+    path: path.join(outputDir, name + '-closeup.png'),
+    fullPage: false,
+    animations: 'disabled'
+  });
+  assert.equal(closeup.overflow.document, false,
+    name + ': zoom próximo não deve criar overflow horizontal');
+  assert.ok(closeup.canvasInk > 0,
+    name + ': a inspeção próxima precisa conter desenho visível');
+
   // Check that the label beside the player is a canonical OSM street name.
   const label = gameplay.locationLabel;
   const canonicalNames = new Set(map.roads.map(road => road.tags.name).filter(Boolean));
@@ -279,7 +300,9 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   });
 
   const result = {
-    viewport, mobile, initial, gameplay, finalLayout,
+    viewport, mobile, initial, gameplay,
+    closeup: { ...closeup, zoomClicks: closeupZoomClicks },
+    finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
     mapDialog, routeSelection, movement

@@ -31,6 +31,14 @@
   const group=ARCHETYPES[home.centralBlock];
   return {block:home.centralBlock,kind:group[seed%group.length],shade:seed%4,detail:seed%3,roof:seed%3,returnWall:seed%4===1,shop:home.centralBlock==='feira'&&seed%3!==2,seed};
  }
+ function frontageMode(style){
+  const seed=style.seed,block=style.block;
+  if(block==='feira')return seed%5===0?'mixed':'commercial';
+  if(block==='feliciano')return seed%4===0?'mixed':'commercial';
+  if(block==='vicente')return seed%4===0?'commercial':seed%5===0?'mixed':'residential';
+  if(block==='matriz')return seed%7===0?'mixed':'residential';
+  return seed%6===0?'mixed':'residential';
+ }
  function statistics(houses){
   const result={total:0,matriz:0,feira:0,joao:0,clovis:0,feliciano:0,vicente:0,kinds:{}};
   for(const home of houses){const style=variant(home);if(!style)continue;result.total++;result[style.block]++;result.kinds[style.kind]=(result.kinds[style.kind]||0)+1;}
@@ -50,9 +58,8 @@
   // The foreground is clipped to the existing illustrative house envelope.
   // It is a painted setback cue, never a parcel, building or collision shape.
   c.save();if(typeof c.rect==='function'&&typeof c.clip==='function'){c.beginPath();c.rect(left+.8,front+1,width-1.6,Math.max(1,faceH-1.5));c.clip();}
-  const commercial=style.block==='feira'||style.block==='feliciano'||
-    (style.block==='vicente'&&seed%4===0);
-  if(commercial){
+  const mode=frontageMode(style);
+  if(mode==='commercial'){
    c.fillStyle=night?'#8c8b7550':'#c7b99a88';
    c.fillRect(left+1,ground,width-2,1.1);
    const bays=style.block==='feira'?3:style.block==='feliciano'?2:1;
@@ -73,6 +80,24 @@
     c.strokeStyle='#8b7966a8';c.lineWidth=.8;
     for(let i=1;i<bays;i++){const x=left+1+i*bayWidth;c.beginPath();c.moveTo(x,front+1.5);c.lineTo(x,ground+.7);c.stroke();}
    }
+  }else if(mode==='mixed'){
+   // Transitional front: a low planted edge, short anonymous fascia and
+   // offset path soften the shift between shop rhythm and residential gates.
+   // The whole composition remains inside the same clipped house envelope.
+   c.fillStyle=night?'#617d5d66':palette.plant+'77';
+   c.fillRect(left+1.2,ground-1.05,width-2.4,.72);
+   const side=seed%2?1:-1;
+   const fasciaX=side>0?left+width*.48:left+1.2;
+   const fasciaW=width*.34;
+   c.fillStyle=style.block==='matriz'?'#b8a88b88':'#c39b7b88';
+   c.fillRect(fasciaX,front+1.9,fasciaW,1.05);
+   c.fillStyle='#f4e7d1a8';
+   c.fillRect(fasciaX+.45,front+2.05,Math.max(.6,fasciaW-.9,.6),.24);
+   c.strokeStyle='#9b8a73a8';c.lineWidth=.7;
+   c.beginPath();c.moveTo(left+1,ground+.02);c.lineTo(left+width-1,ground+.02);c.stroke();
+   const pathX=side>0?left+width*.28:left+width*.72;
+   c.fillStyle='#ddc9a6';c.fillRect(pathX-.55,ground-1.9,1.1,1.9);
+   c.fillStyle=palette.plant;c.beginPath();c.arc(side>0?left+width*.82:left+width*.18,ground-1.1,.85,0,Math.PI*2);c.fill();
   }else{
    // A narrow planted strip and stepping path suggest a private setback.
    // Both remain inside the already existing illustrative house envelope.
@@ -242,6 +267,6 @@
   }
   return true;
  }
- return{ARCHETYPES,PALETTES,SKETCH_IDS,variant,statistics,restoreSketches,recordSketch,draw,drawPreview};
+ return{ARCHETYPES,PALETTES,SKETCH_IDS,variant,frontageMode,statistics,restoreSketches,recordSketch,draw,drawPreview};
 });
 

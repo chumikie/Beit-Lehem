@@ -55,3 +55,39 @@ test('comércio e residência usam vocabulários visuais diferentes sem nomes in
   assert.equal(ops.filter(op=>op[0]==='fillText').length,0,'não inventar nomes de lojas ou estabelecimentos');
  }
 });
+
+test('transições entre comércio e residência são graduais e setorialmente coerentes',()=>{
+ const modes=block=>Array.from({length:24},(_,seed)=>studio.frontageMode({block,seed}));
+ const feira=modes('feira'),feliciano=modes('feliciano'),vicente=modes('vicente');
+ const matriz=modes('matriz'),joao=modes('joao'),clovis=modes('clovis');
+ assert.ok(feira.filter(mode=>mode==='commercial').length>=18);
+ assert.ok(feira.includes('mixed'));
+ assert.ok(feliciano.filter(mode=>mode==='commercial').length>=16);
+ assert.ok(feliciano.includes('mixed'));
+ assert.ok(vicente.filter(mode=>mode==='commercial').length>=5);
+ assert.ok(vicente.includes('mixed'));
+ for(const modeset of [matriz,joao,clovis]){
+  assert.equal(modeset.includes('commercial'),false);
+  assert.ok(modeset.includes('mixed'));
+  assert.ok(modeset.includes('residential'));
+ }
+});
+
+test('detalhes em zoom próximo permanecem recortados e não ampliam footprints',()=>{
+ for(const block of blocks)for(const seed of [0,1,4,5,7,11,18,23]){
+  const home={x:37,y:54,w:24,h:16,seed,centralBlock:block,angle:Math.PI/3,side:1};
+  const before=structuredClone(home),{ctx,ops}=recorder();
+  assert.equal(studio.draw(ctx,home,'tarde',16*60,3.5),true);
+  assert.deepEqual(home,before,'a pintura não pode alterar o objeto espacial usado pelo jogo');
+  const clipIndex=ops.findIndex(op=>op[0]==='clip');
+  assert.ok(clipIndex>0,block+': a camada precisa ativar o recorte antes de pintar');
+  const restoreIndex=ops.findIndex((op,index)=>index>clipIndex&&op[0]==='restore');
+  assert.ok(restoreIndex>clipIndex,block+': o estado do Canvas precisa ser restaurado');
+  const paintOps=new Set(['fillRect','strokeRect','stroke','fill','arc','ellipse']);
+  const painted=ops.map((op,index)=>({name:op[0],index})).filter(op=>paintOps.has(op.name));
+  const frontagePaint=painted.filter(op=>op.index>clipIndex&&op.index<restoreIndex);
+  assert.ok(frontagePaint.length>0,block+': a frente deve desenhar dentro do recorte');
+  assert.equal(painted.some(op=>op.index>clipIndex&&op.index>restoreIndex),false,
+    block+': nenhuma pintura da frente pode escapar do estado recortado');
+ }
+});
