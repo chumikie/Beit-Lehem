@@ -107,6 +107,12 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.9,true),true);
 });
 
+test('C15.5: a câmera usa a largura real do canvas para ativar o perfil compacto',()=>{
+ const source=game.slice(game.indexOf('function drawStreetPets('),game.indexOf('function drawPuddles('));
+ assert.match(source,/const compactViewport=w<=600/);
+ assert.match(source,/streetPetCrowdVisible\(visualCenter,drawnPetCenters,zoom,w\)/);
+});
+
 test('C15.5: nomes de moradores ficam limitados a uma placa no mobile',()=>{
  const source=game.slice(game.indexOf('function layoutResidentNameplates('),
   game.indexOf('function drawDistantResident('));

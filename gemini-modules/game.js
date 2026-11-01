@@ -2070,7 +2070,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
  const daylight=living.minute>=7*60&&living.minute<20*60;
  const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
  const occupiedNameplates=[],drawnPetCenters=[];
- const compactViewport=view.width*zoom<=600;
+ const compactViewport=w<=600;
  for(const [index,pet] of candidates.entries()){
   if(!daylight&&pet.variant!==7)continue;
   const at=companions[index].at;if(!at)continue;
@@ -2079,7 +2079,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
   const spriteOffset=streetPetGroupOffset(pet,at,companions,people);
   const visualCenter={x:at.x+spriteOffset.x,y:at.y+spriteOffset.y};
-  if(!streetPetCrowdVisible(visualCenter,drawnPetCenters,zoom,view.width*zoom))continue;
+  if(!streetPetCrowdVisible(visualCenter,drawnPetCenters,zoom,w))continue;
   const labelWidth=pet.name?Math.max(24,pet.name.length*4.6+8):0;
   const labelY=streetPetNameplateVisible(pet,zoom,compactViewport)
    ? streetPetNameplateSlot(visualCenter,labelWidth,occupiedNameplates)
