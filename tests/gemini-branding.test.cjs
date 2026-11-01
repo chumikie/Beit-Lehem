@@ -8,7 +8,8 @@ test('marca exibida nas prévias é Beit Lehem',()=>{
   const html=fs.readFileSync(path.join(root,'previews',name),'utf8');
   assert.ok(html.includes('aria-label="Beit Lehem"'));
   assert.ok(html.includes('<span>BEIT<span class="brand-sub">LEHEM</span></span>'));
-  assert.ok(html.includes("document.title = 'Beit Lehem — Belém/PB · Jogo cozy';"));
+  assert.ok(html.includes('<title>Beit Lehem</title>'));
+  assert.ok(html.includes("document.title = 'Beit Lehem';"));
   assert.ok(html.includes("document.querySelector('.edition').textContent = '☼ BEIT LEHEM · PRÉVIA';"));
   assert.ok(html.includes("const STORE='roncador-expedition-v2-referencias-gemini'"));
  }

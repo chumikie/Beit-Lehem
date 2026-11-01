@@ -49,7 +49,7 @@ test('gera uma prévia separada, corrige somente a inicialização e preserva o 
   assert.ok(!preview.includes(BROKEN_INITIALIZATION));
   assert.ok(preview.includes('let belemContacts=window.RoncadorBelemContacts.fresh();'));
   assert.ok(preview.includes('let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;'));
-  assert.ok(preview.includes('<title>Beit Lehem — Prévia experimental Gemini</title>'));
+  assert.ok(preview.includes('<title>Beit Lehem</title>'));
   assert.ok(preview.includes("const STORE='roncador-expedition-v2-referencias-gemini',keys="));
 });
 

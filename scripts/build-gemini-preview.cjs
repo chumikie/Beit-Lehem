@@ -103,7 +103,7 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT, outputRelative = OUTPUT_
   html = replaceExactlyOnce(
     html,
     '<title>Trilhas de Roncador — Expedição</title>',
-    '<title>Beit Lehem — Prévia experimental Gemini</title>',
+    '<title>Beit Lehem</title>',
     'Identificação da aba da prévia'
   );
 
@@ -114,7 +114,7 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT, outputRelative = OUTPUT_
     ['<span>TRILHAS<span class="brand-sub">de Roncador</span></span>',
      '<span>BEIT<span class="brand-sub">LEHEM</span></span>'],
     ["document.title = 'Trilhas do Roncador — Belém Viva · V2.27 Cozy';",
-     "document.title = 'Beit Lehem — Belém/PB · Jogo cozy';"],
+     "document.title = 'Beit Lehem';"],
     ["document.querySelector('.brand-sub').textContent = 'do Roncador';",
      "document.querySelector('.brand-sub').textContent = 'LEHEM';"],
     ["document.querySelector('.edition').textContent = '☼ BELÉM VIVA · V2.27';",

@@ -1788,13 +1788,27 @@ function streetPetVisualOffset(at,people){
  const length=best||1;
  return {x:best?nearest.dx/length*amount:amount,y:best?nearest.dy/length*amount:0};
 }
+function streetPetGroupOffset(pet,at,companions,people){
+ // Keep all thirteen mapped walks unchanged; only separate tightly packed sprites.
+ // A smooth fade avoids sudden sideways jumps at the edge of a meeting.
+ const nearest=companions.reduce((best,other)=>{
+  if(other.id===pet.id||!other.at)return best;
+  return Math.min(best,Math.hypot(other.at.x-at.x,other.at.y-at.y));
+ },Infinity);
+ const strength=Math.max(0,Math.min(1,(14-nearest)/9))*4;
+ const angle=pet.variant*2.399963229728653;
+ const person=streetPetVisualOffset(at,people);
+ const x=person.x+Math.cos(angle)*strength,y=person.y+Math.sin(angle)*strength;
+ const distance=Math.hypot(x,y);
+ return distance>4?{x:x*4/distance,y:y*4/distance}:{x,y};
+}
 function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
  // Compact side-on silhouettes; paws touch the same ground line for every coat.
  const coat=pet.coat|| (pet.bolt?'bolt':pet.cat?'cream':'caramel');
  const colors={bolt:['#eee0c3','#d5b78e'],cream:['#eed5ae','#d8b487'],caramel:['#c99169','#a87351'],
   catito:['#f6f0df','#756154'],artemis:['#f8f0db','#b69c7c'],mimi:['#dc9152','#b56c3c'],hani:['#f8eedc','#e9a36e'],
   jekki:['#353235','#b77649'],bethowen:['#f4ead9','#e5d9c5'],bob:['#eee4d5','#d7cbbb'],
-  goku:['#f6f0e5','#292e32'],princesa:['#c58d65','#855c49']};
+  goku:['#f6f0e5','#292e32'],princesa:['#664b41','#a87455']};
  const [fur,patch]=colors[coat];
  const small=coat==='artemis';
  const size=coat==='goku'?.59:small?.82:coat==='catito'?1.13:coat==='bob'?.78:coat==='bethowen'?1.14:coat==='princesa'?1.23:coat==='jekki'?.96:1;
@@ -1873,7 +1887,7 @@ function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
   c.beginPath();c.moveTo(-5,-13);c.lineTo(-2,-19);c.lineTo(-2,-11);c.closePath();c.fill();
   c.fillStyle='#bda083';c.beginPath();c.ellipse(-8,-9,3,2.4,0,0,Math.PI*2);c.fill();
  }else if(coat==='princesa'){
-  // Caramel Doberman-like silhouette: tall posture and narrow upright ears.
+  // Chocolate Doberman-like silhouette: tall posture and narrow upright ears.
   c.fillStyle=patch;c.beginPath();c.moveTo(-11,-12);c.lineTo(-12,-19);c.lineTo(-7,-14);c.closePath();c.fill();
   c.beginPath();c.moveTo(-5,-12);c.lineTo(-3,-19);c.lineTo(-2,-12);c.closePath();c.fill();
  }else if(coat==='bethowen'||coat==='bob'){
@@ -1931,7 +1945,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   const energy=gesture==='greet'?2.1:gesture==='play'?1.5:pet.coat==='jekki'?1.9:pet.coat==='bethowen'?1.25:pet.coat==='mimi'?1.35:pet.coat==='artemis'?1.15:
    pet.coat==='goku'?.65:pet.coat==='princesa'?.85:pet.coat==='bob'?.4:pet.coat==='hani'?.35:pet.coat==='catito'?.45:1;
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)*energy+pet.variant)*behavior.bounce*energy;
-   const offset=streetPetVisualOffset(at,people);
+   const offset=streetPetGroupOffset(pet,at,companions,people);
    c.save();c.translate(at.x+offset.x,at.y+offset.y);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
   // Ground contact stays fixed while the animal's body bobs or reacts.
