@@ -56,11 +56,9 @@ function build(){
  if(!html.includes('aria-label="Beit Lehem"')||
     !html.includes("const STORE='roncador-expedition-v2-referencias-gemini'"))
   throw Error('Prévia incompatível: conferir marca e chave de salvamento.');
- let count=0;
- html=html.replace(/data:image\/jpeg;base64,([A-Za-z0-9+/=]+)/g,(_,encoded)=>{
-  count++;return 'data:image/jpeg;base64,'+cleanJpeg(encoded);
- });
- if(count!==2)throw Error('Esperadas exatamente duas fotos JPEG históricas; confira a fonte.');
+ // The game preview has already replaced archive photos with a tiny neutral
+ // placeholder. Public exports must never contain a real JPEG photograph.
+ if(/data:image\/jpeg;base64,/i.test(html))throw Error('Fotografia real permaneceu no jogo; exportação bloqueada.');
  const header=/^<!--[\s\S]*?-->\s*/;
  if(!header.test(html))throw Error('Cabeçalho de referência não localizado.');
  html=html.replace(header,'');
