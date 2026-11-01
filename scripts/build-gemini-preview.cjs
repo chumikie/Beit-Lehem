@@ -17,9 +17,9 @@ function replaceExactlyOnce(source, search, replacement, label) {
   return source.slice(0, first) + replacement + source.slice(first + search.length);
 }
 
-function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
+function buildGeminiPreview(projectRoot = PROJECT_ROOT, outputRelative = OUTPUT_RELATIVE) {
   const sourcePath = path.join(projectRoot, SOURCE_RELATIVE);
-  const outputPath = path.join(projectRoot, OUTPUT_RELATIVE);
+  const outputPath = path.join(projectRoot, outputRelative);
 
   if (!fs.existsSync(sourcePath)) {
     throw new Error(`Fonte experimental não encontrada: ${SOURCE_RELATIVE}`);
