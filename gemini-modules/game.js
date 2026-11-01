@@ -1771,8 +1771,80 @@ function streetPetVisualOffset(at,people){
  const length=best||1;
  return {x:best?nearest.dx/length*amount:amount,y:best?nearest.dy/length*amount:0};
 }
+function drawCozyPetSprite(c,pet,time,behavior,far){
+ // Compact side-on silhouettes; paws touch the same ground line for every coat.
+ const coat=pet.coat|| (pet.bolt?'bolt':pet.cat?'cream':'caramel');
+ const colors={bolt:['#eee0c3','#d5b78e'],cream:['#eed5ae','#d8b487'],caramel:['#c99169','#a87351'],
+  catito:['#f6f0df','#756154'],artemis:['#f8f0db','#b69c7c'],mimi:['#dc9152','#b56c3c'],hani:['#f8eedc','#e9a36e'],jekki:['#353235','#b77649']};
+ const [fur,patch]=colors[coat];
+ const small=coat==='artemis';
+ const size=small?.82:coat==='catito'?1.13:coat==='jekki'?.96:1;
+ c.save();c.scale(size,size);
+ const step=behavior.resting?0:Math.sin(time*(coat==='jekki'?11:pet.cat?6:8)+pet.variant)*.9;
+ const tailSwing=behavior.resting?0:Math.sin(time*behavior.tailRate+pet.variant)*2;
+ // Distinct tails: cats hold theirs high; Ártemis has an unmistakable Z tip.
+ c.strokeStyle=coat==='jekki'?'#353235':coat==='catito'?'#554740':patch;
+ c.lineCap='round';c.lineJoin='round';c.lineWidth=pet.cat?2.6:2.9;
+ c.beginPath();c.moveTo(5,-7);
+ if(coat==='artemis'){c.lineTo(10,-13);c.lineTo(7,-17);c.lineTo(12,-19+tailSwing*.3);}
+ else if(pet.cat){c.bezierCurveTo(12,-8,12,-17,9+tailSwing*.3,-18);}
+ else{c.quadraticCurveTo(12,-13+tailSwing,10,-16+tailSwing);}
+ c.stroke();
+ // Four separated legs are essential for distinguishing a pet from a blob.
+ const paws=[[-4,step],[0,-step],[4,-step*.8],[7,step*.8]];
+ for(const [x,kick] of paws){
+  roundRect(c,x-1.8,-5,3.5,6+Math.max(0,kick),1.3,fur,'#8b7566');
+  c.fillStyle=coat==='jekki'?patch:fur;c.beginPath();c.ellipse(x,-.1+Math.max(0,kick),2.1,1.1,0,0,Math.PI*2);c.fill();
+ }
+ roundRect(c,-6,-11,14,8,3.4,fur,'#8b7566');
+ if(coat==='catito'){
+  c.fillStyle=patch;c.beginPath();c.ellipse(3,-9,4,2.5,-.3,0,Math.PI*2);c.fill();
+ }else if(coat==='mimi'||coat==='hani'){
+  c.strokeStyle=patch;c.lineWidth=1.15;
+  for(const x of [-1,3,6]){c.beginPath();c.moveTo(x,-10);c.lineTo(x+1,-5);c.stroke();}
+ }else if(coat==='jekki'){
+  c.fillStyle=patch;c.beginPath();c.ellipse(-3,-5,3,2,0,0,Math.PI*2);c.fill();
+ }
+ // The head is separate from the torso and protrudes toward the direction of travel.
+ c.fillStyle=fur;c.strokeStyle='#8b7566';c.lineWidth=.75;c.beginPath();c.ellipse(-7,-10,4.8,4.6,0,0,Math.PI*2);c.fill();c.stroke();
+ if(pet.cat){
+  c.fillStyle=coat==='catito'?'#554a44':fur;c.strokeStyle='#806f63';
+  for(const ear of [-10,-4]){c.beginPath();c.moveTo(ear-2,-12);c.lineTo(ear-1,-18);c.lineTo(ear+2,-13);c.closePath();c.fill();c.stroke();}
+  if(coat==='catito'){
+   // White muzzle and chest, dark asymmetric mask and warm brown cap.
+   c.fillStyle='#6c5950';c.beginPath();c.ellipse(-8.7,-12,3.5,2.6,-.3,0,Math.PI*2);c.fill();
+   c.fillStyle='#a48769';c.beginPath();c.ellipse(-5,-13,2.4,1.5,.2,0,Math.PI*2);c.fill();
+   c.fillStyle='#fff8eb';c.beginPath();c.ellipse(-7,-8,3.1,2.2,0,0,Math.PI*2);c.fill();
+  }else if(coat==='artemis'){
+   c.fillStyle='#b69c7c';c.beginPath();c.ellipse(-5,-12,2.2,2.3,0,0,Math.PI*2);c.fill();
+  }else if(coat==='hani'){
+   c.fillStyle=patch;c.beginPath();c.ellipse(-6,-12,2.9,2.8,0,0,Math.PI*2);c.fill();
+  }else if(coat==='mimi'){
+   c.strokeStyle='#b76d3e';c.lineWidth=.9;c.beginPath();c.moveTo(-9,-13);c.lineTo(-9,-11);c.moveTo(-5,-13);c.lineTo(-5,-11);c.stroke();
+  }
+ }else if(coat==='jekki'){
+  c.fillStyle='#272629';c.beginPath();c.moveTo(-11,-12);c.lineTo(-12,-19);c.lineTo(-7,-14);c.closePath();c.fill();
+  c.beginPath();c.moveTo(-5,-13);c.lineTo(-3,-19);c.lineTo(-2,-12);c.closePath();c.fill();
+  c.fillStyle=patch;c.beginPath();c.ellipse(-8,-8,3.7,2.6,0,0,Math.PI*2);c.fill();
+ }else{
+  c.fillStyle=pet.bolt?'#6d5d55':'#a47359';c.beginPath();c.ellipse(-10,-12,2.6,4,-.4,0,Math.PI*2);c.fill();
+  if(pet.bolt){c.fillStyle='#8d7868';c.beginPath();c.ellipse(-5,-12,2.1,3.1,.2,0,Math.PI*2);c.fill();}
+ }
+ c.fillStyle='#4c433d';c.beginPath();c.arc(-9,-10,.8,0,Math.PI*2);c.arc(-5.5,-10,.8,0,Math.PI*2);c.fill();
+ c.fillStyle=pet.cat?'#ac786d':'#3e3734';c.beginPath();c.arc(-11,-7.4,1,0,Math.PI*2);c.fill();
+ if(coat==='jekki'&&!far){c.strokeStyle='#e6a5a0';c.lineWidth=1.5;c.beginPath();c.moveTo(-11,-6);c.lineTo(-11,-3.3);c.stroke();}
+ if(pet.cat&&!far){
+  c.strokeStyle='#9c8c78';c.lineWidth=.4;c.beginPath();c.moveTo(-11,-7);c.lineTo(-15,-8);c.moveTo(-11,-6.5);c.lineTo(-15,-5.5);c.stroke();
+ }
+ c.restore();
+}
 function drawStreetPets(c,time,view,people=[],renderables=null){
- const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
+ const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true},
+  {id:'catito',name:'Catito',hub:'inicio',variant:10,cat:true,coat:'catito'},
+  {id:'artemis',name:'Ártemis',hub:'inicio',variant:11,cat:true,coat:'artemis'},
+  {id:'mimi',name:'Mimi',hub:'mercado',variant:12,cat:true,coat:'mimi'},
+  {id:'hani',name:'Hani',hub:'mercado',variant:13,cat:true,coat:'hani'},
+  {id:'jekki',name:'Jekki',hub:'inicio',variant:14,cat:false,coat:'jekki'}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
   for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
@@ -1780,52 +1852,25 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode,player,people);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
   const drawPet=()=>{
-  const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)+pet.variant)*behavior.bounce;
+  // Character-specific rhythm, without changing street positions or save data.
+  const energy=pet.coat==='jekki'?1.9:pet.coat==='mimi'?1.35:pet.coat==='artemis'?1.15:
+   pet.coat==='hani'?.35:pet.coat==='catito'?.45:1;
+  const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)*energy+pet.variant)*behavior.bounce*energy;
    const offset=streetPetVisualOffset(at,people);
    c.save();c.translate(at.x+offset.x,at.y+offset.y);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
   // Ground contact stays fixed while the animal's body bobs or reacts.
   c.translate(0,bounce);
-  const fur=pet.bolt?'#eee0c3':pet.cat?'#f0d3ac':'#cd9870';
-  if(zoom<1.15){
-   // At wide zoom, avoid subpixel eyes, ears and overlapping fine outlines.
-   c.strokeStyle='#8f765e';c.lineWidth=1.3;c.lineCap='round';
-   c.beginPath();c.moveTo(4,-3);c.quadraticCurveTo(9,-9,7,-11);c.stroke();
-   roundRect(c,-6,-7,12,8,3.5,fur,'#977861');
-   c.fillStyle=fur;c.beginPath();c.arc(-4,-7,3.6,0,Math.PI*2);c.fill();
-   if(pet.bolt){
-    c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();
-    // Keep the familiar name readable even in the simplified far-zoom sprite.
-    c.fillStyle='#fff9eb';c.strokeStyle='#9b8068';c.lineWidth=.6;
-    roundRect(c,-12,-20,24,8,3,'#fff9eb','#9b8068');
-    c.fillStyle='#5c4a38';c.font='bold 6px system-ui';c.textAlign='center';c.fillText('Bolt',0,-14);
-   }
-   c.restore();return;
-  }
-  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*behavior.tailRate+pet.variant)*(behavior.resting?.7:2)),9,-13);c.stroke();
-  roundRect(c,-6,-7,12,9,4,fur,'#9c846b');
-  c.fillStyle=pet.bolt?'#d7bb91':fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
-  if(pet.bolt){
-   // Bolt's pale coat, darker floppy ears and charcoal muzzle come from the
-   // author's photographs; the source photos stay outside the game/repository.
-   c.fillStyle='#6d5d55';c.beginPath();c.ellipse(-6.5,-8,2.2,4,-.3,0,Math.PI*2);c.fill();
-   c.fillStyle='#8d7868';c.beginPath();c.ellipse(-1,-7,2.6,3.2,.25,0,Math.PI*2);c.fill();
-   c.fillStyle='#aa998b';c.beginPath();c.ellipse(-4.8,-4.1,3.7,2.2,0,0,Math.PI*2);c.fill();
-   c.fillStyle='#393536';c.beginPath();c.arc(-7,-4.2,1.4,0,Math.PI*2);c.fill();
-   c.strokeStyle='#4c4740';c.lineWidth=1.2;c.beginPath();c.moveTo(-5,-1.9);c.lineTo(3,-1.9);c.stroke();
-  }
-  if(pet.cat){c.beginPath();c.moveTo(-7,-9);c.lineTo(-7,-15);c.lineTo(-2,-11);c.moveTo(0,-11);c.lineTo(4,-15);c.lineTo(4,-8);c.fill();}
-  else{roundRect(c,-8,-10,4,8,2,'#a47359');}
-  const glance=behavior.curious?.4:behavior.observing?-.35:0;
-  c.fillStyle='#51483e';c.beginPath();c.arc(-5+glance,-7,0.8,0,7);c.arc(-1+glance,-7,0.8,0,7);c.fill();
+  drawCozyPetSprite(c,pet,time,behavior,zoom<1.15);
   c.strokeStyle='#a77a67';c.lineWidth=.6;c.beginPath();c.moveTo(-3,-5);c.lineTo(-3,-3);c.stroke();
   if(greenRest&&zoom>=1.15){
    // Bolt quietly watches the plants during a natural stop on his street route.
    c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
   }
-  if(pet.name&&zoom>1.2){
-   roundRect(c,-18,-22,36,10,4,'#fff9ebee','#b89f7d');
-   c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,-17);
+  if(pet.name&&(zoom>1.2||pet.bolt)){
+   const labelWidth=Math.max(24,pet.name.length*4.6+8),labelY=zoom<1.15?-26:-28;
+   roundRect(c,-labelWidth/2,labelY,labelWidth,10,4,'#fff9ebee','#b89f7d');
+   c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,labelY+5);
   }
   c.restore();
   };
