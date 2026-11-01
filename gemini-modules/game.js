@@ -195,6 +195,13 @@ function affectionSnapshot(id){return window.RoncadorAffectionMemory.snapshot({l
 const distance=(a,b)=>Math.hypot(a.x-b[0],a.y-b[1]);
 function syncSceneryToggle(){const b=$('sceneryToggle');b.setAttribute('aria-pressed',String(showScenery));b.innerHTML=showScenery?'⌂ <span>Cenários</span>':'◈ <span>Mapa limpo</span>';$('sceneryNote').hidden=!showScenery;}
 function syncLightButton(){const b=$('lightButton'),labels={manha:'☀ Manhã →',tarde:'◐ Tarde →',anoitecer:'☾ Anoitecer →'};b.textContent=labels[lightPhase];b.setAttribute('aria-label','Luz ilustrativa: '+lightPhase+'. Alternar para o próximo período.');}
+function syncDawnLightOnEntry(previousMinute){
+ // The existing morning palette is reused at daybreak, without a new art mode.
+ // Only the threshold crossing changes the preset: manual light choices remain usable.
+ if(previousMinute<350&&living.minute>=350&&living.minute<410&&lightPhase==='anoitecer'){
+  lightPhase='manha';syncLightButton();
+ }
+}
 function syncSkyButton(){const b=$('skyMood');b.textContent=window.RoncadorAtmosphere.LABELS[skyMode]+' ↻';b.dataset.sky=skyMode;b.setAttribute('aria-label','Céu fictício: '+window.RoncadorAtmosphere.LABELS[skyMode]+'. Mudar a atmosfera do jogo.');b.title='O céu é uma simulação artística, não uma previsão real.';}
 function isMarketMorning(){return window.RoncadorLivingWorld.isMarketMorning(living);}
 function fairAtmosphere(){return marketDay||isMarketMorning();}
@@ -4645,7 +4652,9 @@ function move(dt,time){
  const dialog=anyDialog();
  if(active&&!dialog&&!document.hidden){
   elapsed+=dt;
+  const previousMinute=living.minute;
   window.RoncadorLivingWorld.advance(living,dt*2.5);
+  syncDawnLightOnEntry(previousMinute);
   if(sound){
    ambientSoundSeconds+=dt;
    if(ambientSoundSeconds>=9){
@@ -4881,6 +4890,20 @@ $('communityWatchAction').onclick=visitCommunityEncounter;
 $('momentAction').onclick=exploreMoment;
 $('momentOpen').onclick=()=>{$('lifeDialog').close();exploreMoment();};
 $('momentWait').onclick=skipMomentPeriod;
+// Quiet, touch-accessible test entry in the time/neighbor panel, not in the HUD.
+const dawnTestButton=document.createElement('button');
+dawnTestButton.type='button';dawnTestButton.id='dawnTestButton';
+dawnTestButton.textContent='◷ Testar 05h54';
+dawnTestButton.title='Ir às 05h54 do mesmo dia fictício para encontrar Ciça, Nara e Téo';
+dawnTestButton.setAttribute('aria-label','Testar a alvorada às cinco e cinquenta e quatro');
+dawnTestButton.style.cssText='min-height:44px;padding:8px 12px;border:1px solid #a4b69a;border-radius:12px;background:#f5f4e9;color:#355c48;cursor:pointer;';
+$('lifeDialogClock').parentElement.append(dawnTestButton);
+dawnTestButton.onclick=()=>{
+ if(!active)start();
+ living.minute=5*60+54;lightPhase='manha';syncLightButton();
+ $('lifeDialog').close();updateUI();save();
+ notify('☀ 05h54 · Ciça, Nara e Téo voltam da festa pelas ruas do mapa.');
+};
 $('momentCollect').onclick=collectMoment;
 $('neighborRoute').onclick=visitNextNeighbor;
 $('skyMood').onclick=()=>{skyMode=window.RoncadorAtmosphere.next(skyMode);syncSkyButton();save();notify('☁ Céu do jogo: '+window.RoncadorAtmosphere.LABELS[skyMode]+'. Não é uma previsão do tempo de Belém.');};
