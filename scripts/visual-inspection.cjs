@@ -562,6 +562,49 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   }
   assert.ok(movement.saveValid, name + ': save deve preservar versão, fonte do mapa e coordenadas');
   assert.equal(pageErrors.length, 0, 'erros de execução JavaScript durante visualização');
+
+  // C20: measure the actors that really survived crowd spacing and rendering,
+  // not just overlapping candidate anchors. Time changes use existing UI.
+  const spatialSnapshots = [];
+  const measureSpatial = async label => {
+    await page.waitForTimeout(300);
+    const snapshot = await page.evaluate(() => {
+      const state = expeditionState;
+      const people = state.streetPopulation.filter(p => p.visibility > .1);
+      const pets = state.streetPets;
+      const closePairs = (items, radius) => {
+        const found = [];
+        for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+          const distance = Math.hypot(items[i].x - items[j].x, items[i].y - items[j].y);
+          if (distance < radius) found.push({ ids: [items[i].id, items[j].id], distance: +distance.toFixed(1) });
+        }
+        return found.sort((a, b) => a.distance - b.distance);
+      };
+      return { day: state.lifeDay, minute: +state.lifeMinute.toFixed(1),
+        peopleCount: people.length, namedCount: people.filter(p => !p.ambient).length,
+        ambientCount: people.filter(p => p.ambient).length,
+        petCount: pets.length, occupiedHubs: new Set(people.map(p => p.hub).filter(Boolean)).size,
+        peopleOnHouseFootprints: people.filter(p => p.houseBlocked).map(p => p.id),
+        petsOnHouseFootprints: pets.filter(p => p.houseBlocked).map(p => p.id),
+        residentPairs: closePairs(people.filter(p => !p.ambient), 20).slice(0, 12),
+        allPairs: closePairs(people, 12).slice(0, 12),
+        petPairs: closePairs(pets, 12).slice(0, 12) };
+    });
+    spatialSnapshots.push({ label, ...snapshot });
+    await page.screenshot({ path: path.join(outputDir, name + '-spatial-' + label + '.png'),
+      fullPage: false, animations: 'disabled' });
+  };
+  if (await page.locator('#start').isVisible().catch(() => false)) {
+    await page.locator('#start').click();
+    await page.waitForTimeout(350);
+  }
+  await measureSpatial('current');
+  for (const [label, button] of [['17h', '#time17Btn'], ['19h', '#time19Btn']]) {
+    if (!await page.locator(button).isVisible().catch(() => false)) continue;
+    await page.locator(button).click();
+    await measureSpatial(label);
+  }
+  result.spatialSnapshots = spatialSnapshots;
   await context.close();
   return result;
 }
