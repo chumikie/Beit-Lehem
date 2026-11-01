@@ -51,6 +51,23 @@ test('C9: geometria real mantém casas nos lotes e identifica sobreposições',(
  assert.ok(samples.depth>0);
 });
 
+test('C13.1: mede pontos de ruas mapeadas dentro de footprints ilustrativos',()=>{
+ const hits=[];
+ for(const s of segments){
+  for(let t=0;t<=1;t+=Math.min(1,4/s.len)){
+   const x=s.ax+s.dx*t,y=s.ay+s.dy*t;
+   const house=houses.find(h=>{
+    if(Math.abs(x-h.x)>25||Math.abs(y-h.y)>25)return false;
+    const dx=x-h.x,dy=y-h.y,c=Math.cos(h.angle),sn=Math.sin(h.angle);
+    return Math.abs(dx*c+dy*sn)<h.w/2+5&&Math.abs(-dx*sn+dy*c)<h.h/2+5;
+   });
+   if(house)hits.push({x,y,house:house.seed});
+  }
+ }
+ console.info(`C13.1: ${hits.length} amostras de centro de rua (passos <=4 unidades) atravessam footprints ilustrativos; ${new Set(hits.map(h=>h.house)).size} casas envolvidas.`);
+ assert.ok(hits.length>=0);
+});
+
 test('C9: árvores e casas usam reservas de espaço, com custo de recorte limitado por zoom',()=>{
  const hubs=map.landmarks.filter(p=>['igreja','mercado','rodoviaria'].includes(p.id));
  const cells=new Set();for(const hub of hubs)for(let gx=Math.floor((hub.p[0]-150)/45);gx<=(hub.p[0]+150)/45;gx++)for(let gy=Math.floor((hub.p[1]-150)/45);gy<=(hub.p[1]+150)/45;gy++)cells.add(gx+','+gy);

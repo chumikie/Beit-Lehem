@@ -13,8 +13,12 @@ test('an unblocked step is always available',()=>{
  assert.equal(mayAdvance(false,false,120,120),true);
  assert.equal(mayAdvance(false,true,120,120),true);
 });
-test('manual movement cannot cross a house even beside a road',()=>{
- assert.equal(mayAdvance(true,false,0,0),false);
+test('C13.1: manual walking follows the road center under an illustrative house',()=>{
+ assert.equal(mayAdvance(true,false,0,0),true);
+ assert.equal(mayAdvance(true,false,3.9,3.9),true);
+ assert.equal(mayAdvance(true,false,4.1,0),false);
+ assert.equal(mayAdvance(true,false,0,4.1),false);
+ assert.equal(mayAdvance(true,false,7,7),false);
 });
 test('auto-walking continues on a mapped road beneath an illustrative footprint',()=>{
  assert.equal(mayAdvance(true,true,0,0),true);

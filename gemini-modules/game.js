@@ -2069,10 +2069,12 @@ function blockedByHouse(x,y){
  return false;
 }
 // Houses are artistic footprints, while road centerlines come from the mapped
-// network. A route may stay on its road when a decorative house overlaps it;
-// ordinary off-road movement still respects every house collision.
+// network. Both guided and manual walking must keep the mapped centerline open
+// beneath a decorative footprint; manual movement gets a narrower corridor.
+// Ordinary off-road movement still respects every house collision.
 function mayAdvanceOnMappedRoute(houseBlocked,routeActive,fromRoadDistance,toRoadDistance){
- return !houseBlocked||(routeActive&&fromRoadDistance<=9&&toRoadDistance<=9);
+ const corridor=routeActive?9:4;
+ return !houseBlocked||(fromRoadDistance<=corridor&&toRoadDistance<=corridor);
 }
 function chapterUI(){
  const tasks=[
