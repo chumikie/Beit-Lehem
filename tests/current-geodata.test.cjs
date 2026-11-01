@@ -67,6 +67,7 @@ test('POIs locais são mantidos como aliases separados dos pontos OSM', () => {
   assert.equal(map.localPlaces.length, 9);
   assert.ok(map.localPlaces.some(place => place.displayName === 'Bar da Prosa (R. Vicente Cado, 354)'));
   assert.ok(map.localPlaces.some(place => place.displayName === 'Confeitaria Sonho Doce (R. Feliciano Pedrosa, 1401)'));
+  assert.ok(map.localPlaces.every(place => place.landmarkId && map.landmarks.some(landmark => landmark.id === place.landmarkId)));
   for (const place of map.localPlaces) {
     assert.equal(place.provenance, 'author-curated');
     assert.equal(place.nameRole, 'game-display-alias');
