@@ -120,7 +120,7 @@ test('três vizinhos que chegam à mesma calçada recebem espaço separado na pr
  assert.ok(start>=0&&end>start,'função de distribuição encontrada');
  const definitions=['rosa','zeca','mila'].map((id,i)=>({id,hub:'mercado',variant:10+i}));
  const context={
-  living:{day:1},elapsed:0,
+  living:{day:1},elapsed:0,skyMode:'sol',
   window:{
    RoncadorSecondaryNeighbors:{RESIDENTS:definitions,agenda:()=>({present:true,hub:'mercado',walking:false})},
    RoncadorStreetLife:{sample:(_path,offset)=>({x:offset/2,y:0,walking:false})},

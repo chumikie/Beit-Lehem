@@ -830,7 +830,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   if(person?.id==='bia'&&/caderno|estudando|anotações|lendo/.test(activity))return'read';
   return defaultKind;
  }
- function choose(person,elapsed,world){
+ function choose(person,elapsed,world,weather='sol'){
   const config=GESTURES[person?.id];
   if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
   // An occasional fictional doorstep gesture at the cooler end of the day.
@@ -853,7 +853,10 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
   const waiting=hub==='rodoviaria';
   const ordinaryKind=commerce&&morning?'look':waiting&&afternoon?'rest':
    hub==='igreja'&&afternoon?'flower':config.kind;
-  const kind=routineKind(person,ordinaryKind);
+  const ordinaryGesture=routineKind(person,ordinaryKind);
+  // The optional illustrated drizzle briefly interrupts paper/cloth gestures.
+  // This is only a pose: the existing schedule, streets and encounters prevail.
+  const kind=weather==='chuvisco'&&['read','sketch','ribbon','letter'].includes(ordinaryGesture)?'look':ordinaryGesture;
   const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
   if(phase>=duration)return null;
@@ -5623,7 +5626,7 @@ function residentsInStreets(){
    point=walkingPoint(def.id,schedule.hub,i,morning?.shift||0);
   }
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel,activity:schedule.activity};
-  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living,skyMode);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,reunion:schedule.reunion||null,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -5646,7 +5649,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    if(next)at=next;
   }
   if(!at)continue;
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living,skyMode);
   // A scheduled rest must hold the feet as well as the walking animation.
   // Travel, visits and community scenes retain their original priority.
   const scheduledRest=!duty.walking&&!duty.travel&&!duty.meeting&&!duty.community&&!smallWalk;

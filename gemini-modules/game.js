@@ -1005,7 +1005,7 @@ function residentsInStreets(){
    point=walkingPoint(def.id,schedule.hub,i,morning?.shift||0);
   }
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel,activity:schedule.activity};
-  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living,skyMode);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,reunion:schedule.reunion||null,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
@@ -1028,7 +1028,7 @@ function secondaryInStreets(primary=residentsInStreets()){
    if(next)at=next;
   }
   if(!at)continue;
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living,skyMode);
   // A scheduled rest must hold the feet as well as the walking animation.
   // Travel, visits and community scenes retain their original priority.
   const scheduledRest=!duty.walking&&!duty.travel&&!duty.meeting&&!duty.community&&!smallWalk;

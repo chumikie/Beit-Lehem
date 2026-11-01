@@ -23,7 +23,7 @@
   if(person?.id==='bia'&&/caderno|estudando|anotações|lendo/.test(activity))return'read';
   return defaultKind;
  }
- function choose(person,elapsed,world){
+ function choose(person,elapsed,world,weather='sol'){
   const config=GESTURES[person?.id];
   if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
   // An occasional fictional doorstep gesture at the cooler end of the day.
@@ -46,7 +46,10 @@
   const waiting=hub==='rodoviaria';
   const ordinaryKind=commerce&&morning?'look':waiting&&afternoon?'rest':
    hub==='igreja'&&afternoon?'flower':config.kind;
-  const kind=routineKind(person,ordinaryKind);
+  const ordinaryGesture=routineKind(person,ordinaryKind);
+  // The optional illustrated drizzle briefly interrupts paper/cloth gestures.
+  // This is only a pose: the existing schedule, streets and encounters prevail.
+  const kind=weather==='chuvisco'&&['read','sketch','ribbon','letter'].includes(ordinaryGesture)?'look':ordinaryGesture;
   const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
   if(phase>=duration)return null;
