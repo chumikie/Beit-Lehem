@@ -892,7 +892,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();recentSpots.length=0;day=clock.day;}
    last=now;
    for(let i=recentSpots.length-1;i>=0;i--)if(recentSpots[i].until<=now)recentSpots.splice(i,1);
-   const eligible=p=>p&&!p.meeting&&!p.travel&&!p.arriving;
+   // Respect an existing short daily gesture. A greeting may begin once the
+   // resident finishes observing, resting or tending their belongings.
+   const eligible=p=>p&&!p.meeting&&!p.travel&&!p.arriving&&!p.pause&&!p.moment;
    if(clock.minute<7*60||clock.minute>=20*60)active=null;
    if(active){
     const pair=active.ids.map(id=>people.find(p=>p.id===id));

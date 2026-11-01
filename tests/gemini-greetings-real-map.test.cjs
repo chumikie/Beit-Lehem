@@ -6,6 +6,7 @@ const {buildGraph}=require('../dist/pathfinding.js');
 const street=require('../dist/street-life.js');
 const {prepare}=require('../dist/road-details.js');
 const greeting=require('../gemini-modules/street-greetings.js');
+const moments=require('../gemini-modules/street-moments.js');
 
 const graph=buildGraph(map.roads),junctions=prepare(map.roads,graph).junctions;
 const pairs=[
@@ -82,4 +83,38 @@ test('aglomeração impede conversa e mudança de horário não altera o relógi
  assert.ok(flow.snapshot());
  assert.deepEqual(flow.apply(pair,3,{day:2,minute:8*60+30}).slice().sort(),['cica','damiao'],
   'dia novo renova a elegibilidade sem reaproveitar encontro antigo');
+});
+
+test('um gesto cotidiano em andamento termina antes do cumprimento espontâneo',()=>{
+ const graph={route:(a,b)=>({distance:Math.hypot(a[0]-b[0],a[1]-b[1])})};
+ const flow=greeting.create(graph);flow.setJunctions([]);
+ const pair=[{id:'damiao',x:0,y:0,def:{name:'Francisco'}},
+  {id:'cica',x:38,y:0,def:{name:'Ciça'}}];
+ assert.deepEqual(flow.apply([{...pair[0],pause:true,moment:{kind:'look'}},pair[1]],1,{day:1,minute:540}),[]);
+ assert.equal(flow.snapshot(),null,'não interrompe a pausa para conversar');
+ assert.deepEqual(flow.apply([pair[0],{...pair[1],moment:{kind:'ribbon'}}],1.5,{day:1,minute:540}),[]);
+ assert.deepEqual(flow.apply(pair,2,{day:1,minute:540}).slice().sort(),['cica','damiao']);
+ const stages=new Set();
+ for(let t=2.1;t<8;t+=.1){
+  const people=pair.map(p=>({...p}));flow.apply(people,t,{day:1,minute:540});
+  for(const person of people)if(person.greeting)stages.add(person.greeting.stage);
+ }
+ assert.ok(stages.has('wave')&&stages.has('turn'),'despedida permanece completa');
+ assert.deepEqual(flow.apply(pair,9,{day:1,minute:540}),[],'libera a dupla depois da despedida');
+});
+
+test('pausas naturais não eliminam todos os encontros das três duplas na malha real',()=>{
+ for(const [hub,idA,vA,idB,vB,shift] of pairs){
+  let free=0,available=0;
+  for(let t=0;t<1000;t++){
+   const people=positions(hub,idA,vA,idB,vB,shift,t);
+   if(!eligible(people[0],people[1],12))continue;
+   free++;
+   const clock={day:1,minute:9*60+Math.floor(t/5)};
+   if(people.every(p=>!moments.choose({...p,hub},t,clock)))available++;
+  }
+  assert.ok(free>0,hub+' tem posições conectadas antes do filtro de pausa');
+  assert.ok(available>0,hub+' mantém oportunidades após respeitar gestos');
+  assert.ok(available<=free);
+ }
 });
