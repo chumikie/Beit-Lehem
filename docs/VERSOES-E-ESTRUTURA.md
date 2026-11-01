@@ -1,13 +1,13 @@
 # Beit Lehem — encontre a versão certa
 
-**Este é o índice de versões do jogo.** O repositório é privado e a PR #1 permanece em rascunho. Nenhum arquivo abaixo representa uma versão publicada na internet.
+**Este é o índice de versões do jogo.** A PR #1 foi integrada à `main` em `0c2db37`. O repositório está público; o GitHub Pages usa uma branch separada e não acompanha automaticamente o HTML mais recente da `main`.
 
 | Você quer… | Abra este arquivo | O que é |
 | --- | --- | --- |
 | **Consultar a referência estável** | [V2.27 estável](../baseline/Belem-Viva-V2-27.html) | Cópia congelada para comparação. Não é a prévia principal. |
-| **Jogar a base Gemini no computador** | [Beit Lehem — desenvolvimento](../previews/beit-lehem-development.html) | HTML Gemini com o mapa e sistemas mais ricos; ainda experimental. |
-| **Abrir a base Gemini no celular** | [Beit Lehem — desenvolvimento celular](../previews/beit-lehem-development-mobile.html) | Por enquanto o mesmo HTML responsivo Gemini; refinamento específico do celular pendente. |
-| **Rever o Gemini preservado** | [Gemini Preview](../previews/gemini-preview.html) | Mesmo conteúdo das prévias principais neste marco; progresso separado da V2.27. |
+| **Jogar a base Gemini atual** | [Beit Lehem — desenvolvimento](../previews/beit-lehem-development.html) | **Único HTML principal gerado**; ainda experimental. |
+| **Usar o link antigo de celular** | [Beit Lehem — desenvolvimento celular](../previews/beit-lehem-development-mobile.html) | Cópia idêntica do principal; CSS responsivo, refinamento móvel pendente. |
+| **Usar o link antigo Gemini** | [Gemini Preview](../previews/gemini-preview.html) | Cópia idêntica mantida por compatibilidade, não uma segunda base. |
 
 ## Como baixar e abrir
 
@@ -26,14 +26,16 @@
 - **`scripts/` e `build-standalone.cjs`** — geração de HTMLs autônomos e validações.
 - **`docs/`** — decisões, guia de referência, mapa do código e próximos passos.
 - **`references/gemini-2026-10-31/` e `drafts/`** — material histórico de análise, sem carregar diretamente no jogo.
-- **`previews/`** — somente as **três prévias reconhecíveis**, não uma cópia nova para cada commit.
+- **`previews/`** — um HTML principal e dois aliases idênticos; não são três linhas de desenvolvimento.
+- **`gemini-preview.html` na raiz e `publicacao/index.html`** — artefatos anteriores; não são a base para novos builds nem para publicação automática.
+- **`gh-pages/index.html`** — versão pública independente, atualizada somente após aprovação e verificação do HTML sanitizado.
 - **`baseline/`** — V2.27 congelada, nunca reescrita.
 
 O histórico Git guarda os commits anteriores; **não precisamos criar V2.30.html, V2.31.html etc. a cada ajuste**. Para continuar leve:
 
-1. Editar **módulos específicos** em `dist/`, evitando mudanças simultâneas em arquivos gigantes.
+1. Editar **módulos específicos** em `gemini-modules/`; `dist/` continua sendo a referência V2.27.
 2. Rodar os testes relevantes primeiro.
-3. Gerar as prévias desktop/celular **juntas a partir da fonte Gemini ao fechar um conjunto de mudanças testáveis**, e não duplicar dezenas de HTMLs.
+3. Gerar o HTML principal com `npm run build:game` e manter os dois links legados como cópias; não criar um HTML novo por commit.
 4. Registrar um resumo curto com os pontos alterados. Não adicionar caches, dependências, imagens de terceiros sem licença ou ZIPs repetidos.
 5. Não apagar ou renomear os arquivos atuais sem verificar todos os caminhos de build, links e compatibilidade.
 
@@ -43,6 +45,7 @@ Com Node.js 18+:
 npm test
 npm run verify:baseline
 npm run build:development-preview
+npm run build:public-preview
 ```
 
 Para jogar sem download de nova prévia gerada no GitHub, execute localmente `npm run play:development-preview`.
@@ -51,7 +54,7 @@ Para jogar sem download de nova prévia gerada no GitHub, execute localmente `np
 
 - **Aprovado como referência:** V2.27.
 - **Base principal do desenvolvimento:** Gemini Preview, ainda experimental.
-- **Candidatos atuais:** prévias desktop e celular da PR #1, derivadas do Gemini.
+- **Candidato atual:** HTML principal da `main` derivado do Gemini; a branch `gh-pages` pode estar defasada.
 - **Ainda pendente:** inspeção visual lado a lado, testes completos de build e avaliação física em celulares.
 
 **Estilo:** cidade cozy do interior paraibano — afetos, comércio, árvores, fachadas e cotidiano. **Sem conceitos de idol, palco idol ou elementos do TsuLiPa**. O outro jogo não é biblioteca de assets deste projeto.
