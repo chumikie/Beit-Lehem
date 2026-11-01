@@ -205,8 +205,8 @@ function note(freq=440,delay=0,length=.12,volume=.045){if(!sound)return;try{audi
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function prepareTreeRoadIndex(roadSegments){
- // Tree placement needs only the existing 22-unit clearance, not the closest
- // road's identity. A padded grid gives the exact same yes/no decision.
+ // Segment bounding boxes are padded by the largest clearance used by
+ // houses/trees. Any segment within that radius must share the query cell.
  const size=64,pad=22,cells=new Map();
  for(const s of roadSegments){
   const x0=Math.floor((Math.min(s.ax,s.ax+s.dx)-pad)/size),x1=Math.floor((Math.max(s.ax,s.ax+s.dx)+pad)/size);
@@ -215,12 +215,97 @@ function prepareTreeRoadIndex(roadSegments){
    const key=x+','+y;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(s);
   }
  }
- return {size,cells};
+ return {size,pad,cells};
+}
+function roadTooClose(x,y,clearance,index=treeRoadIndex,metrics=null){
+ const list=index&&clearance<=index.pad
+  ? index.cells.get(Math.floor(x/index.size)+','+Math.floor(y/index.size))||[]
+  : segments;
+ for(const s of list){
+  if(metrics)metrics.roadSegmentChecks=(metrics.roadSegmentChecks||0)+1;
+  if(pointSegment(x,y,s).d<clearance)return true;
+ }
+ return false;
 }
 function treeRoadTooClose(x,y,index=treeRoadIndex){
- if(!index)return nearestRoad(x,y).d<22;
- const list=index.cells.get(Math.floor(x/index.size)+','+Math.floor(y/index.size))||[];
- return list.some(s=>pointSegment(x,y,s).d<22);
+ return roadTooClose(x,y,22,index);
+}
+function createHouseOccupancyGrid(size=32){
+ return {size,cells:new Map()};
+}
+function houseOccupancyTooClose(x,y,radius,grid,metrics=null){
+ const reach=Math.ceil(radius/grid.size),cx=Math.floor(x/grid.size),cy=Math.floor(y/grid.size);
+ for(let gx=cx-reach;gx<=cx+reach;gx++)for(let gy=cy-reach;gy<=cy+reach;gy++){
+  const points=grid.cells.get(gx+','+gy)||[];
+  for(const p of points){
+   if(metrics)metrics.occupiedHouseChecks=(metrics.occupiedHouseChecks||0)+1;
+   if(Math.hypot(x-p[0],y-p[1])<radius)return true;
+  }
+ }
+ return false;
+}
+function addHouseOccupancyPoint(grid,x,y){
+ const key=Math.floor(x/grid.size)+','+Math.floor(y/grid.size);
+ if(!grid.cells.has(key))grid.cells.set(key,[]);
+ grid.cells.get(key).push([x,y]);
+}
+function generateHouseCandidates(roadSegments,center,sceneList,mapAreas,roadIndex,hashFn=hash,useSpatialIndex=true,metrics=null){
+ const occupied=[],occupancyGrid=useSpatialIndex?createHouseOccupancyGrid():null,candidates=[];
+ let id=1;
+ for(const s of roadSegments){
+  if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway))continue;
+  const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;
+  const step=isClovisArea?17:21,startV=isClovisArea?10:16;
+  for(let v=startV;v<s.len;v+=step){
+   let t=v/s.len;
+   for(const side of [-1,1]){
+    let r=hashFn(id++,side),offset=(isClovisArea?16:19)+r*6;
+    let x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;
+    if(Math.hypot(x-center[0],y-center[1])>1900)continue;
+    const roadClearance=isClovisArea?11.5:14.5;
+    let nearRoad=false;
+    if(useSpatialIndex)nearRoad=roadTooClose(x,y,roadClearance,roadIndex,metrics);
+    else{
+     let nearest=Infinity;
+     for(const segment of roadSegments){
+      if(metrics)metrics.roadSegmentChecks=(metrics.roadSegmentChecks||0)+1;
+      const distance=pointSegment(x,y,segment).d;
+      if(distance<nearest)nearest=distance;
+     }
+     nearRoad=nearest<roadClearance;
+    }
+    if(nearRoad)continue;
+    const houseClearance=isClovisArea?14.5:18;
+    let nearHouse=false;
+    if(useSpatialIndex)nearHouse=houseOccupancyTooClose(x,y,houseClearance,occupancyGrid,metrics);
+    else{
+     for(const p of occupied){
+      if(metrics)metrics.occupiedHouseChecks=(metrics.occupiedHouseChecks||0)+1;
+      if(Math.hypot(x-p[0],y-p[1])<houseClearance){nearHouse=true;break;}
+     }
+    }
+    if(nearHouse)continue;
+    if(sceneList.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;
+    if(mapAreas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;
+    if(useSpatialIndex)addHouseOccupancyPoint(occupancyGrid,x,y);
+    else occupied.push([x,y]);
+    candidates.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:13+r*7,h:10+hashFn(id,2)*8,color:Math.floor(hashFn(id,3)*5),seed:id});
+   }
+  }
+ }
+ return candidates;
+}
+function selectHouseCandidates(candidates,mapData){
+ const centralHubs=['igreja','mercado'].map(id=>mapData.landmarks.find(l=>l.id===id)?.p).filter(Boolean);
+ const felicianoRoads=mapData.roads.filter(r=>r.tags.name==='Rua Feliciano Pedrosa');
+ const nearFeliciano=b=>felicianoRoads.some(r=>r.p.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<90));
+ const selected=new Set(),covered=new Set(),cell=b=>Math.floor(b.x/250)+':'+Math.floor(b.y/250);
+ const take=(b,i)=>{if(selected.size>=1350||selected.has(i))return;selected.add(i);covered.add(cell(b));};
+ candidates.forEach((b,i)=>{if(centralHubs.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<150))take(b,i);});
+ candidates.forEach((b,i)=>{if(nearFeliciano(b))take(b,i);});
+ candidates.forEach((b,i)=>{if(!covered.has(cell(b)))take(b,i);});
+ candidates.forEach(take);
+ return candidates.filter((b,i)=>selected.has(i));
 }
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 function applyUserPublicPlaceCorrections(){
@@ -272,20 +357,10 @@ function preprocess(){
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
  if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
- const occupied=[],candidates=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(!['residential','primary','secondary','tertiary','unclassified'].includes(s.road.tags.highway))continue;const isClovisArea=s.ay>120&&s.ay<750&&s.ax>-180&&s.ax<380;const step=isClovisArea?17:21,startV=isClovisArea?10:16;for(let v=startV;v<s.len;v+=step){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=(isClovisArea?16:19)+r*6,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<(isClovisArea?11.5:14.5)||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<(isClovisArea?14.5:18)))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,9),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);candidates.push({x,y,angle:Math.atan2(s.dy,s.dx),side,w:13+r*7,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
- // Preserve central street life but reserve a small share of the illustration
- // budget across the mapped territory before filling the remaining slots.
- const centralHubs=['igreja','mercado'].map(id=>data.landmarks.find(l=>l.id===id)?.p).filter(Boolean);
- const felicianoRoads=roads.filter(r=>r.tags.name==='Rua Feliciano Pedrosa');
- const nearFeliciano=b=>felicianoRoads.some(r=>r.p.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<90));
- const selected=new Set(),covered=new Set(),cell=b=>Math.floor(b.x/250)+':'+Math.floor(b.y/250);
- const take=(b,i)=>{if(selected.size>=1350||selected.has(i))return;selected.add(i);covered.add(cell(b));};
- candidates.forEach((b,i)=>{if(centralHubs.some(p=>Math.hypot(b.x-p[0],b.y-p[1])<150))take(b,i);});
- candidates.forEach((b,i)=>{if(nearFeliciano(b))take(b,i);});
- candidates.forEach((b,i)=>{if(!covered.has(cell(b)))take(b,i);});
- candidates.forEach(take);
- houses.push(...candidates.filter((b,i)=>selected.has(i)));
  treeRoadIndex=prepareTreeRoadIndex(segments);
+ const center=data.urbanCenter||data.start;
+ const candidates=generateHouseCandidates(segments,center,scenicScenes,areas,treeRoadIndex);
+ houses.push(...selectHouseCandidates(candidates,data));
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
  fairStalls=window.RoncadorFairStreets.layout(data,scenicScenes,houses);
  marketStall=window.RoncadorFairStreets.featured(fairStalls,data.landmarks.find(p=>p.id==='mercado')?.p);
