@@ -916,9 +916,9 @@ function secondaryInStreets(primary=residentsInStreets()){
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
   const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused,moment},elapsed,living.day);
-  // A narrow junction may lack a free roadside spot; omit this frame
-  // rather than stacking two illustrated bodies over the same sidewalk.
-  if(!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19))continue;
+  // A congested corner fades a walker rather than dropping the resident
+  // abruptly for one frame. Its scheduled route and coordinates are intact.
+  person.crowded=!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19);
   placed.push(person);
  }
  return placed;
@@ -1325,8 +1325,9 @@ function drawStreetLife(c,time,view){
  }
  ambientHitTargets=ambientPeople;
  const people=[...ambientPeople,...residents,...secondaries].sort((a,b)=>a.y-b.y);
+ for(const person of people)person.visibility=person.secondary?residentMotion.appearance(person.id,!person.crowded,elapsed):1;
  // Labels are a proximity aid, not a second layer of billboards over the town.
- const nameplates=layoutResidentNameplates(people,player,zoom,matchMedia('(max-width:800px)').matches);
+ const nameplates=layoutResidentNameplates(people.filter(person=>person.visibility>.5),player,zoom,matchMedia('(max-width:800px)').matches);
  for(const person of people){
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
    const age=elapsed-(marketReaction.until-5.5);
@@ -1338,11 +1339,13 @@ function drawStreetLife(c,time,view){
   if(worldPause&&worldPause.age>.4&&worldPause.age<3.2&&person.def&&!person.arriving&&!person.walking&&!person.social&&!person.meeting&&living.people[person.id]?.bond>0&&Math.hypot(person.x-player.x,person.y-player.y)<42){
    person.social={pose:'smile',stage:'quiet',facing:player.x>=person.x?1:-1,intensity:reduce?1:Math.min(1,(worldPause.age-.4)*2),react:true};
   }
-  if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
+  if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25||person.visibility<.015)continue;
   // One representation per frame avoids ghost outlines at intermediate zoom.
+  c.save();c.globalAlpha*=person.visibility;
   if(zoom<1.15)drawDistantResident(c,person);
   else if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
+  c.restore();
   if(zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
    const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
    const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
