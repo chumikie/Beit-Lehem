@@ -5625,7 +5625,10 @@ function mappedStreetResidentAnchor(roads,hub){
  return section.p[Math.floor(section.p.length/2)];
 }
 function walkingPoint(id,hub,variant,shift=0){
- const place=hub==='inicio'?{p:data.start}:hub.startsWith('missao:')?{p:missions[Number(hub.slice(7))]?.p}:hub.startsWith('rua:')?{p:mappedStreetResidentAnchor(roads,hub)}:data.landmarks.find(l=>l.id===hub);
+ // Three existing neighborhood stops are journal locations, not OSM landmark
+ // IDs. Anchor their residents to the already mapped named streets instead.
+ const neighborhoodRoad={sonho_doce:'Rua Feliciano Pedrosa',escola_anita:'Rua Clovis Bezerra',bar_prosa:'Rua Vicente Cado'}[hub];
+ const place=hub==='inicio'?{p:data.start}:hub.startsWith('missao:')?{p:missions[Number(hub.slice(7))]?.p}:hub.startsWith('rua:')?{p:mappedStreetResidentAnchor(roads,hub)}:neighborhoodRoad?{p:mappedStreetResidentAnchor(roads,'rua:'+neighborhoodRoad)}:data.landmarks.find(l=>l.id===hub);
  if(!place?.p)return null;
  const key=id+':'+hub;
  if(!streetPaths.has(key))streetPaths.set(key,window.RoncadorStreetLife.itinerary(pathfinder,place.p,variant));
