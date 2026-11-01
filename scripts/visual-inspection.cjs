@@ -601,7 +601,11 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   await measureSpatial('current');
   for (const [label, button] of [['17h', '#time17Btn'], ['19h', '#time19Btn']]) {
     if (!await page.locator(button).isVisible().catch(() => false)) continue;
+    if (mobile && !await page.locator('#sidebar').evaluate(el => el.classList.contains('open')))
+      await page.locator('#mobileRoute').click();
     await page.locator(button).click();
+    if (mobile && await page.locator('#sidebar').evaluate(el => el.classList.contains('open')))
+      await page.locator('#closeRoute').click();
     await measureSpatial(label);
   }
   result.spatialSnapshots = spatialSnapshots;
