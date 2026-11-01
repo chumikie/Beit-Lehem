@@ -44,12 +44,13 @@
 - O workflow tem permissão de leitura do repositório, não faz merge, não publica e não aciona Pages.
 - A execução oficial fica registrada no [GitHub Actions](https://github.com/chumikie/Beit-Lehem/actions/runs/41331595171).
 
-### 5. Build isolado e revisão visual — próxima etapa
+### 5. Build isolado — concluído; inspeção visual ainda pendente
 
-- Acrescentado ao workflow um passo que executa `buildGeminiPreview` em arquivo temporário fora do repositório e valida 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais e 86 nomes de ruas.
-- Esse passo não escreve em `previews/`, não altera `publicacao/index.html` e não gera artefato publicado.
-- A execução desse novo passo ainda precisa concluir no commit que o introduziu.
-- Depois, abrir uma saída temporária no navegador e conferir nomes de ruas, posição das casas, POIs, fachadas, rotas e salvamento em desktop e móvel. Inspeção visual não deve ser declarada concluída apenas com testes de código.
+- O workflow executou `buildGeminiPreview` em arquivo temporário fora do repositório, com sucesso: **952.971 bytes**. Validou 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais, 86 nomes de ruas e a inatividade dos rótulos viários não verificados.
+- No mesmo HEAD, `npm test` voltou a passar: **398/398 testes, zero falhas**, em 27,44 segundos (Node 22).
+- O passo de build não escreveu em `previews/`, não alterou `publicacao/index.html` e não gerou artefato publicado.
+- Execução registrada: [GitHub Actions — testes e build temporário](https://github.com/chumikie/Beit-Lehem/actions/runs/41331901166).
+- **Próxima validação:** abrir uma saída temporária no navegador e conferir nomes de ruas, distribuição das casas, POIs, fachadas, rotas e salvamento em desktop e móvel. Inspeção visual não deve ser declarada concluída apenas com testes de código.
 
 ### 6. Modularizar o monólito de forma incremental
 
