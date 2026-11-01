@@ -157,7 +157,7 @@ function composeCurrentMap(osm, templateMap) {
       p: previous.p.slice(),
       kind: landmark?.kind || 'place',
       provenance: 'author-curated',
-      nameRole: 'game-display-alias',
+      nameRole: 'game-display-name',
       positionStatus: landmark?.positionStatus || 'author-reference-unverified'
     };
     const existing = localPlaces.findIndex(item => item.id === record.id);
