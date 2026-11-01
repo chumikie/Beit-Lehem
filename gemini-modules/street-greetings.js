@@ -22,7 +22,9 @@
    junctions=Array.isArray(points)?points.filter(p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y)):[];
    return junctions.length;
   }
-  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<22);}
+  // Reserve the immediate crossing, not entire short streets on either side.
+  // The graph route and crowd-clearance gates below remain mandatory.
+  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<12);}
   function nearbyPorch(a,b){
    const x=(a.x+b.x)/2,y=(a.y+b.y)/2;
    return porches.some(h=>Math.hypot(h.x-x,h.y-y)<34&&
