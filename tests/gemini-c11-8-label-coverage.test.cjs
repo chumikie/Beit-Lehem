@@ -10,12 +10,13 @@ const hash=(x,y=0)=>{let n=Math.imul((x|0)^0x9e3779b9,0x85ebca6b)^Math.imul((y|0
 const inside=(x,y,ring)=>{let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;};
 const segments=[],houses=[],labels=[];
 const nearestRoad=(x,y)=>segments.reduce((best,s)=>{const t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));const px=s.ax+t*s.dx,py=s.ay+t*s.dy,d=Math.hypot(x-px,y-py);return d<best.d?{d,x:px,y:py}:best;},{d:Infinity});
+const placementHelpers=source.slice(source.indexOf('function pointSegment('),source.indexOf('function inside('));
 const start=source.indexOf('function preprocess(){'),end=source.indexOf(' centralBlocks=window.RoncadorCentralBlocks.prepare',start);
 assert.ok(start>=0&&end>start);
-vm.runInNewContext(source.slice(start,end)+'}\npreprocess();',{
+vm.runInNewContext(placementHelpers+'\n'+source.slice(start,end)+'}\npreprocess();',{
  Math,data:map,roads:[],areas:[],missions:[],segments,houses,labels,hash,inside,nearestRoad,
  scenicScenes:[],verifiedWater:[],VERIFIED_HYDRO_GEOJSON:null,projectVerifiedWater:()=>[],
- prepareTreeRoadIndex:()=>({}),treeRoadIndex:null,window:{RoncadorScenicPlacement:scenic}
+ treeRoadIndex:null,window:{RoncadorScenicPlacement:scenic}
 });
 const guardCode=source.slice(source.indexOf('function streetLabelBlocked('),source.indexOf('function region(c,detail){'));
 const guard=vm.runInNewContext(guardCode+'\nstreetLabelBlocked',{Math});
