@@ -339,7 +339,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   const interactionAudit = { album: false, help: false, observation: false, mobileRoute: false,
     mapEscape: false, sidebarEscape: false, modalIsolation: false, saveRestored: false,
     residentNotebook: false, culturalActivity: false, contactsShortcut: false,
-    routeBeforeNotebook: null, routeDuringNotebook: null, routePreserved: null };
+    routeBeforeNotebook: null, routeDuringNotebook: null, routePreserved: null,
+    cameraShortcutPreservesRoute: false };
   if (mobile) {
     if (await page.locator('#mobileRoute').isVisible()) {
       await page.locator('#mobileRoute').click();
@@ -434,6 +435,12 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   await page.keyboard.press('Escape');
   interactionAudit.mapEscape = !(await page.locator('#mapDialog').evaluate(el => el.open));
   assert.ok(interactionAudit.mapEscape, name + ': Escape deve fechar o mapa');
+  const routeBeforeRecenter = await page.evaluate(() => expeditionState.routeRemaining);
+  await page.keyboard.press('r');
+  const routeAfterRecenter = await page.evaluate(() => expeditionState.routeRemaining);
+  interactionAudit.cameraShortcutPreservesRoute = routeBeforeRecenter === 0 || routeAfterRecenter > 0;
+  assert.ok(interactionAudit.cameraShortcutPreservesRoute,
+    name + ': R não deve descartar o destino de caminhada');
 
   let movement = { controlVisible: false, localStorageKeys: [], saveVersion: null, saveMapSource: null };
   if (mobile) {
