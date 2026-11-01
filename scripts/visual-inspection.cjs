@@ -170,6 +170,62 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     }
   }
 
+  // Follow the in-game resident notebook's existing "Encontrar pelo mapa"
+  // action. This uses the live street schedule and pathfinder, never injected
+  // coordinates, clock changes, teleportation or scripted dialogue outcomes.
+  const residentEncounters = [];
+  if (name !== 'mobile-narrow') {
+    const candidates = await page.evaluate(() => {
+      const state = expeditionState;
+      const ids = new Set(window.RoncadorLivingWorld.RESIDENTS.map(person => person.id));
+      return state.streetResidents.filter(person => ids.has(person.id))
+        .map(person => ({ id: person.id,
+          distance: Math.round(Math.hypot(person.x - state.position.x, person.y - state.position.y)) }))
+        .sort((a, b) => a.distance - b.distance).slice(0, 3);
+    });
+    for (const candidate of candidates) {
+      if (residentEncounters.filter(item => item.talked).length >= 2) break;
+      const encounter = { id: candidate.id, initialDistance: candidate.distance,
+        routed: false, reached: false, talked: false, reason: null };
+      if (mobile) await page.locator('#mobileRoute').click();
+      await page.locator('#openLife').click();
+      const cardIndex = await page.evaluate(id =>
+        window.RoncadorLivingWorld.RESIDENTS.findIndex(person => person.id === id), candidate.id);
+      const action = page.locator('#residentGrid .resident-card').nth(cardIndex).locator('button');
+      if (cardIndex < 0 || await action.isDisabled()) {
+        encounter.reason = 'morador indisponível na rotina atual';
+        await page.keyboard.press('Escape');
+        residentEncounters.push(encounter);
+        continue;
+      }
+      const previousBond = await page.evaluate(id => expeditionState.residentBonds[id], candidate.id);
+      await action.click();
+      if (await page.locator('#lifeDialog').evaluate(dialog => dialog.open)) {
+        // Already close enough: the notebook performs the ordinary conversation.
+        encounter.reached = true;
+      } else {
+        encounter.routed = (await page.evaluate(() => expeditionState.routeRemaining)) > 0;
+        if (encounter.routed) {
+          encounter.reached = await page.waitForFunction(id => {
+            const state = expeditionState;
+            const resident = state.streetResidents.find(person => person.id === id);
+            return resident && Math.hypot(resident.x - state.position.x, resident.y - state.position.y) < 39;
+          }, candidate.id, { timeout: 18000 }).then(() => true).catch(() => false);
+          if (encounter.reached) await page.keyboard.press('e');
+        }
+      }
+      if (encounter.reached) {
+        const dialogOpen = await page.locator('#lifeDialog').evaluate(dialog => dialog.open);
+        const currentBond = await page.evaluate(id => expeditionState.residentBonds[id], candidate.id);
+        encounter.talked = dialogOpen && currentBond >= previousBond;
+        if (dialogOpen) await page.keyboard.press('Escape');
+      }
+      if (!encounter.talked) encounter.reason = encounter.routed
+        ? 'não alcançado durante a janela de caminhada' : 'sem rota acessível neste momento';
+      residentEncounters.push(encounter);
+    }
+  }
+
   // Zoom one notch for a close inspection of houses, vegetation and street labels.
   const zoomIn = page.locator('#zoomIn');
   if (await zoomIn.isVisible().catch(() => false)) {
@@ -416,7 +472,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, routeSelection, movement, interactionAudit, conversation
+    mapDialog, routeSelection, movement, interactionAudit, conversation, residentEncounters
   };
   report.viewports[name] = result;
 
