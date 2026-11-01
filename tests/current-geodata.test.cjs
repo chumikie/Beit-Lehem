@@ -55,7 +55,7 @@ test('nomes oficiais vêm apenas de properties.name do OSM, sem correção de ac
   assert.ok(map.unverifiedRoadLabels.length >= 1);
   for (const proposal of map.unverifiedRoadLabels) {
     assert.equal(proposal.displayedAsStreetName, false);
-    assert.equal(map.roads.find(road => road.id === proposal.roadId)?.tags.name,
+    assert.equal(map.roads.find(road => road.id === proposal.roadId)?.tags.name ?? null,
       proposal.sourceName);
   }
 });
