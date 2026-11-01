@@ -12,8 +12,10 @@ const {
 
 const root = path.resolve(__dirname, '..');
 const osm = JSON.parse(fs.readFileSync(path.join(root, 'source/belem-osm-2026.geojson'), 'utf8'));
-const preview = fs.readFileSync(path.join(root, 'previews/beit-lehem-development.html'), 'utf8');
-const templateMap = extractEmbeddedMap(preview);
+const template = fs.readFileSync(
+  path.join(root, 'references/gemini-2026-10-31/experimento-anonimizado.html.txt'), 'utf8'
+);
+const templateMap = extractEmbeddedMap(template);
 
 test('a malha ativa usa geometrias OSM sem deslocar ruas ou polígonos', () => {
   const map = composeCurrentMap(osm, templateMap);
