@@ -99,8 +99,18 @@ async function collectLayout(page, label) {
     return {
       label, rects, overflow, canvasInk,
       locationLabel: document.querySelector('#location')?.textContent?.trim() || null,
-      welcomeVisible: visible(document.querySelector('#welcome')),
-      touchControlsVisible: visible(document.querySelector('#touchPad'))
+      welcomeVisible: (() => {
+        const element = document.querySelector('#welcome');
+        const style = element && getComputedStyle(element);
+        return !!element && style.display !== 'none' && style.visibility !== 'hidden';
+      })(),
+      touchControlsVisible: (() => {
+        const element = document.querySelector('#touchPad');
+        const style = element && getComputedStyle(element);
+        const rect = element?.getBoundingClientRect();
+        return !!element && style.display !== 'none' && style.visibility !== 'hidden' &&
+          rect.width > 0 && rect.height > 0;
+      })()
     };
   }, { label });
 }
@@ -174,6 +184,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       canvas: rect ? { width: Math.round(rect.width), height: Math.round(rect.height) } : null
     };
   });
+  assert.ok(mapDialog.opened, name + ': mapa da expedição precisa abrir');
   if (mapDialog.opened) {
     await page.screenshot({
       path: path.join(outputDir, name + '-map.png'),
