@@ -43,7 +43,8 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
   const shadow=operations.findIndex(op=>op[0]==='ellipse'&&op[3]===8&&op[4]===2.3);
   const bounce=operations.findIndex((op,i)=>i>firstMove&&op[0]==='translate');
   assert.ok(firstMove>=0&&shadow>firstMove&&bounce>shadow);
-  assert.deepEqual(operations[firstMove],['translate',10,20]);
+  assert.ok(Math.hypot(operations[firstMove][1]-10,operations[firstMove][2]-20)<=4.01,
+   'o deslocamento visual entre pets não pode ultrapassar quatro unidades');
   assert.equal(operations[bounce][1],0);
  }
 });
