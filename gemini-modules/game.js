@@ -4413,9 +4413,14 @@ function move(dt,time){
  if(saveClock>3){save();saveClock=0;}
 }
 function frame(t){const dt=last?Math.min((t-last)/1000,.045):.016;last=t;if(loaded){move(dt,t/1000);render(t/1000);}requestAnimationFrame(frame);}
+function canvasWorldPoint(clientX,clientY,rect,width,height,view,scale){
+ return {x:(clientX-rect.left-width/2)/scale+view.x,y:(clientY-rect.top-height/2)/scale+view.y};
+}
 function clickWorld(e){
  if(!active||anyDialog())return;
- const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left-w/2)/zoom+camera.x,y=(e.clientY-r.top-h/2)/zoom+camera.y;
+ // Hit testing follows the scale actually rendered this frame, including a
+ // partially animated zoom, rather than the future target zoom.
+ const at=canvasWorldPoint(e.clientX,e.clientY,canvas.getBoundingClientRect(),w,h,camera,pauseVisualZoom),x=at.x,y=at.y;
  if(Math.hypot(x-player.x,y-(player.y-12))<18){
   spawnEmojiBurst(player.x,player.y-16,['💖','✨','🌸','(o˘◡˘o)','⭐'],6);
   note(784,0,.1);note(988,.09,.14);
