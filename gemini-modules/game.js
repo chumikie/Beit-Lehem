@@ -1918,13 +1918,13 @@ function streetPetGroupOffset(pet,at,companions,people){
 function streetPetCrowdVisible(at,placed,zoom,screenWidth){
  // Keep the original road point and itinerary; this is screen-space decluttering.
  // On phones reserve a little more breathing room between visible silhouettes.
- const compact=screenWidth<=600,minPixels=compact?34:26,minWorld=minPixels/Math.max(.5,zoom);
+ const compact=screenWidth<=600,minPixels=compact?44:26,minWorld=minPixels/Math.max(.5,zoom);
  if(placed.some(other=>Math.hypot(other.x-at.x,other.y-at.y)<minWorld))return false;
  placed.push({x:at.x,y:at.y});
  return true;
 }
 function streetPetNameplateVisible(pet,zoom,compact=false){
- return !!pet.name&&(pet.bolt?zoom>(compact?2:1.2):zoom>(compact?2.8:2.1));
+ return !!pet.name&&(compact?pet.bolt&&zoom>2:pet.bolt?zoom>1.2:zoom>2.1);
 }
 function streetPetNameplateSlot(at,width,occupied){
  // Try a few compact vertical lanes around a pet; hide the label if every

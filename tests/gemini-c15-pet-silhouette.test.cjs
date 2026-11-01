@@ -93,7 +93,7 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  const original={x:12,y:24},snapshot=JSON.stringify(original),placed=[];
  assert.equal(helpers.streetPetCrowdVisible(original,placed,1,390),true);
  assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},placed,1,390),false,
-  'silhuetas a menos de 34 px não são empilhadas em viewport móvel');
+  'silhuetas a menos de 44 px não são empilhadas em viewport móvel');
  assert.equal(helpers.streetPetCrowdVisible({x:50,y:24},placed,1,390),true);
  assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},[],1,1440),true,
   'a densidade desktop mantém o intervalo menor');
@@ -104,7 +104,7 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},1.5,true),false);
  assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},2.1,true),true);
  assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.5,true),false);
- assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.9,true),true);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},3.5,true),false,\n  'no celular os nomes dos demais pets permanecem no diário, sem disputar a câmera');
 });
 
 test('C15.5: a câmera usa a largura real do canvas para ativar o perfil compacto',()=>{
