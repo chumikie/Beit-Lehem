@@ -159,8 +159,8 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT, outputRelative = OUTPUT_
   }
   if(/data:image\/jpeg;base64,/i.test(html))throw new Error('Fotografia real permaneceu na prévia');
   html=replaceExactlyOnce(html,'</head>',
-    '<style id="fictional-world-ui">#realCity,#realCityDialog,#cultureEvidence,#cultureSource{display:none!important}</style></head>',
-    'Interface ficcional sem guia externo');
+    '<style id="fictional-world-ui">#realCity,#realCityDialog,#cultureEvidence,#cultureSource{display:none!important}</style><style id="mobile-street-name-fit">@media(max-width:800px){.location{max-width:min(210px,calc(100vw - 152px));font-size:9px;letter-spacing:.15px;padding:6px 8px}}</style></head>',
+    'Interface ficcional e nome completo da rua em telas móveis');
   if (html.includes(brokenInitialization)) {
     throw new Error('A inicialização incorreta de kawaiiState permaneceu na cópia gerada.');
   }
