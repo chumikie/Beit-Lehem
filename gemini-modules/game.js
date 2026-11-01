@@ -450,6 +450,13 @@ function house(c,b){
   window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute,zoom);
  }
 }
+function houseVisualBounds(b){
+ // The road-aligned roof/walls extend beyond the lot centre at diagonal
+ // bearings. Include a small margin for the porch and painted shadow.
+ const angle=b.angle||0,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+ const halfX=(b.w*cos+b.h*sin)/2+9,halfY=(b.w*sin+b.h*cos)/2+9;
+ return {left:b.x-halfX,right:b.x+halfX,top:b.y-halfY,bottom:b.y+halfY};
+}
 function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,true);if(a.tags.landuse==='residential'){c.fillStyle='#bec59b';c.fill();c.strokeStyle='#adba8c';c.lineWidth=2;c.stroke();}else if(a.tags.landuse==='forest'||a.tags.leisure==='nature_reserve'){c.fillStyle='#8cba7c77';c.fill();if(!detail){c.strokeStyle='#61894d88';c.lineWidth=3;c.setLineDash([8,6]);c.stroke();c.setLineDash([]);}}else if(a.tags.landuse==='grass'||a.tags.landuse==='meadow'||a.tags.leisure==='park'||a.tags.leisure==='garden'){c.fillStyle='#b4cf8d';c.fill();}else if(a.tags.leisure==='pitch'){c.fillStyle='#88ab6c';c.fill();c.lineWidth=1.1;c.strokeStyle='#e7edd2b0';c.stroke();let xs=ring.map(p=>p[0]),ys=ring.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),ww=Math.max(...xs)-x,hh=Math.max(...ys)-y;const cx=x+ww/2,cy=y+hh/2;c.strokeRect(x+4,y+4,ww-8,hh-8);c.beginPath();c.moveTo(x+4,cy);c.lineTo(x+ww-4,cy);c.stroke();c.beginPath();c.arc(cx,cy,Math.min(ww,hh)*.16,0,Math.PI*2);c.stroke();}}
 }
 function projectVerifiedWater(geo,projection){
@@ -1824,8 +1831,15 @@ function render(time){
  drawPuddles(ctx,time,{left,right,top,bottom});
  drawMappedPlaces(ctx,{left,right,top,bottom});
  const renderables=[],speechOverlays=[];
- const visibleHouses=houses.filter(b=>b.x>left&&b.x<right&&b.y>top&&b.y<bottom);
- for(const b of visibleHouses)renderables.push({sortY:b.y+b.h*.45,draw:()=>house(ctx,b)});
+ const visibleHouses=[];
+ for(const b of houses){
+  // A cheap broad check avoids computing rotated bounds for distant lots.
+  if(b.x<left-26||b.x>right+26||b.y<top-26||b.y>bottom+26)continue;
+  const bounds=houseVisualBounds(b);
+  if(bounds.right<=left||bounds.left>=right||bounds.bottom<=top||bounds.top>=bottom)continue;
+  visibleHouses.push(b);
+  renderables.push({sortY:bounds.bottom,draw:()=>house(ctx,b)});
+ }
  drawGroundedFlora(ctx,{left,right,top,bottom},time,renderables);
  // Trees are illustrative scenery. Keep roads, the field and homes clear.
  for(let gx=Math.floor(left/45);gx<right/45;gx++)for(let gy=Math.floor(top/45);gy<bottom/45;gy++){

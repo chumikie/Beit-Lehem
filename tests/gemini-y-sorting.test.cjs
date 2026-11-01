@@ -7,7 +7,7 @@ const section=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b,source.inde
 
 test('objetos verticais entram na fila única pela base no chão',()=>{
  const render=section('function render(time){','function ');
- assert.match(source,/sortY:b\.y\+b\.h\*\.45/);
+ assert.match(source,/sortY:bounds\.bottom/);
  assert.match(source,/sortY:tree\.y\+2/);
  assert.match(source,/sortY:mission\.p\[1\]/);
  assert.match(source,/sortY:guide\.y/);
