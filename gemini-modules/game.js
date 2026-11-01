@@ -3374,7 +3374,21 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  $('cozyGuideHint').hidden=!active||w<600||zoom<1.15||guideDistance>85||guideDistance<32||Math.abs((guide.x-camera.x)*zoom)>w/2-30||Math.abs((guide.y-camera.y)*zoom)>h/2-30||anyDialog();
  const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();observeWeeklyVisit();observeSmallWalk();observeSeasonalEncounter();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();syncContactsUI();syncKawaiiUI();observeMarketChange(secondarySnapshot);drawMini();}
 function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('Chegue perto de um marco dourado para guardar o selo.');return;}const i=near,m=missions[i];collected.add(i);target=missions.findIndex((_,j)=>!collected.has(j));for(let n=0;n<22;n++){const a=n/22*Math.PI*2;particles.push({x:m.p[0],y:m.p[1]-16,vx:Math.cos(a)*18,vy:Math.sin(a)*18-10,life:1.5,r:1.2+hash(n)*2,color:n%2?'#f3d586':'#faf0be'});}note(523,0,.2);note(659,.1,.2);note(784,.2,.35);notify('Selo '+(collected.size)+'/6 · '+m.name+' — '+m.description);renderMissions();updateUI();save();if(collected.size===missions.length)setTimeout(()=>{if(collected.size===6){$('winTime').textContent=formatTime(elapsed);showDialog('winDialog');note(1046,.1,.4);}},950);}
-function speakerWithinReach(person){return !!person&&Math.hypot(player.x-person.x,player.y-person.y)<(person.secondary?44:43);}
+function speakerWithinReach(person){
+ if(!person)return false;
+ const distance=Math.hypot(player.x-person.x,player.y-person.y);
+ if(distance>=(person.secondary?44:43))return false;
+ // Nearby people on disconnected street components must not converse across a block.
+ const from=pathfinder?.nearest([player.x,player.y]),to=pathfinder?.nearest([person.x,person.y]);
+ if(from?.component!=null&&to?.component!=null&&from.component!==to.component)return false;
+ // Respect house footprints, except decorative overlaps directly on an OSM road.
+ const steps=Math.ceil(distance/3);
+ for(let i=1;i<steps;i++){
+  const t=i/steps,x=player.x+(person.x-player.x)*t,y=player.y+(person.y-player.y)*t;
+  if(blockedByHouse(x,y)&&nearestRoad(x,y).d>9)return false;
+ }
+ return true;
+}
 function gpsFor(p){const proj=data.projection;return{lat:proj.originLat-p[1]/proj.metersPerDegreeLat,lon:proj.originLon+p[0]/proj.metersPerDegreeLon};}
 function locationLinks(p){const {lat,lon}=gpsFor(p),at=lat.toFixed(6)+','+lon.toFixed(6);return{maps:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(at),streetView:'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+encodeURIComponent(at)};}
 const CULTURE={
