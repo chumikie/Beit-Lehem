@@ -1,6 +1,6 @@
 # Os caminhos do Camucá — capítulo contemplativo preparatório
 
-Data: 01/11/2026. Estado: **implementação local testada; integração com a branch da PR ainda pendente**.
+Data: 01/11/2026. Estado: **implementação integrada na PR #1**, commit `9642f5d`, com as restrições geográficas mantidas.
 
 ## Limite geográfico
 
@@ -22,6 +22,6 @@ Cada marco é persistente, ordenado, restaurado com validação, sem recompensa 
 - `npm run build:development-preview`: duas prévias locais reconstruídas com sucesso.
 - A cópia local tem alterações anteriores de jogabilidade ainda não integradas, enquanto a mesma branch remota da PR #1 recebeu mudanças visuais em `gemini-modules/game.js`. **Não sobrescrever esse arquivo remoto com o conteúdo local integral sem uma integração de três vias e revisão dos conflitos.**
 
-## Para concluir a integração na PR #1
+## Integração concluída, acesso público ainda pendente
 
-Reconciliar as alterações de narrativa locais com as mudanças artísticas já enviadas à branch remota, executar a suíte completa novamente e reconstruir as duas prévias do resultado combinado. Manter PR aberta, sem merge. A abertura de percurso real na Serra do Camucá depende de confirmação independente de passagem pública ou autorização explícita.
+As alterações narrativas foram reconciliadas com os ajustes artísticos da branch remota, com **206 testes aprovados** no conjunto integrado e as prévias reconstruídas. A PR está aberta, sem merge. A abertura de percurso real na Serra do Camucá **continua dependendo** de confirmação independente de passagem pública ou autorização explícita.

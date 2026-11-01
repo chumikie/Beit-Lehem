@@ -1,6 +1,6 @@
 # Pequenos Passeios — autonomia social sem inventar caminhos
 
-Estado em 01/11/2026: **implementado e testado na cópia local; integração com a branch remota da PR #1 pendente**. A V2.27 oficial e o mapa de ruas não foram modificados.
+Estado em 01/11/2026: **integrado e testado na branch da PR #1**, commit `9642f5d`. A V2.27 oficial e o mapa de ruas não foram modificados.
 
 ## O que é jogável na cópia local
 
@@ -29,6 +29,6 @@ As semanas seguintes repetem os tipos de encontro com dias diferentes, sem gerar
 - `npm run build:development-preview`: prévias desktop e celular reconstruídas; a fonte arquivada e a V2.27 ficaram intactas.
 - A conferência visual manual fica com a frente artística separada.
 
-## Pendência antes de disponibilizar código e HTML na PR #1
+## Integração realizada na PR #1
 
-O arquivo local `gemini-modules/game.js` contém histórias anteriores ainda não integradas. Entretanto, a branch remota da PR #1 teve alterações visuais próprias nesse mesmo arquivo. Copiar integralmente qualquer uma dessas versões **sobrescreveria trabalho da outra frente**. É necessária uma integração preservando ambos os conjuntos, seguida de nova execução dos testes e reconstrução das prévias **do resultado combinado**. Não fazer merge nem publicação.
+Os conflitos com a frente visual foram resolvidos em cópia isolada, preservando zoom, cartões e o nome exibido **Francisco**, sem renomear o ID interno `damiao` utilizado por salvamentos antigos. A suíte do resultado combinado aprovou **206 testes**; `verify:baseline` confirmou o SHA-256 original e as três prévias foram reconstruídas e enviadas. A PR permanece aberta e em rascunho, **sem merge ou publicação**. A pesquisa de novos estabelecimentos não adicionou pontos ou trajetos inventados.
