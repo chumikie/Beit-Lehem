@@ -53,11 +53,25 @@ test('C9: geometria real mantém casas nos lotes e identifica sobreposições',(
 });
 
 test('C13.1: mede pontos de ruas mapeadas dentro de footprints ilustrativos',()=>{
- const hits=[];
+ const hits=[],cellSize=64,houseCells=new Map();
+ // The test used to scan every house for every road sample (tens of millions
+ // of redundant checks). A 64-unit center grid narrows candidates; the exact
+ // rotated-footprint test below remains unchanged.
+ for(const house of houses){
+  const key=Math.floor(house.x/cellSize)+','+Math.floor(house.y/cellSize);
+  if(!houseCells.has(key))houseCells.set(key,[]);
+  houseCells.get(key).push(house);
+ }
+ const nearbyHouses=(x,y)=>{
+  const cx=Math.floor(x/cellSize),cy=Math.floor(y/cellSize),nearby=[];
+  for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++)
+   nearby.push(...(houseCells.get(gx+','+gy)||[]));
+  return nearby;
+ };
  for(const s of segments){
   for(let t=0;t<=1;t+=Math.min(1,4/s.len)){
    const x=s.ax+s.dx*t,y=s.ay+s.dy*t;
-   const house=houses.find(h=>{
+   const house=nearbyHouses(x,y).find(h=>{
     if(Math.abs(x-h.x)>25||Math.abs(y-h.y)>25)return false;
     const dx=x-h.x,dy=y-h.y,c=Math.cos(h.angle),sn=Math.sin(h.angle);
     return Math.abs(dx*c+dy*sn)<h.w/2+5&&Math.abs(-dx*sn+dy*c)<h.h/2+5;
