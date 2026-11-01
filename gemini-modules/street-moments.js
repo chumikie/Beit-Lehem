@@ -16,6 +16,13 @@
   return porches.length;
  }
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+ function routineKind(person,defaultKind){
+  const activity=typeof person?.activity==='string'?person.activity.toLowerCase():'';
+  if(person?.id==='damiao'&&/cestos|organizando a feira/.test(activity))return'rest';
+  if(person?.id==='cica'&&/fitas|tecidos|cores/.test(activity))return'ribbon';
+  if(person?.id==='bia'&&/caderno|estudando|anotações|lendo/.test(activity))return'read';
+  return defaultKind;
+ }
  function choose(person,elapsed,world){
   const config=GESTURES[person?.id];
   if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
@@ -37,14 +44,15 @@
   // schedules, shopfronts or geographic claims are introduced.
   const commerce=['mercado','sonho_doce','bar_prosa'].includes(hub);
   const waiting=hub==='rodoviaria';
-  const kind=commerce&&morning?'look':waiting&&afternoon?'rest':
+  const ordinaryKind=commerce&&morning?'look':waiting&&afternoon?'rest':
    hub==='igreja'&&afternoon?'flower':config.kind;
+  const kind=routineKind(person,ordinaryKind);
   const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
   if(phase>=duration)return null;
   const strength=smooth(Math.min(1,phase/.65,(duration-phase)/.65));
   return{kind,strength,phase,hubRoutine:commerce&&morning||waiting&&afternoon};
  }
- return{GESTURES,CYCLE,DURATION,choose,setHouses};
+ return{GESTURES,CYCLE,DURATION,choose,setHouses,routineKind};
 });
 
