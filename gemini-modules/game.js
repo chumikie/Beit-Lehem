@@ -695,18 +695,55 @@ function drawGroundedFlora(c,view,time,renderables=null){
 }
 
 function drawClovisNeighborhoodScene(){ /* Cena associada a domicílio particular retirada desta cópia de referência. */ }
-function drawDailyActivity(c,time,view){
+function drawDailyActivity(c,time,view,visibleHouses=[],renderables=[],speechOverlays=[]){
  if(!showScenery)return;
+ const morning=living.minute>=7*60&&living.minute<720&&lightPhase!=='anoitecer';
+ const afternoon=living.minute>=900&&living.minute<20*60;
+ for(const b of visibleHouses){
+  if(!['clovis','joao','matriz'].includes(b.centralBlock)||b.seed%7!==2||!morning&&!afternoon)continue;
+  const x=b.x+b.w*.47,y=b.y+b.h*.45;
+  renderables.push({sortY:y,draw:()=>{
+   c.save();c.translate(x,y);c.lineCap='round';
+   if(morning){
+    // Basket, broom and a tiny pecking bird; no new fauna record or map point.
+    c.fillStyle='#bc9671';c.beginPath();c.ellipse(-5,-1,3.3,2.2,0,0,Math.PI*2);c.fill();
+    c.strokeStyle='#8d7356';c.lineWidth=.8;c.beginPath();c.arc(-5,-2.5,2,Math.PI,0);c.stroke();
+    c.strokeStyle='#826c4e';c.lineWidth=.8;c.beginPath();c.moveTo(2,-12);c.lineTo(3,0);c.stroke();
+    c.strokeStyle='#c8a57b';c.lineWidth=2;c.beginPath();c.moveTo(.8,0);c.lineTo(5,0);c.stroke();
+    c.fillStyle='#9f8b70';c.beginPath();c.ellipse(10,1,1.7,1,0,0,Math.PI*2);c.fill();
+    c.strokeStyle='#72685a';c.lineWidth=.55;c.beginPath();c.moveTo(11,1);c.lineTo(12.8,2);c.stroke();
+   }else{
+    // Two inward-facing chairs, plants and a bicycle resting by the wall.
+    for(const side of [-1,1]){
+     const cx=side*5;c.strokeStyle='#9a8063';c.lineWidth=1.2;c.beginPath();
+     c.moveTo(cx,-4);c.lineTo(cx,-1);c.lineTo(cx-side*1.9,-1);c.moveTo(cx,-1);c.lineTo(cx,3);c.stroke();
+    }
+    c.fillStyle='#b98970';c.fillRect(-11,0,2.7,2.4);c.fillStyle='#6f9c70';c.beginPath();c.ellipse(-9.6,-1,3,2.5,0,0,Math.PI*2);c.fill();
+    c.strokeStyle='#708d87';c.lineWidth=.9;c.beginPath();c.arc(10,1,2.1,0,Math.PI*2);c.arc(17,1,2.1,0,Math.PI*2);c.moveTo(10,1);c.lineTo(14,-3);c.lineTo(17,1);c.lineTo(10,1);c.moveTo(14,-3);c.lineTo(16,-4);c.stroke();
+   }
+   c.restore();
+  }});
+ }
+ for(let i=0;i<(roadDetails?.junctions?.length||0);i+=2){
+  const j=roadDetails.junctions[i],x=j.x+7,y=j.y;
+  if(x<view.left-12||x>view.right+12||y<view.top-15||y>view.bottom+12)continue;
+  renderables.push({sortY:y,draw:()=>{
+   c.save();c.translate(x,y);c.strokeStyle='#667568';c.lineWidth=1.25;c.beginPath();c.moveTo(0,0);c.lineTo(0,-13);c.lineTo(3,-13);c.stroke();
+   c.fillStyle=lightPhase==='anoitecer'||living.minute>=1040?'#fcebb0':'#dfd8b7';c.beginPath();c.arc(3,-12.6,2,0,Math.PI*2);c.fill();c.restore();
+  }});
+ }
  const moment=window.RoncadorDailyMoments.current(living);
  if(!moment)return;
  const hub=data.landmarks.find(p=>p.id===moment.hub);if(!hub)return;
  const [x,y]=hub.p;if(x<view.left-34||x>view.right+34||y<view.top-75||y>view.bottom+25)return;
+ speechOverlays.push(()=>{
  const bob=reduce?0:Math.sin(time*2.1)*1.3;
  c.save();c.translate(x+40,y-31+bob);
  c.fillStyle='#fff7e6ee';c.strokeStyle='#acc2a1';c.lineWidth=1;c.beginPath();c.roundRect(-13,-18,26,24,8);c.fill();c.stroke();
  c.fillStyle='#d9c8a0';c.beginPath();c.moveTo(-4,6);c.lineTo(0,10);c.lineTo(4,6);c.fill();
  c.font='13px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(moment.icon,0,-6);
  c.restore();
+ });
 }
 function prepareWildlife(){
  const found=[];
@@ -1674,7 +1711,7 @@ function render(time){
   }
  }
  drawScenicLayer(ctx,{left,right,top,bottom},true);
- drawClovisNeighborhoodScene(ctx,time,{left,right,top,bottom});drawParkedMotosAndSorda(ctx,time,{left,right,top,bottom});drawDailyActivity(ctx,time,{left,right,top,bottom});
+ drawClovisNeighborhoodScene(ctx,time,{left,right,top,bottom});drawParkedMotosAndSorda(ctx,time,{left,right,top,bottom});drawDailyActivity(ctx,time,{left,right,top,bottom},visibleHouses,renderables,speechOverlays);
  // OSM POIs remain small and separate from the artwork.
  window.RoncadorLandmarks?.drawMarkers(ctx,data.landmarks,{left,right,top,bottom},zoom);
  drawGeology(ctx,{left,right,top,bottom});
@@ -1747,6 +1784,20 @@ function render(time){
    const glow=ctx.createRadialGradient(sx,sy,8,sx,sy,radius);
    glow.addColorStop(0,'#fcebb052');glow.addColorStop(.5,'#f6c9851b');glow.addColorStop(1,'#f6c98500');
    ctx.fillStyle=glow;ctx.fillRect(sx-radius,sy-radius,radius*2,radius*2);
+  }
+  ctx.restore();
+ }
+ // Street lamps illuminate mapped corners and nearby sidewalk props after the
+ // evening tint. Their light is decorative and never changes navigation.
+ if(showScenery&&(lightPhase==='anoitecer'||living.minute>=1040)){
+  ctx.save();ctx.globalCompositeOperation='screen';
+  const corners=roadDetails?.junctions||[];
+  for(let i=0;i<corners.length;i+=2){
+   const j=corners[i],sx=(j.x+7-camera.x)*zoom+w/2,sy=(j.y-13-camera.y)*zoom+h/2;
+   if(sx<-75||sx>w+75||sy<-75||sy>h+75)continue;
+   const radius=42*zoom,halo=ctx.createRadialGradient(sx,sy,1,sx,sy,radius);
+   halo.addColorStop(0,'#fcebb044');halo.addColorStop(.42,'#fcebb020');halo.addColorStop(1,'#fcebb000');
+   ctx.fillStyle=halo;ctx.fillRect(sx-radius,sy-radius,radius*2,radius*2);
   }
   ctx.restore();
  }
