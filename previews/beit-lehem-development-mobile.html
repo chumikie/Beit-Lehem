@@ -4175,7 +4175,7 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorResidentMotion=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
  function create(graph){
-  const states=new Map(),visuals=new Map();
+  const states=new Map(),visuals=new Map(),visibility=new Map();
   let holds=new Set();
   const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
   const safe=n=>Number.isFinite(n)?n:0;
@@ -4183,7 +4183,9 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    const target={x:person.x,y:person.y},now=safe(elapsed);
    if(!Number.isFinite(target.x)||!Number.isFinite(target.y))return person;
    let s=states.get(person.id);
-   if(!s||day!==s.day||now<s.last-.001||now-s.last>18){
+   // Resuming a background tab must not snap a resident to a new scheduled
+   // destination. The next frames reconnect along the mapped street route.
+   if(!s||day!==s.day||now<s.last-.001){
     s={x:target.x,y:target.y,day,last:now,heading:0,stride:0,pace:0,bridge:null,bridgeIndex:1,blockedUntil:0};states.set(person.id,s);
     return{...person,heading:0,stridePhase:0,arriving:false};
    }
@@ -4264,7 +4266,15 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
    person.lean=v.lean;
    return person;
   }
-  return{resolve,present,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
+  function appearance(id,clear,now){
+   const previous=visibility.get(id);
+   if(!previous||now<previous.last){const alpha=clear?1:0;visibility.set(id,{alpha,last:now});return alpha;}
+   const dt=Math.min(.12,Math.max(0,now-previous.last));previous.last=now;
+   const desired=clear?1:0;
+   previous.alpha+=(desired-previous.alpha)*(1-Math.exp(-dt*(clear?5:10)));
+   return previous.alpha;
+  }
+  return{resolve,present,appearance,hold:ids=>{holds=new Set(ids);},clear:()=>{states.clear();visuals.clear();visibility.clear();holds.clear();},snapshot:()=>[...states].map(([id,s])=>({id,x:s.x,y:s.y,arriving:!!s.bridge}))};
  }
  return{create};
 });
@@ -5454,9 +5464,9 @@ function secondaryInStreets(primary=residentsInStreets()){
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
   const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused,moment},elapsed,living.day);
-  // A narrow junction may lack a free roadside spot; omit this frame
-  // rather than stacking two illustrated bodies over the same sidewalk.
-  if(!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19))continue;
+  // A congested corner fades a walker rather than dropping the resident
+  // abruptly for one frame. Its scheduled route and coordinates are intact.
+  person.crowded=!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19);
   placed.push(person);
  }
  return placed;
@@ -5863,8 +5873,9 @@ function drawStreetLife(c,time,view){
  }
  ambientHitTargets=ambientPeople;
  const people=[...ambientPeople,...residents,...secondaries].sort((a,b)=>a.y-b.y);
+ for(const person of people)person.visibility=person.secondary?residentMotion.appearance(person.id,!person.crowded,elapsed):1;
  // Labels are a proximity aid, not a second layer of billboards over the town.
- const nameplates=layoutResidentNameplates(people,player,zoom,matchMedia('(max-width:800px)').matches);
+ const nameplates=layoutResidentNameplates(people.filter(person=>person.visibility>.5),player,zoom,matchMedia('(max-width:800px)').matches);
  for(const person of people){
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
    const age=elapsed-(marketReaction.until-5.5);
@@ -5876,11 +5887,13 @@ function drawStreetLife(c,time,view){
   if(worldPause&&worldPause.age>.4&&worldPause.age<3.2&&person.def&&!person.arriving&&!person.walking&&!person.social&&!person.meeting&&living.people[person.id]?.bond>0&&Math.hypot(person.x-player.x,person.y-player.y)<42){
    person.social={pose:'smile',stage:'quiet',facing:player.x>=person.x?1:-1,intensity:reduce?1:Math.min(1,(worldPause.age-.4)*2),react:true};
   }
-  if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
+  if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25||person.visibility<.015)continue;
   // One representation per frame avoids ghost outlines at intermediate zoom.
+  c.save();c.globalAlpha*=person.visibility;
   if(zoom<1.15)drawDistantResident(c,person);
   else if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
+  c.restore();
   if(zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
    const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
    const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
