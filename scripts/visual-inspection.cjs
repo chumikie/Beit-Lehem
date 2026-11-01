@@ -200,8 +200,10 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       }
       const previousBond = await page.evaluate(id => expeditionState.residentBonds[id], candidate.id);
       await action.click();
-      if (await page.locator('#lifeDialog').evaluate(dialog => dialog.open)) {
-        // Already close enough: the notebook performs the ordinary conversation.
+      const openDialogIds = () => page.locator('dialog[open]').evaluateAll(nodes => nodes.map(dialog => dialog.id));
+      let activeDialogs = await openDialogIds();
+      if (activeDialogs.length) {
+        // Close-range actions may open secondaryDialog, not only the resident notebook.
         encounter.reached = true;
       } else {
         encounter.routed = (await page.evaluate(() => expeditionState.routeRemaining)) > 0;
@@ -215,10 +217,14 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
         }
       }
       if (encounter.reached) {
-        const dialogOpen = await page.locator('#lifeDialog').evaluate(dialog => dialog.open);
+        activeDialogs = await openDialogIds();
         const currentBond = await page.evaluate(id => expeditionState.residentBonds[id], candidate.id);
-        encounter.talked = dialogOpen && currentBond >= previousBond;
-        if (dialogOpen) await page.keyboard.press('Escape');
+        encounter.dialog = activeDialogs.at(-1) || null;
+        encounter.talked = !!encounter.dialog && currentBond >= previousBond;
+        // Escape the actual existing conversation dialog before selecting another resident.
+        for (let attempt = 0; attempt < 3 && (await openDialogIds()).length; attempt++) {
+          await page.keyboard.press('Escape');
+        }
       }
       if (!encounter.talked) encounter.reason = encounter.routed
         ? 'não alcançado durante a janela de caminhada' : 'sem rota acessível neste momento';
