@@ -76,7 +76,7 @@ test('POIs locais são mantidos como aliases separados dos pontos OSM', () => {
   assert.ok(map.localPlaces.every(place => place.landmarkId && map.landmarks.some(landmark => landmark.id === place.landmarkId)));
   for (const place of map.localPlaces) {
     assert.equal(place.provenance, 'author-curated');
-    assert.equal(place.nameRole, 'game-display-alias');
+    assert.equal(place.nameRole, 'game-display-name');
     assert.equal(typeof place.displayName, 'string');
     assert.ok(place.displayName.length > 0);
     assert.ok(!Object.prototype.hasOwnProperty.call(place, 'tags'),
