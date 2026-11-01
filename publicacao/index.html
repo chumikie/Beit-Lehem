@@ -804,19 +804,46 @@
  const GESTURES={
   damiao:{kind:'rest',offset:0},lucia:{kind:'flower',offset:9},
   bia:{kind:'read',offset:17},cica:{kind:'ribbon',offset:5},
-  nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21}
+  nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21},
+  rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8}
  };
  const CYCLE=33,DURATION=3.4;
+ let porches=[];
+ function setHouses(houses){
+  porches=Array.isArray(houses)?houses.filter(h=>h&&['matriz','joao','clovis'].includes(h.centralBlock)&&h.w>=18&&h.seed%7===2&&Number.isFinite(h.x)&&Number.isFinite(h.y)).map(h=>({x:h.x,y:h.y})):[];
+  return porches.length;
+ }
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function choose(person,elapsed,world){
   const config=GESTURES[person?.id];
-  if(!config||person.meeting||person.travel||person.arriving||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
+  if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
+  // An occasional fictional doorstep gesture at the cooler end of the day.
+  // It changes only the resident's pose on an existing mapped path.
+  const nearPorch=Number.isFinite(person.x)&&Number.isFinite(person.y)&&
+   porches.some(h=>Math.hypot(h.x-person.x,h.y-person.y)<32);
+  if(nearPorch&&world.minute>=16*60+45&&world.minute<18*60+5){
+   const porchPhase=((elapsed+config.offset)%41+41)%41;
+   if(porchPhase<3.2){
+    const kind=['damiao','cica'].includes(person.id)?'sweep':['lucia','nara','teo'].includes(person.id)?'chair':'rest';
+    return{kind,strength:smooth(Math.min(1,porchPhase/.55,(3.2-porchPhase)/.55)),phase:porchPhase,nearPorch:true};
+   }
+  }
+  const minute=world.minute,hub=person.hub;
+  const morning=minute>=8*60&&minute<11*60;
+  const afternoon=minute>=14*60&&minute<17*60;
+  // The established fictional destinations shape the pose; no new stops,
+  // schedules, shopfronts or geographic claims are introduced.
+  const commerce=['mercado','sonho_doce','bar_prosa'].includes(hub);
+  const waiting=hub==='rodoviaria';
+  const kind=commerce&&morning?'look':waiting&&afternoon?'rest':
+   hub==='igreja'&&afternoon?'flower':config.kind;
+  const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
-  if(phase>=DURATION)return null;
-  const strength=smooth(Math.min(1,phase/.65,(DURATION-phase)/.65));
-  return{kind:config.kind,strength,phase};
+  if(phase>=duration)return null;
+  const strength=smooth(Math.min(1,phase/.65,(duration-phase)/.65));
+  return{kind,strength,phase,hubRoutine:commerce&&morning||waiting&&afternoon};
  }
- return{GESTURES,CYCLE,DURATION,choose};
+ return{GESTURES,CYCLE,DURATION,choose,setHouses};
 });
 
 </script><script>
@@ -830,44 +857,84 @@
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
  function create(graph){
   let active=null,last=-1,day=null,nextCheck=0;
-  const cooldown=new Map(),personal=new Map();
+  let porches=[],junctions=[];
+  const cooldown=new Map(),personal=new Map(),recentSpots=[];
+  function setHouses(houses){
+   // Match the same sparse, illustrated residential doorsteps as central-blocks.
+   porches=Array.isArray(houses)?houses.filter(h=>
+    h&&['matriz','joao','clovis'].includes(h.centralBlock)&&h.w>=18&&h.seed%7===2&&Number.isFinite(h.x)&&Number.isFinite(h.y)
+   ).map(h=>({x:h.x,y:h.y})):[];
+   return porches.length;
+  }
+  function setJunctions(points){
+   junctions=Array.isArray(points)?points.filter(p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y)):[];
+   return junctions.length;
+  }
+  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<22);}
+  function nearbyPorch(a,b){
+   const x=(a.x+b.x)/2,y=(a.y+b.y)/2;
+   return porches.some(h=>Math.hypot(h.x-x,h.y-y)<34&&
+     Math.hypot(h.x-a.x,h.y-a.y)<57&&Math.hypot(h.x-b.x,h.y-b.y)<57);
+  }
   function apply(people,now,clock){
    if(!Number.isFinite(now)||!Number.isFinite(clock?.minute))return[];
-   if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();day=clock.day;}
+   if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();recentSpots.length=0;day=clock.day;}
    last=now;
+   for(let i=recentSpots.length-1;i>=0;i--)if(recentSpots[i].until<=now)recentSpots.splice(i,1);
    const eligible=p=>p&&!p.meeting&&!p.travel&&!p.arriving;
    if(clock.minute<7*60||clock.minute>=20*60)active=null;
    if(active){
     const pair=active.ids.map(id=>people.find(p=>p.id===id));
-    if(pair.some(p=>!eligible(p))||now-active.start>=3.8){active=null;}
+    if(pair.some(p=>!eligible(p))||now-active.start>=active.duration){active=null;}
    }
    if(!active&&now>=nextCheck&&clock.minute>=7*60&&clock.minute<20*60){
     nextCheck=now+.4;
     const sorted=people.filter(eligible).slice().sort((a,b)=>a.id.localeCompare(b.id));
     outer:for(let i=0;i<sorted.length;i++)for(let j=i+1;j<sorted.length;j++){
      const a=sorted[i],b=sorted[j],k=key(a.id,b.id),d=Math.hypot(a.x-b.x,a.y-b.y);
-     if(!known.has(k)||d<23||d>64||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
+     if(!known.has(k)||d<23||d>64||nearJunction(a)||nearJunction(b)||now<(cooldown.get(k)||0)||now<(personal.get(a.id)||0)||now<(personal.get(b.id)||0))continue;
+     const center={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+     // Keep the shared sidewalk free for other pedestrians and do not start
+     // another farewell in the same narrow stretch immediately afterward.
+     if(recentSpots.some(p=>Math.hypot(p.x-center.x,p.y-center.y)<68))continue;
+     if(people.some(other=>other.id!==a.id&&other.id!==b.id&&
+      Math.hypot(other.x-center.x,other.y-center.y)<34))continue;
      // Friends on separate streets or opposite sides of a block cannot greet
      // through buildings. No new connector or destination is invented.
      const road=graph?.route?.([a.x,a.y],[b.x,b.y]);
      if(!road||!Number.isFinite(road.distance)||road.distance>d*1.3+3)continue;
-     active={ids:[a.id,b.id],start:now};cooldown.set(k,now+55);
+     const porch=nearbyPorch(a,b);
+     const variation=(Array.from(k).reduce((sum,c)=>sum+c.charCodeAt(0),0)+Number(clock.day||0))%5;
+     const duration=4.05+variation*.18+(porch?.45:0);
+     active={ids:[a.id,b.id],start:now,porch,duration};
+     recentSpots.push({...center,until:now+duration+12});cooldown.set(k,now+55);
      for(const id of active.ids)personal.set(id,now+18);
      break outer;
     }
    }
    if(!active)return[];
-   const age=now-active.start,pair=active.ids.map(id=>people.find(p=>p.id===id));
+   const age=(now-active.start)*4.4/active.duration,pair=active.ids.map(id=>people.find(p=>p.id===id));
    for(let i=0;i<2;i++){
     const person=pair[i],friend=pair[1-i];
     person.moment=null;person.walking=false;
-    const intensity=smooth(Math.min((age-.65)/.5,(3.3-age)/.6));
-    person.social={pose:age<.65?'listen':age<3.3?'wave':'smile',facing:friend.x>=person.x?1:-1,intensity,react:age>1.1&&age<2.8,spontaneous:true};
-    person.greeting={friend:friend.def?.name||friend.id,age};
+    // A short conversation now ends in distinct beats: look, wave, turn, release.
+    // Positions remain untouched; the resident motion system resumes its own route.
+    const stage=age<.65?'notice':age<2.75?'chat':age<3.15?'look':age<3.85?'wave':'turn';
+    const facing=friend.x>=person.x?1:-1;
+    const outward=Number.isFinite(person.heading)?(Math.cos(person.heading)>=0?1:-1):facing;
+    const intensity=stage==='wave'
+      ?smooth(Math.min((age-3.15)/.18,(3.85-age)/.18))
+      :stage==='chat'?smooth(Math.min((age-.65)/.35,(2.75-age)/.35))
+      :stage==='turn'?1-smooth((age-3.85)/.55):1;
+    person.social={pose:stage==='wave'?'wave':stage==='chat'?'listen':'smile',
+      facing:stage==='turn'?outward:facing,intensity,
+      stage:stage==='look'||stage==='wave'||stage==='turn'?'farewell':stage,
+      react:stage==='chat'&&age>1.1&&age<2.5,spontaneous:true};
+    person.greeting={friend:friend.def?.name||friend.id,age,stage,nearPorch:active.porch};
    }
    return active.ids.slice();
   }
-  return{apply,snapshot:()=>active?{ids:active.ids.slice(),start:active.start}:null};
+  return{apply,setHouses,setJunctions,snapshot:()=>active?{ids:active.ids.slice(),start:active.start,porch:active.porch,duration:active.duration}:null};
  }
  return{LINKS,create};
 });
@@ -1113,6 +1180,15 @@
       c.strokeStyle = '#d4c9ab'; c.lineWidth = 1.2;
       c.beginPath(); c.moveTo(x, 6); c.lineTo(x, 19); c.stroke();
     }
+    // Shallow arch recesses and stucco edge light, inspired by the 2007 facade.
+    // The illustration is historical in character; it does not assert current paint.
+    for(const x of [-16,0,16]){
+      c.fillStyle='#4c5d5630';c.fillRect(x-5.6,2,1.3,17);
+      c.strokeStyle='#f8ecd6a6';c.lineWidth=.65;
+      c.beginPath();c.moveTo(x+5,3);c.lineTo(x+5,19);c.stroke();
+    }
+    c.fillStyle='#fff4d154';c.fillRect(-23,-23,1.2,39);
+    c.fillStyle='#5b655126';c.fillRect(22.1,-22,1.5,42);
     for (let x of [-18, 18]) {
       rounded(c, x - 3, -19, 6, 9, 3, '#7b9590', '#bca47c');
       circle(c, x, -19, .8, '#e9d79d');
@@ -1146,28 +1222,37 @@
       c.strokeStyle = '#d9c4a1'; c.lineWidth = .7; c.beginPath(); c.moveTo(-30, y); c.lineTo(30, y); c.stroke();
     }
   }
-  function stall(c, x, y, color, produce = '#dea06e') {
+  function stall(c, x, y, color, produce = '#dea06e', variant = 0) {
     ellipse(c, x + 1.5, y + 4, 9, 3.5, '#344a3426');
-    rounded(c, x - 7, y - 3, 14, 10, 1.4, '#c3a582', '#8d816e');
-    c.fillStyle = '#a88f67'; c.fillRect(x - 6, y + 4, 12, 1.2);
-    for (let i = 0; i < 4; i++) circle(c, x - 4.5 + i * 3, y + 2, 1.5, i % 2 ? '#9aad6b' : produce);
-    polygon(c, [[x-9,y-5],[x+9,y-5],[x+7,y-13],[x-7,y-13]], color, '#fff4d0');
-    c.strokeStyle = '#fff3c6'; c.lineWidth = 1.4;
-    for (let i = -6; i <= 6; i += 6) { c.beginPath(); c.moveTo(x+i,y-12); c.lineTo(x+i,y-5); c.stroke(); }
+    rounded(c, x - 7, y - 3, 14, 10, 1.4, variant % 2 ? '#b9a488' : '#c3a582', '#8d816e');
+    rounded(c, x - 6, y + 3.6, 12, 1.4, .5, '#a88f67');
+    for (let i = 0; i < (variant === 2 ? 3 : 4); i++) circle(c, x - 4.5 + i * (variant === 2 ? 4 : 3), y + 2, 1.5, i % 2 ? '#9aad6b' : produce);
+    const slope = variant === 1 ? 10 : variant === 2 ? 11 : 13;
+    polygon(c, [[x-9,y-5],[x+9,y-5],[x+7,y-slope],[x-7,y-slope]], color, '#fff4d0');
+    // Alternate stripes with a plain canvas canopy and a folded-edge canopy.
+    if (variant === 0) {
+      c.strokeStyle = '#fff3c6'; c.lineWidth = 1.4;
+      for (let i = -6; i <= 6; i += 6) { c.beginPath(); c.moveTo(x+i,y-12); c.lineTo(x+i,y-5); c.stroke(); }
+    } else if (variant === 1) {
+      rounded(c,x-8,y-6,16,1.4,.6,'#fff2d0b8');
+    } else {
+      for(let i=-5;i<=5;i+=5) circle(c,x+i,y-5,.9,'#f2d6b2');
+    }
+    if (variant === 2) { ellipse(c,x+5,y+5,2.9,1.4,'#8d775d');ellipse(c,x+5,y+4.5,2.3,.7,'#ead7ab'); }
   }
   function drawMarketDetails(c, marketDay) {
     polygon(c, [[-25,-29],[18,-29],[30,-7],[-32,-7]], '#ba8062', '#96684e');
     rounded(c, -25, -7, 50, 24, 1.5, '#f2dfbc', '#9d9780');
     rounded(c, -18, -5, 36, 11, 2, '#73948b', '#54716f');
-    for (let i = -21; i <= 21; i += 8) rounded(c, i-3, 10, 6, 7, 1, '#d8b88e', '#b58e68');
+    for (let i = -21; i <= 21; i += 8) rounded(c, i-3, 10, 6, 7, 1, i % 3 === 0 ? '#c9ab84' : '#d8b88e', '#b58e68');
     rounded(c, -18, -30, 36, 8, 3, '#fff4db', '#927358');
     c.fillStyle = '#8a6c4d'; c.font = 'bold 7px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('MERCADO', 0, -26);
-    stall(c, -24, 19, '#d18e75', '#e6bd76');
-    stall(c, 22, 19, '#86a5a1', '#b9c77a');
+    stall(c, -24, 19, '#d18e75', '#e6bd76', 0);
+    stall(c, 22, 19, '#86a5a1', '#b9c77a', 1);
     if (marketDay) {
-      stall(c, -39, 5, '#c47f65', '#c8a46c');
-      stall(c, 38, -3, '#e3b46f', '#d5ac81');
-      stall(c, -36, -22, '#829e84', '#e1b76c');
+      stall(c, -39, 5, '#c47f65', '#c8a46c', 2);
+      stall(c, 38, -3, '#e3b46f', '#d5ac81', 0);
+      stall(c, -36, -22, '#829e84', '#e1b76c', 1);
       for (let i = 0; i < 7; i++) {
         const x = -27 + i * 8.5, y = 34 + (i % 2) * 3;
         circle(c, x, y, 2.8, ['#a67764','#dbb3a1','#84a189'][i % 3]);
@@ -1183,19 +1268,44 @@
       }
       ellipse(c,14,34,5.5,2.8,'#879795');ellipse(c,14,32,4.8,1.5,'#d9dfd4');
       circle(c,14,32,.9,'#abb2a5');
+      rounded(c,23,31,8,3,1,'#a78263');
+      for(const x of [24.5,27,29])circle(c,x,30,1.2,x===27?'#e5bd78':'#a3b47b');
     }
   }
   function drawTerminalGround(c) {
-    rounded(c, -33, -16, 66, 39, 5, '#d6d4bc', '#a1a690');
-    rounded(c, -28, -11, 56, 23, 2, '#c9cfc0');
+    // The terminal shares the warm paving and soft contact shadow of town blocks.
+    rounded(c, -31, -13, 66, 39, 5, '#425f4930');
+    rounded(c, -33, -16, 66, 39, 5, '#e1d9c4', '#b5b39d');
+    rounded(c, -29, -11, 58, 29, 2, '#d5d9c8');
+    rounded(c, -26, 13, 52, 2, 1, '#bcb59e73');
   }
   function drawTerminalDetails(c) {
-    rounded(c, -29, -16, 58, 16, 2.5, '#77999b', '#547578');
-    c.strokeStyle = '#e9f0dd'; c.lineWidth = 1.2;
-    for (let i = -20; i < 24; i += 10) { c.beginPath(); c.moveTo(i, -15); c.lineTo(i, 0); c.stroke(); }
-    rounded(c, -18, 3, 36, 13, 5, '#e3d4ae', '#9a9b85');
-    for (let i = -13; i < 15; i += 8) rounded(c, i, 5, 6, 5, 1, '#789a9d');
-    circle(c, -11, 16, 3.3, '#67746a'); circle(c, 11, 16, 3.3, '#67746a');
+    // Covered waiting bay and bus share the same small-scale architecture.
+    // Not a claim about the present-day facade or bus timetable.
+    ellipse(c,1,7,29,6,'#47645a2c');
+    rounded(c, -27, -6, 54, 12, 1.5, '#8eaaa4', '#698985');
+    for (let i = -19; i < 25; i += 11) rounded(c,i,-3,7,7,1,'#d8e5dc','#6e918f');
+    for (const x of [-24,24]) rounded(c,x,-7,1.7,20,.5,'#667e76');
+    polygon(c,[[-31,-16],[31,-16],[27,-8],[-27,-8]],'#75928f','#607e7a');
+    rounded(c,-27,-14,54,1.3,.6,'#d8e2d5a8');
+    rounded(c,-27,-8.9,54,1.7,.6,'#47645e99');
+    // Raised roof edge and discreet station sign anchor the building silhouette.
+    rounded(c,-23,-11.5,46,2.1,.8,'#d2dfd0');
+    c.textAlign='center';c.textBaseline='middle';c.font='bold 4.5px system-ui';
+    c.fillStyle='#42665e';c.fillText('RODOVIÁRIA',0,-12.5);
+    // The shaded bench stays visible at left instead of hiding behind the bus.
+    ellipse(c,-14,15,12,2.5,'#50655729');
+    rounded(c,-25,8,21,2.5,1,'#b39b79');
+    rounded(c,-25,6.3,21,1.5,.7,'#dbcaab');
+    for(const x of [-22,-7])rounded(c,x,10,1.7,5,.5,'#8c8975');
+    // Small illustrative bus occupies the adjacent bay, leaving a walking gap.
+    ellipse(c,16,16,15,3.2,'#51665930');
+    rounded(c,3,4,27,12,3.5,'#e8dabb','#a7a28d');
+    rounded(c,5,5.5,20,5.7,1.1,'#789a9d');
+    for(const x of [11,18])rounded(c,x,5.5,1.2,5.7,.4,'#ecf1df');
+    rounded(c,25.5,10,3,2.2,.6,'#d4a979');
+    for(const x of [9,24])circle(c,x,16,2.7,'#67746a');
+    circle(c,28,11,.8,'#fff2c3');
   }
   function drawHomeVarandaGround(c) {
     rounded(c, -34, -22, 68, 48, 6, '#d9ceb8', '#b5a489');
@@ -1227,7 +1337,7 @@
     for (const cx of [-20, -14]) {
       rounded(c, cx, 14, 4.2, 4.2, 1, '#d98a5f', '#8f5738');
     }
-    // Pingo the dog wagging tail on the sidewalk
+    // Bolt the dog wagging tail on the sidewalk
     const wag = Math.sin(time * 6) * 1.8;
     ellipse(c, 21, 19, 5.5, 2.1, '#3b4f3d33');
     rounded(c, 17, 13, 8.5, 5.5, 2.5, '#d49b6a', '#8c623e');
@@ -1411,9 +1521,10 @@
   }
   function label(c, landmark) {
     const title = landmark.kind === 'square' ? 'Praça 6 de Setembro*' : landmark.name;
-    const y = landmark.kind === 'church' ? 33 : landmark.kind === 'square' ? 43 : 36;
-    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 8px system-ui';
-    c.lineWidth = 3; c.strokeStyle = '#fff9df'; c.strokeText(title, 0, y);
+    // Keep captions clear of the market counters and the terminal waiting bay.
+    const y = landmark.kind === 'church' ? 37 : landmark.kind === 'square' ? 43 : landmark.kind === 'market' || landmark.kind === 'terminal' ? 46 : 39;
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'bold 7.2px system-ui';
+    c.lineWidth = 2.4; c.strokeStyle = '#fff9df'; c.strokeText(title, 0, y);
     c.fillStyle = '#476b55'; c.fillText(title, 0, y);
   }
 
@@ -1437,7 +1548,7 @@
       c.restore();
     }
   }
-  function drawDetails(c, landmarks, viewport, marketDay, time = 0, night = false) {
+  function drawDetails(c, landmarks, viewport, marketDay, time = 0, night = false, labelOptions = null) {
     for (const landmark of landmarks || []) {
       if (!visible(landmark, viewport)) continue;
       c.save(); c.translate(landmark.p[0], landmark.p[1]);
@@ -1454,7 +1565,9 @@
       if (landmark.kind === 'chapel') drawChapelDetails(c);
       if (landmark.kind === 'amusement') drawAmusementDetails(c, night, time);
       if (landmark.kind === 'rockview') drawRockviewDetails(c, night);
-      label(c, landmark);
+      // At city scale the mapped POI glyph stays visible, while full captions
+      // wait until the player approaches. Postcards omit options and keep labels.
+      if (!labelOptions || (labelOptions.zoom >= 1.65 && labelOptions.distance <= 105)) label(c, landmark);
       c.restore();
     }
   }
@@ -1960,21 +2073,35 @@
   return{grid:g,values,min,max,sample,contours,source:terrain.source};
  }
  function draw(c,layer,view,zoom=1.85){
-  if(!layer||zoom<1.2)return;
+  // Altitude samples and contour geometry remain unchanged. Only visual detail varies.
+  if(!layer||zoom<.75)return;
   const g=layer.grid,cross=(x,y)=>x>=view.left-g.step&&x<=view.right+g.step&&y>=view.top-g.step&&y<=view.bottom+g.step;
+  const distant=zoom<1.2,step=distant?3:2;
   c.save();
-  // Gentle highlights complement the existing sage ground without changing
-  // the road network or creating a false 3-D street surface.
-  for(let row=0;row<g.height;row+=2)for(let col=0;col<g.width;col+=2){
+  // Diffuse earth-toned slopes, with a slight cool offset shadow to convey
+  // volume without inventing a new hill or changing the navigable surface.
+  for(let row=0;row<g.height;row+=step)for(let col=0;col<g.width;col+=step){
    const x=g.x0+col*g.step,y=g.y0+row*g.step;
    if(!cross(x,y))continue;
    const z=layer.values[row*g.width+col],high=(z-layer.min)/Math.max(1,layer.max-layer.min);
-   if(high>.52){const gradient=c.createRadialGradient(x,y,10,x,y,g.step*1.8);gradient.addColorStop(0,`rgba(193,157,107,${(.07+high*.07).toFixed(3)})`);gradient.addColorStop(1,'rgba(193,157,107,0)');c.fillStyle=gradient;c.fillRect(x-g.step*1.8,y-g.step*1.8,g.step*3.6,g.step*3.6);}
+   if(high<=.52)continue;
+   const radius=g.step*(distant?2.15:1.8),strength=(.045+high*.065)*(distant?.7:1);
+   const shadow=c.createRadialGradient(x+g.step*.26,y+g.step*.22,0,x+g.step*.26,y+g.step*.22,radius);
+   shadow.addColorStop(0,`rgba(84,105,90,${strength.toFixed(3)})`);
+   shadow.addColorStop(1,'rgba(84,105,90,0)');
+   c.fillStyle=shadow;c.fillRect(x-radius+g.step*.26,y-radius+g.step*.22,radius*2,radius*2);
+   const light=c.createRadialGradient(x-g.step*.18,y-g.step*.18,0,x-g.step*.18,y-g.step*.18,radius);
+   light.addColorStop(0,`rgba(193,157,107,${(strength*1.25).toFixed(3)})`);
+   light.addColorStop(1,'rgba(193,157,107,0)');
+   c.fillStyle=light;c.fillRect(x-radius-g.step*.18,y-radius-g.step*.18,radius*2,radius*2);
   }
-  c.lineCap='round';c.strokeStyle='#6480647c';c.lineWidth=1.05;
-  c.beginPath();for(const seg of layer.contours){if(!cross(seg.from.x,seg.from.y)&&!cross(seg.to.x,seg.to.y))continue;c.moveTo(seg.from.x,seg.from.y);c.lineTo(seg.to.x,seg.to.y);}c.stroke();
-  if(zoom>1.6){
-   // Sparse contour elevation numbers, not the elevation of individual roads.
+  // Contour lines stay readable close up and disappear at landscape zoom.
+  if(!distant){
+   c.lineCap='round';c.strokeStyle=zoom<1.6?'#64806456':'#6480647c';c.lineWidth=zoom<1.6?.85:1.05;
+   c.beginPath();for(const seg of layer.contours){if(!cross(seg.from.x,seg.from.y)&&!cross(seg.to.x,seg.to.y))continue;c.moveTo(seg.from.x,seg.from.y);c.lineTo(seg.to.x,seg.to.y);}c.stroke();
+  }
+  if(zoom>1.8){
+   // Elevation labels refer only to the sampled macro-terrain, not roads.
    c.textAlign='center';c.textBaseline='middle';c.font='6px system-ui';
    let printed=0;for(let i=0;i<layer.contours.length&&printed<5;i+=19){const seg=layer.contours[i];const x=(seg.from.x+seg.to.x)/2,y=(seg.from.y+seg.to.y)/2;if(!cross(x,y))continue;c.fillStyle='#f1e9d1ca';c.fillRect(x-8,y-3,16,6);c.fillStyle='#71896a';c.fillText(`${seg.level}m`,x,y);printed++;}
   }
@@ -1990,8 +2117,27 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorAffectionMemory=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
  const PROTAGONISTS=['damiao','lucia','bia'];
- const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo'};
- const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.']};
+ const NAMES={damiao:'Damião',lucia:'Lúcia',bia:'Bia',cica:'Ciça',nara:'Nara',teo:'Téo',rosa:'Rosa',zeca:'Zeca',mila:'Mila'};
+ const DEFAULT={damiao:['Hoje a banca acordou tranquila.','Uma conversa deixa o trabalho mais leve.'],lucia:['As folhas ficam mais bonitas quando a gente observa com calma.','Cada visita traz uma memória nova.'],bia:['Entre páginas e caminhos, há sempre coisa para descobrir.','Quero conhecer o mundo sem esquecer de onde saí.'],cica:['Estou separando as cores mais alegres de hoje.','Toda fita pode guardar um carinho.'],nara:['Meu caderninho já tem mais uma janela.','A sombra da tarde muda meu desenho.'],teo:['Uma boa notícia merece viajar de mão em mão.','As cartas sempre encontram quem se lembra delas.'],rosa:['Gosto de observar quem passa e ouvir novidades.','Uma conversa tranquila muda a cor da tarde.'],zeca:['As folhas me ensinam a ter paciência.','Depois da sombra, sempre encontro um cantinho verde.'],mila:['Hoje encontrei uma cor nova no caminho.','À tarde, gosto de desenhar o que vi pela cidade.']};
+ // Permanent keepsakes are derived from existing quest completion flags.
+ // Unlike the 12 recent diary notes, these achievements cannot scroll away.
+ const KEEPSAKES=Object.freeze([
+  {id:'manha-mercado',title:'Uma manhã de mãos dadas com a feira',icon:'🧺',caption:'Você ajudou Damião a preparar a banca, e a manhã ganhou outra história.',earned:s=>s?.marketMorning?.claimed===true},
+  {id:'muda-matriz',title:'A flor que ficou na memória',icon:'🌱',caption:'Um cuidado partilhado com Lúcia perto da Matriz.',earned:s=>s?.luciaGarden?.claimed===true},
+  {id:'carta-caminhos',title:'Uma carta para os caminhos',icon:'✉️',caption:'Você e Bia escreveram sobre saudade, planos e o que fica.',earned:s=>s?.biaLetters?.claimed===true},
+  {id:'fitas-feira',title:'Fitas de bom-dia',icon:'🎀',caption:'Ciça e Damião dividiram um pequeno gesto de acolhimento.',earned:s=>s?.communitySeen?.includes('fitas-de-bom-dia')===true},
+  {id:'desenho-jardim',title:'Uma folha desenhada',icon:'🎨',caption:'Uma lembrança de Nara e Lúcia encontrou lugar no caderno.',earned:s=>s?.communitySeen?.includes('memorias-do-jardim')===true},
+  {id:'caderno-bia-nara',title:'Desenhos para os caminhos',icon:'📖',caption:'Nara desenhou uma janela ou paisagem inspirada na carta de Bia.',earned:s=>s?.biaLetters?.claimed===true&&['janela-bia','paisagem-bia'].includes(s?.sideNeighbors?.choices?.nara)},
+  {id:'zeca-lucia',title:'Uma muda entre vizinhos',icon:'🪴',caption:'Zeca ouviu a história da muda cuidada com Lúcia.',earned:s=>s?.luciaGarden?.claimed===true&&s?.sideNeighbors?.choices?.zeca==='muda-lucia'},
+  {id:'mila-cores',title:'Fitas, janelas e cores',icon:'🎨',caption:'Mila uniu ideias de Ciça e Nara num desenho imaginado.',earned:s=>s?.sideNeighbors?.choices?.mila==='amigas'},
+  {id:'bilhete-volta',title:'Um bilhete de volta',icon:'💌',caption:'O recado de Bia e Téo ganhou um caminho de volta.',earned:s=>s?.communitySeen?.includes('bilhete-de-volta')===true}
+ ]);
+ function collection(raw){
+  return KEEPSAKES.filter(item=>item.earned(raw)).map(({id,title,icon,caption})=>({id,title,icon,caption}));
+ }
+ function collectionProgress(raw){
+  return{earned:collection(raw).length,total:KEEPSAKES.length};
+ }
  function snapshot(raw,id){
   const clock=raw?.living||{day:1,minute:510},person=clock.people?.[id]||{};
   const seen=Array.isArray(raw?.communitySeen)?raw.communitySeen:[];
@@ -2003,6 +2149,7 @@
   switch(id){
    case 'damiao':
     if(known('recado-da-feira'))memory=['Guardei o bilhete de Téo junto das anotações da feira.','o recado de Téo','joy'];
+    else if(raw?.marketMorning?.claimed&&neighbors.choices?.cica==='banca')memory=['Ciça me mostrou a fita que vocês prepararam para a banca. Guardei o laço com carinho!','o laço preparado com Ciça','joy'];
     else if(known('fitas-de-bom-dia'))memory=['Olhe a fita de Ciça no meu cesto! Ainda me lembra aquela manhã.','a fita da feira','joy'];
     else if(raw?.marketMorning?.claimed)memory=['Ainda lembro como você me ajudou com os cestos e as frutas.','a manhã de trabalho juntos','warm'];
     break;
@@ -2011,20 +2158,42 @@
     else if(raw?.luciaGarden?.claimed)memory=['A mudinha que cuidamos ficou guardada aqui, junto da nossa conversa.','a muda que cuidamos','warm'];
     break;
    case 'bia':
-    if(known('bilhete-de-volta'))memory=['Téo prometeu guardar meu bilhete até a próxima volta.','o bilhete de Téo','joy'];
+    if(raw?.biaLetters?.claimed&&['janela-bia','paisagem-bia'].includes(neighbors.choices?.nara))memory=['Nara desenhou uma página para nossa carta. Agora ela tem um desenho para lembrar.','o desenho de Nara na carta','joy'];
+    else if(known('bilhete-de-volta'))memory=['Téo prometeu guardar meu bilhete até a próxima volta.','o bilhete de Téo','joy'];
     else if(known('caderno-compartilhado'))memory=['Nara desenhou uma janela na página em que escrevi meus planos.','o desenho de Nara','joy'];
     else if(raw?.biaLetters?.claimed)memory=['Voltei a ler a carta que escrevemos. A saudade cabe inteira numa página.','a carta que escrevemos','warm'];
     break;
    case 'cica':
-    if(raw?.marketMorning?.claimed&&raw?.marketWitnessed)memory=[known('fitas-de-bom-dia')?'Meu laço e a arrumação de vocês deixaram a banca uma graça!':'Vi como você e Damião ajeitaram a banca. Ficou uma graça!','a banca que arrumaram','warm'];
+    if(neighbors.choices?.cica==='banca'&&raw?.marketMorning?.claimed)memory=['Separei uma fita para a banca de Damião. Aquela ajuda de vocês merecia um laço!','a fita da banca','joy'];
+    else if(raw?.marketMorning?.claimed&&raw?.marketWitnessed)memory=[known('fitas-de-bom-dia')?'Meu laço e a arrumação de vocês deixaram a banca uma graça!':'Vi como você e Damião ajeitaram a banca. Ficou uma graça!','a banca que arrumaram','warm'];
     else if(known('fitas-de-bom-dia'))memory=['Damião sorriu quando viu o laço. Acho que escolhi a cor certa!','o laço de Damião','joy'];
     else if(neighbors.choices?.cica==='fitas')memory=['Lembra como organizamos as fitas? Ainda separo as cores daquele jeito.','as fitas que arrumamos','warm'];
     else if(neighbors.choices?.cica==='cores')memory=['Ainda guardo a dupla de cores que escolhemos.','as cores que escolhemos','warm'];
     break;
    case 'nara':
-    if(known('memorias-do-jardim'))memory=['Meu desenho da folhinha de Lúcia ficou na página mais bonita.','o desenho das folhas','joy'];
+    if(raw?.biaLetters?.claimed&&neighbors.choices?.nara==='janela-bia')memory=['A janela que desenhamos para Bia ainda está aberta naquela página.','a janela da carta de Bia','joy'];
+    else if(raw?.biaLetters?.claimed&&neighbors.choices?.nara==='paisagem-bia')memory=['Guardei o horizonte que pintamos para os planos de Bia.','a paisagem da carta de Bia','joy'];
+    else if(known('memorias-do-jardim'))memory=['Meu desenho da folhinha de Lúcia ficou na página mais bonita.','o desenho das folhas','joy'];
     else if(known('caderno-compartilhado'))memory=['Bia escreveu uma frase ao lado da janela que desenhei.','o caderno compartilhado','joy'];
     else if(neighbors.choices?.nara)memory=['Abri o caderno bem na página que desenhamos juntos.','nosso primeiro desenho','warm'];
+    break;
+   case 'rosa':
+    if(neighbors.choices?.rosa==='prosa')memory=['Nossa conversa tranquila ainda me acompanha pelo caminho.','a pausa para conversar','warm'];
+    else if(neighbors.choices?.rosa==='caderno')memory=['Guardei no caderno a frase que escrevemos durante o passeio.','a frase do caderno','joy'];
+    else if(raw?.marketMorning?.claimed)memory=['Soube da ajuda que você deu a Damião na feira. Uma manhã assim rende boa conversa!','a ajuda na feira','warm'];
+    break;
+   case 'zeca':
+    if(raw?.luciaGarden?.claimed&&neighbors.choices?.zeca==='muda-lucia')memory=['Ainda lembro da muda que você cuidou com Lúcia. Uma história boa para compartilhar.','a muda de Lúcia','joy'];
+    else if(neighbors.choices?.zeca==='vasos')memory=['Aquele papo sobre vasos me fez olhar melhor para as folhas.','a conversa sobre os vasos','warm'];
+    else if(neighbors.choices?.zeca==='sementes')memory=['Ainda lembro da nossa dica de jardim.','o papo sobre sementes','warm'];
+    else if(raw?.luciaGarden?.claimed)memory=['Lúcia me contou da muda que vocês cuidaram. Dá gosto saber que ela tem companhia!','o cuidado com a muda','warm'];
+    break;
+   case 'mila':
+    if(neighbors.choices?.mila==='amigas')memory=['Guardei a ideia de misturar fitas de Ciça e desenhos de Nara.','as cores das amigas','joy'];
+    else if(neighbors.choices?.mila==='cores')memory=['A faixa de cor que escolhemos ainda está no meu caderno.','a cor do caderno','warm'];
+    else if(neighbors.choices?.mila==='tecidos')memory=['Ainda estou pensando nas estampas que imaginamos.','as estampas do passeio','warm'];
+    else if(neighbors.choices?.cica==='banca')memory=['Ciça mostrou a ideia da fita para Damião. Agora quero desenhar uma igualzinha no meu caderno!','a fita da banca','joy'];
+    else if(['janela-bia','paisagem-bia'].includes(neighbors.choices?.nara))memory=['Nara me contou do desenho que fez para a carta de Bia. Que ideia bonita!','o desenho na carta','warm'];
     break;
    case 'teo':
     if(known('bilhete-de-volta'))memory=['O bilhete de Bia está protegido no meu envelope de capa azul.','a carta de Bia','joy'];
@@ -2037,13 +2206,29 @@
   const fallback=DEFAULT[id]?.[morning?0:1]||'Que bom encontrar você.';
   const friendly=close?{
    damiao:'Que bom rever você! Já parece gente de casa.',lucia:'Suas visitas sempre dão um respiro ao meu dia.',bia:'Quando você chega, tenho vontade de contar todos os meus planos.',
-   cica:'Olha quem voltou para escolher cores comigo!',nara:'Você já sabe onde guardo meus melhores desenhos.',teo:'Eu sabia que você voltaria para ouvir novidades!'
+   cica:'Olha quem voltou para escolher cores comigo!',nara:'Você já sabe onde guardo meus melhores desenhos.',teo:'Eu sabia que você voltaria para ouvir novidades!',rosa:'Que bom que voltou! Guardei uma boa conversa para hoje.',zeca:'Voltou para ver as plantas? Que bom ter companhia.',mila:'Olha quem chegou! Tenho outra ideia de desenho.'
   }[id]:null;
   const line=memory?.[0]||friendly||fallback;
   const mood=Number(person.fatigue)>75?'sleepy':memory?.[2]||((close||bond>=1)?'warm':'curious');
   return {id,name:NAMES[id],line,short:memory?.[1]||friendly||null,expression:mood,remembered:!!memory,close,kind:memory?.[1]||null};
  }
- return{snapshot};
+ function appendSocialKeepsakes(grid,raw,doc){
+  if(!grid||!doc?.createElement)return 0;
+  let added=0;
+  for(const memory of collection(raw).filter(item=>!['manha-mercado','muda-matriz','carta-caminhos'].includes(item.id))){
+   if(grid.querySelector?.('[data-keepake="'+memory.id+'"]'))continue;
+   const article=doc.createElement('article');article.className='album-card community-keepsake';
+   article.setAttribute('data-keepake',memory.id);
+   const thumbnail=doc.createElement('div');thumbnail.className='fair-memory-thumbnail';
+   thumbnail.textContent=memory.icon;thumbnail.setAttribute('aria-label','Lembrança ilustrativa: '+memory.title);
+   const content=doc.createElement('div');content.className='album-card-content';
+   const title=doc.createElement('strong');title.textContent=memory.title;
+   const caption=doc.createElement('span');caption.textContent=memory.caption;
+   content.append(title,caption);article.append(thumbnail,content);grid.append(article);added++;
+  }
+  return added;
+ }
+ return{snapshot,collection,collectionProgress,appendSocialKeepsakes};
 });
 
 </script>
@@ -2070,6 +2255,70 @@
     damiao:['Uma boa feira é feita das pessoas que chegam e dos encontros que ficam.','Hoje eu separo os cestos com calma. Cada conversa também faz parte do caminho.','Quando a rua acorda, eu gosto de escutar as novidades e oferecer um bom dia.'],
     lucia:['Tem planta que pede sombra, tem conversa que pede tempo. As duas merecem cuidado.','Meu caderno está cheio de memórias pequenas: um passeio, uma flor, um sorriso.','Uma vizinhança fica mais bonita quando alguém se lembra de perguntar como a gente está.'],
     bia:['Fiz uma lista de lugares que sonho conhecer. Também escrevi tudo o que gosto daqui.','O melhor de estudar é descobrir perguntas novas e depois dividir com alguém.','Ficar um pouco na rua ajuda a organizar as ideias antes de voltar aos livros.']
+  };
+  // Follow-ups depend only on already-saved care activity and day.
+  // These are fictional neighbors, not quotations or accounts of real residents.
+  const CARE_FOLLOW_UP={
+    damiao:{
+      cestos:'Os cestos que arrumamos ontem deixaram a banca pronta bem mais cedo. Obrigado pela força!',
+      historias:'Ainda pensei naquela conversa de ontem. É bom ter quem escute com calma.'
+    },
+    lucia:{
+      mudas:'Olhe, a mudinha que cuidamos ontem parece mais viçosa. Cuidar junto faz diferença.',
+      lembrancas:'Guardei com carinho o que conversamos ontem. Tem lembrança que floresce devagar.'
+    },
+    bia:{
+      caderno:'Revisei as anotações que organizamos ontem. Agora meus planos estão mais claros.',
+      planos:'Fiquei pensando nos caminhos que imaginamos ontem. Já tenho outra ideia para contar!'
+    }
+  };
+  // A neighbor may mention a recent kindness shown to someone else.
+  // All accounts are original fictional dialogue, derived from existing save fields.
+  const NEIGHBOR_FOLLOW_UP={
+    damiao:[
+      {friend:'lucia',kind:'mudas',text:'Lúcia me contou que você ajudou com a mudinha. É bom ver esse cuidado correndo pela cidade.'},
+      {friend:'bia',kind:'caderno',text:'Bia disse que vocês organizaram o caderno dela. Esses planos merecem todo apoio.'}
+    ],
+    lucia:[
+      {friend:'damiao',kind:'cestos',text:'Damião comentou que você ajudou com os cestos. A feira fica mais bonita com essa atenção.'},
+      {friend:'bia',kind:'planos',text:'Bia me falou dos planos que vocês imaginaram. É bonito ver alguém sonhar com carinho.'}
+    ],
+    bia:[
+      {friend:'lucia',kind:'mudas',text:'Lúcia me contou da mudinha que vocês cuidaram. Queria desenhar como ela vai ficar.'},
+      {friend:'damiao',kind:'historias',text:'Damião disse que você parou para ouvir suas histórias. Também quero escutar uma delas.'}
+    ]
+  };
+  function neighborFollowUp(s,id){
+    return NEIGHBOR_FOLLOW_UP[id]?.find(({friend,kind})=>{
+      const person=s.people?.[friend];
+      return person?.lastCareKind===kind&&person.lastCareDay>0&&s.day-person.lastCareDay<=1;
+    })?.text||null;
+  }
+  // Short, illustrated-album-ready diary captions; no new save fields.
+  // They are fictional descriptions of player actions, not real local testimony.
+  const CARE_DIARY={
+    damiao:{
+      cestos:'Na feira, você organizou os cestos com Damião e deixou a passagem mais acolhedora.',
+      historias:'Você parou para ouvir as histórias de Damião, sem pressa de seguir caminho.'
+    },
+    lucia:{
+      mudas:'Perto da Matriz, você cuidou de uma pequena muda com Lúcia.',
+      lembrancas:'Você e Lúcia dividiram uma lembrança tranquila, dessas que cabem no coração.'
+    },
+    bia:{
+      caderno:'Na Rodoviária, você ajudou Bia a colocar suas anotações em ordem.',
+      planos:'Você ouviu os sonhos de Bia e imaginou com ela caminhos para o futuro.'
+    }
+  };
+  const REUNION_DIARY={
+    damiao:'Damião se lembrou de uma gentileza sua. Uma conversa de ontem virou amizade hoje.',
+    lucia:'Lúcia retomou um cuidado compartilhado. Pequenas coisas continuam crescendo entre amigos.',
+    bia:'Bia lembrou de algo que vocês fizeram juntos. Até os planos guardam memórias.'
+  };
+  const CARE_TODAY={
+    damiao:'Obrigado pela companhia de hoje! Depois a gente continua a conversa perto da banca.',
+    lucia:'Gostei de cuidar dessas pequenas coisas com você hoje. Vamos ver como ficam amanhã?',
+    bia:'Essa conversa me ajudou a colocar as ideias no papel. Depois te conto o que descobri!'
   };
   const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
   function fresh() {
@@ -2160,7 +2409,17 @@
     const n=s.people[id],firstToday=n.lastConversationDay!==s.day;
     if(firstToday){n.lastConversationDay=s.day;n.bond=clamp(n.bond+1,0,4);n.company=clamp(n.company-25,0,100);s.notes.unshift({day:s.day,text:'Você conversou com '+p.name+' sobre '+p.likes+'.'});s.notes=s.notes.slice(0,12);}
     const choices=DIALOGUES[id];
-    return{friendship:n.bond,newMemory:firstToday,text:firstToday?choices[(s.day+Math.max(0,n.bond)-2)%choices.length]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.'};
+    const yesterday=n.lastCareDay===s.day-1&&CARE_FOLLOW_UP[id]?.[n.lastCareKind];
+    const today=n.lastCareDay===s.day&&n.lastCareKind;
+    const neighbor=firstToday?neighborFollowUp(s,id):null;
+    const text=firstToday
+      ?(yesterday||neighbor||choices[(s.day+Math.max(0,n.bond)-2)%choices.length])
+      :(today?CARE_TODAY[id]:'Que bom rever você! Ainda lembro da nossa conversa de hoje.');
+    if(firstToday&&(yesterday||neighbor)){
+      s.notes[0].text=yesterday?REUNION_DIARY[id]:
+        'Um gesto seu chegou a outra pessoa: '+p.name+' comentou uma gentileza feita a um amigo.';
+    }
+    return{friendship:n.bond,newMemory:firstToday,text};
   }
   function care(s,id,kind){
     if(!s?.people?.[id]||!CARE[id])return{ok:false,text:'Encontro não encontrado.'};
@@ -2172,7 +2431,7 @@
     person.lastCareDay=s.day;person.lastCareKind=kind;person.careCount=clamp(person.careCount+1,0,9999);
     person.fatigue=clamp(person.fatigue+choice.fatigue,0,100);
     person.company=clamp(person.company+choice.company,0,100);
-    s.notes.unshift({day:s.day,text:'Um gesto com '+RESIDENTS.find(p=>p.id===id).name+': '+choice.label.replace(/^[^\p{L}]+/u,'')+'.'});
+    s.notes.unshift({day:s.day,text:CARE_DIARY[id]?.[kind]||'Um gesto de cuidado com um amigo.'});
     s.notes=s.notes.slice(0,12);
     return{ok:true,text:choice.effect,progress:careProgress(s)};
   }
@@ -2492,17 +2751,43 @@
     }
     c.fillStyle='#8c7d67';c.fillRect(left+home.w*.62,base+1.9,home.w*.25,home.h*.32);
     if(block==='feira'&&seed%3!==1){
-      const colors=['#d0a276','#7394a0','#cb846b'];c.fillStyle=colors[seed%3];
-      c.fillRect(left-1.3,base-2.2,home.w+2.6,3.2);
-      c.strokeStyle='#fff5dc';c.lineWidth=.65;for(let i=2;i<home.w;i+=4){c.beginPath();c.moveTo(left+i,base-2.2);c.lineTo(left+i,base+1);c.stroke();}
+      // Existing illustrative awning: a shaded canvas edge and subtle fabric
+      // rhythm, inspired by the 2007 market scene, not a current shop survey.
+      const colors=['#d0a276','#7394a0','#cb846b'];
+      c.fillStyle='#50483f32';c.fillRect(left-.8,base+1,home.w+1.6,1.6);
+      c.fillStyle=colors[seed%3];c.fillRect(left-1.3,base-2.2,home.w+2.6,3.2);
+      c.fillStyle='#fff7df56';c.fillRect(left-1.1,base-2,home.w+2.2,.7);
+      c.fillStyle='#65564d36';c.fillRect(left-1.3,base+.25,home.w+2.6,.65);
+      c.strokeStyle='#fff5dc';c.lineWidth=.65;
+      for(let i=2;i<home.w;i+=4){c.beginPath();c.moveTo(left+i,base-2.2);c.lineTo(left+i,base+1);c.stroke();}
     }
     if(block==='matriz'){
+      // Quiet stucco reveals and eave shadows on existing illustrative houses.
+      // These are material studies, not claims about any photographed private facade.
+      c.fillStyle='#5d58451f';c.fillRect(left+.8,base+1.2,home.w-1.6,1.4);
       c.strokeStyle='#756d63';c.lineWidth=.65;c.strokeRect(left+.8,base-.2,home.w-1.6,home.h*.36+.2);
       c.fillStyle='#efeee0';c.fillRect(left+home.w*.55,base+1.5,1.2,home.h*.29);
+      c.fillStyle='#fff9eb82';c.fillRect(left+home.w*.55+1.2,base+1.5,.6,home.h*.29);
+      if(seed%3===0){
+        c.fillStyle='#b6a68f';c.fillRect(left+home.w*.59,base+home.h*.25,home.w*.3,.7);
+        c.fillStyle='#625b4b24';c.fillRect(left+home.w*.59,base+home.h*.25+.7,home.w*.3,.55);
+      }
     }
     if(block==='joao'&&seed%3===0){
       c.fillStyle='#d3a895';c.fillRect(left+home.w*.48,base+1,1.3,home.h*.34);
       c.fillStyle='#76a68a';c.beginPath();c.ellipse(left+home.w+.3,base+home.h*.15,2.6,1.7,0,0,Math.PI*2);c.fill();
+    }
+    // Tiny fictional doorstep corners on a sparse subset of existing homes.
+    // All details stay inside the drawn facade: no new buildings or path obstacles.
+    const residential=(block==='matriz'||block==='joao'||block==='clovis');
+    if(residential&&home.w>=18&&seed%7===2){
+      const porchY=base+home.h*.31,porchX=left+home.w*.18;
+      c.fillStyle='#8b735e';c.fillRect(porchX,porchY-2.1,3.1,.65);
+      c.fillRect(porchX+.25,porchY-1.5,.55,1.5);
+      c.fillRect(porchX+2.3,porchY-1.5,.55,1.5);
+      c.fillStyle='#b68064';c.fillRect(porchX+5.2,porchY-2.1,2.4,.8);
+      c.fillStyle='#7b9e7a';c.beginPath();
+      c.ellipse(porchX+6.4,porchY-3.5,1.7,1.4,0,0,Math.PI*2);c.fill();
     }
     if(phase==='anoitecer'){
       c.fillStyle='#ffe3a55c';c.fillRect(left+1.8,base+2,3,home.h*.28);
@@ -2647,7 +2932,7 @@
   {id:'conversa',title:'Uma conversa no portão',story:'Uma lembrança inventada de ouvir alguém querido sem olhar para o relógio.'},
   {id:'chuva',title:'O cheiro da primeira chuva',story:'Uma lembrança inventada de terra molhada e esperança depois do calor.'}
  ];
- function fresh(){return{arrived:false,talked:false,work:[],memory:null,claimed:false};}
+ function fresh(){return{arrived:false,talked:false,work:[],memory:null,claimed:false,claimedDay:0};}
  function readyForMemory(state){return state.talked&&state.work.length===TASKS.length;}
  function ready(state){return readyForMemory(state)&&MEMORIES.some(m=>m.id===state.memory);}
  function restore(raw){
@@ -2659,16 +2944,26 @@
   }
   if(readyForMemory(state)&&MEMORIES.some(m=>m.id===raw.memory))state.memory=raw.memory;
   state.claimed=ready(state)&&raw.claimed===true;
+  if(state.claimed&&Number.isInteger(raw.claimedDay)&&raw.claimedDay>=1&&raw.claimedDay<=9999)state.claimedDay=raw.claimedDay;
   return state;
  }
  function arrive(state){if(state.arrived)return false;state.arrived=true;return true;}
  function meet(state){if(state.talked)return false;state.arrived=true;state.talked=true;return true;}
  function doWork(state,id){if(!state.talked||state.claimed||id!==TASKS[state.work.length]?.id)return false;state.work.push(id);return true;}
  function chooseMemory(state,id){if(!readyForMemory(state)||state.claimed||!MEMORIES.some(m=>m.id===id))return false;state.memory=id;return true;}
- function claim(state){if(state.claimed||!ready(state))return false;state.claimed=true;return true;}
+ function claim(state,day){if(state.claimed||!ready(state))return false;state.claimed=true;state.claimedDay=Number.isInteger(day)&&day>=1&&day<=9999?day:0;return true;}
+ function growth(state,day){
+  if(!state?.claimed)return{stage:0,caption:'A mudinha ainda espera seu cuidado.',flower:false,scale:.66};
+  // Saves anteriores à data de plantio mantêm a flor já conquistada.
+  if(!Number.isInteger(state.claimedDay)||state.claimedDay<1)return{stage:3,caption:'Uma flor do jardim já guarda essa lembrança.',flower:true,scale:1};
+  const days=Math.max(0,(Number.isInteger(day)?day:state.claimedDay)-state.claimedDay);
+  const stage=days>=5?3:days>=3?2:days>=1?1:0;
+  const captions=['A muda foi plantada hoje.','As primeiras folhas estão mais abertas.','Um botão de flor começa a aparecer.','A flor se abriu depois de alguns dias.'];
+  return{stage,caption:captions[stage],flower:stage===3,scale:[.7,.82,.92,1][stage]};
+ }
  function progress(state){return Number(state.arrived)+Number(state.talked)+Number(state.claimed);}
  function next(state){return !state.arrived?'arrival':!state.talked?'talk':!readyForMemory(state)?'work':!ready(state)?'memory':!state.claimed?'thank':'next';}
- return{TASKS,MEMORIES,fresh,restore,arrive,meet,doWork,chooseMemory,readyForMemory,ready,claim,progress,next};
+ return{TASKS,MEMORIES,fresh,restore,arrive,meet,doWork,chooseMemory,readyForMemory,ready,claim,growth,progress,next};
 });
 
 </script>
@@ -2713,7 +3008,7 @@
 
 </script>
 <script>
-/* Three fictional neighbors: daily presence, small gestures and persistent memories.
+/* Fictional neighbors: daily presence, small gestures and persistent memories.
    No placement claims a verified business, home or workplace in Belém/PB. */
 (function(root){
  'use strict';
@@ -2722,18 +3017,39 @@
    morning:'separa fitas e dobra tecidos',afternoon:'ajeita cores para a próxima manhã',
    greeting:'Bom dia! Uma fita só ganha graça quando encontra a cor certa.',
    options:[{id:'fitas',label:'Ajudar a organizar as fitas',reply:'Ciça abre um sorriso e arruma as fitas por cor. “Agora dá gosto de olhar!”'},
-    {id:'cores',label:'Escolher uma combinação de cores',reply:'“Sálvia e terracota combinam com o nosso passeio”, diz Ciça, mostrando duas fitas.'}]},
+    {id:'cores',label:'Escolher uma combinação de cores',reply:'“Sálvia e terracota combinam com o nosso passeio”, diz Ciça, mostrando duas fitas.'},
+    {id:'banca',label:'🎀 Preparar uma fita para a banca de Damião',reply:'“Damião vai gostar desta fita!”, diz Ciça, separando um laço para a banca que vocês arrumaram.'}]},
   {id:'nara',name:'Nara',hub:'igreja',variant:7,tone:'#b99ab3',icon:'✏️',role:'A desenhista de janelas',
    morning:'desenha linhas no seu caderninho',afternoon:'repassa os traços das fachadas',
    greeting:'Toda janela tem uma forma bonita. Gosto de imaginar as histórias atrás delas.',
    options:[{id:'desenho',label:'Desenhar uma janelinha junto',reply:'Nara acrescenta uma janela de arco ao seu caderno. “Olha só como ficou acolhedora!”'},
-    {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'}]},
+    {id:'sombra',label:'Observar a luz das fachadas',reply:'“A sombra muda tudo ao longo do dia”, conta Nara, pintando uma página de dourado.'},
+    {id:'janela-bia',label:'✏️ Desenhar uma janela para a carta de Bia',reply:'Nara desenha uma janela aberta ao lado da carta: “Para lembrar que sempre existe um caminho de volta.”'},
+    {id:'paisagem-bia',label:'🌿 Desenhar a paisagem que Bia quer conhecer',reply:'Nara pinta um horizonte delicado: “Os sonhos também precisam de espaço no papel.”'}]},
+  {id:'rosa',name:'Rosa',hub:'sonho_doce',variant:10,tone:'#b78483',icon:'☕',role:'Vizinha das conversas tranquilas',
+   morning:'observa o movimento e ajeita um pequeno caderno',afternoon:'descansa e troca notícias com quem passa',
+   greeting:'Eu gosto de uma conversa sem pressa. Sempre tem uma história bonita nas ruas.',
+   options:[{id:'prosa',label:'☕ Fazer uma pausa para conversar',reply:'Rosa escuta com atenção e diz: “Às vezes a melhor descoberta é ter tempo para alguém.”'},
+    {id:'caderno',label:'📒 Anotar uma lembrança do passeio',reply:'Rosa abre o caderno e guarda uma frase sobre o dia: “Essa eu não quero esquecer.”'}]},
+  {id:'zeca',name:'Zeca',hub:'escola_anita',variant:11,tone:'#88a386',icon:'🪴',role:'Vizinho que gosta de plantas',
+   morning:'observa vasos e folhas perto do caminho',afternoon:'descansa à sombra e conversa sobre o quintal',
+   greeting:'Planta e amizade têm uma coisa parecida: as duas melhoram com cuidado.',
+   options:[{id:'vasos',label:'🪴 Conversar sobre os vasos',reply:'Zeca ajeita uma folhinha e sorri: “Cada vaso guarda um pouquinho de paciência.”'},
+    {id:'sementes',label:'🌱 Trocar uma dica de plantio',reply:'Zeca conta uma dica imaginada de jardim e agradece a companhia.'},
+    {id:'muda-lucia',label:'🌷 Contar da muda cuidada com Lúcia',reply:'“Lúcia vai gostar de saber que você voltou para olhar a planta”, diz Zeca, contente.'}]},
+  {id:'mila',name:'Mila',hub:'bar_prosa',variant:12,tone:'#c394a6',icon:'🎨',role:'Criadora de cores e pequenos desenhos',
+   morning:'reúne ideias e combina cores no caderno',afternoon:'observa detalhes de fachadas e tecidos',
+   greeting:'Uma cor muda o jeito da gente lembrar de um dia. Qual foi a sua preferida hoje?',
+   options:[{id:'cores',label:'🎨 Escolher uma cor para o caderno',reply:'Mila desenha uma pequena faixa colorida: “Essa combina com o nosso passeio.”'},
+    {id:'tecidos',label:'🧵 Conversar sobre estampas',reply:'Mila mistura duas estampas imaginárias e ri: “Cada uma conta uma história!”'},
+    {id:'amigas',label:'♡ Juntar uma ideia de Ciça e Nara',reply:'Mila imagina uma fita desenhada como uma janela: “Ciça e Nara iam adorar essa mistura!”'}]},
   {id:'teo',name:'Téo',hub:'rodoviaria',variant:8,tone:'#85a0c5',icon:'✉️',role:'O colecionador de recados',
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
    options:[{id:'envelope',label:'Ajudar a separar envelopes',reply:'Téo alinha os envelopes e coloca um coração no de cima. “Pronto, ninguém se perde!”'},
     {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]}
  ]);
+ const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{}});
  function restore(raw){
   const state=fresh();if(!raw||typeof raw!=='object')return state;
@@ -2743,26 +3059,51 @@
   return state;
  }
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
+ // Fictional weekly variations; never claims residents' real schedules.
+ const WEEKLY_ROUTINES={
+  rosa:{morning:['observa o movimento e anota uma história','organiza seu caderninho de conversas','cumprimenta quem passa sem pressa'],afternoon:['faz uma pausa e relembra uma visita','procura uma frase bonita para guardar','descansa e troca notícias com conhecidos']},
+  zeca:{morning:['confere as folhas de um vaso ilustrativo','observa a sombra sobre as plantas','separa ideias para cuidar de uma muda'],afternoon:['descansa e conta histórias de jardins','repara nas plantas ao longo do caminho','conversa sobre os cuidados do quintal']},
+  mila:{morning:['experimenta cores no caderno','desenha formas de portas e janelas','separa ideias de fitas e tecidos'],afternoon:['observa padrões nas fachadas','compara cores de pequenos desenhos','imagina uma estampa para as amigas']}
+ };
+ function weeklyActivity(clock,def){
+  const scenes=WEEKLY_ROUTINES[def.id];
+  if(!scenes)return null;
+  const weekday=(((Number(clock?.day)||1)-1)%7+7)%7;
+  const morning=(Number(clock?.minute)||0)<12*60;
+  return scenes[morning?'morning':'afternoon'][weekday%3];
+ }
  function agenda(clock,def){
   const community=root?.RoncadorStreetCommunity?.agenda(clock,def.id);
-  if(community)return community;
+  if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
-  const open=minute>=8*60&&minute<12*60 || minute>=14*60&&minute<18*60;
+  const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
+   def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
+   (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
-  return {present:true,hub:def.hub,activity:morning?def.morning:def.afternoon,walking:minute%60<18};
+  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
  }
- function interact(state,clock,id,choiceId){
+ function availableOptions(def,context={}){
+  return def?.options?.filter(choice=>{
+   if(choice.id==='banca')return def.id==='cica'&&context.marketMorning?.claimed===true;
+   if(choice.id==='janela-bia'||choice.id==='paisagem-bia')return def.id==='nara'&&context.biaLetters?.claimed===true;
+   if(choice.id==='muda-lucia')return def.id==='zeca'&&context.luciaGarden?.claimed===true;
+   if(choice.id==='amigas')return def.id==='mila'&&Boolean(context.sideNeighbors?.choices?.cica)&&Boolean(context.sideNeighbors?.choices?.nara);
+   return true;
+  })||[];
+ }
+ function interact(state,clock,id,choiceId,context={}){
   const def=RESIDENTS.find(r=>r.id===id),choice=def?.options.find(o=>o.id===choiceId);
   if(!def||!choice)return{ok:false,reason:'Escolha indisponível.'};
+  if(!availableOptions(def,context).some(option=>option.id===choiceId))return{ok:false,reason:id==='nara'?'Conclua primeiro a carta com Bia para compartilhar esse desenho.':id==='zeca'?'Conclua primeiro o cuidado da muda com Lúcia.':id==='mila'?'Conheça primeiro as atividades de Ciça e Nara.':'Conclua primeiro a manhã com Damião para preparar a fita da banca.'};
   if(!agenda(clock,def).present)return{ok:false,reason:'Essa pessoa já seguiu sua rotina. Volte em outro horário.'};
   if(state.lastHelp[id]===clock.day)return{ok:false,reason:'Vocês já compartilharam uma gentileza hoje. Amanhã haverá outro encontro.'};
   state.lastHelp[id]=clock.day;state.choices[id]=choiceId;
   const first=!state.seen.includes(id);if(first)state.seen.push(id);
-  return{ok:true,first,reply:choice.reply,unlocked:state.seen.length===RESIDENTS.length};
+  return{ok:true,first,reply:choice.reply,unlocked:coreProgress(state)===3};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,interact};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,coreProgress,interact};
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
@@ -2800,29 +3141,50 @@
   return {block:home.centralBlock,kind:group[seed%group.length],shade:seed%4,detail:seed%3,roof:seed%3,returnWall:seed%4===1,shop:home.centralBlock==='feira'&&seed%3!==2,seed};
  }
  function statistics(houses){
-  const result={total:0,matriz:0,feira:0,joao:0,kinds:{}};
+  const result={total:0,matriz:0,feira:0,joao:0,clovis:0,feliciano:0,vicente:0,kinds:{}};
   for(const home of houses){const style=variant(home);if(!style)continue;result.total++;result[style.block]++;result.kinds[style.kind]=(result.kinds[style.kind]||0)+1;}
   return result;
  }
  const SKETCH_IDS=Object.freeze(['matriz','feira','joao','clovis','feliciano','vicente']);
  function restoreSketches(raw){return Array.isArray(raw)?SKETCH_IDS.filter(id=>raw.includes(id)):[];}
  function recordSketch(state,id,nearby){
-  if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===3};
-  state.push(id);return{recorded:true,unlocked:state.length===3,progress:state.length};
+  if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===SKETCH_IDS.length};
+  state.push(id);return{recorded:true,unlocked:state.length===SKETCH_IDS.length,progress:state.length};
  }
- function draw(c,home,phase='manha',minute=8*60){
+ function draw(c,home,phase='manha',minute=8*60,zoomLevel=1.85){
   const style=variant(home);if(!style)return false;
   const palette=PALETTES[style.block],seed=style.seed,night=phase==='anoitecer'||minute>=18*60||minute<6*60;
   const width=home.w,height=home.h;
+  // Only microdetails are reduced at distant zoom; facade and lot are unchanged.
+  const distant=zoomLevel<1.15;
   c.save();c.translate(home.x,home.y);c.rotate(home.angle);
   const left=-width/2,top=-height/2,front=top+height*.63,faceH=height*.37;
   // Roof: one thin ridge + uneven ceramic joints; no added footprint.
   c.strokeStyle=style.shade%2?'#f8ddbb88':'#f2e7c988';c.lineWidth=.65;
   c.beginPath();c.moveTo(left+1,top+height*.15);c.lineTo(left+width-1,top+height*.15);c.stroke();
-  for(let i=2+(seed%3);i<width-2;i+=4.2){c.beginPath();c.moveTo(left+i,top+height*.17);c.lineTo(left+i+1,top+height*.29);c.stroke();}
+  if(!distant)for(let i=2+(seed%3);i<width-2;i+=4.2){c.beginPath();c.moveTo(left+i,top+height*.17);c.lineTo(left+i+1,top+height*.29);c.stroke();}
   // The roof casts a soft, narrow contact shadow across the wall.
-  c.fillStyle='#584e462e';c.fillRect(left+.8,front-.25,width-1.6,1.3);
+  c.fillStyle=night?'#403b3b34':style.block==='matriz'?'#574c3f3c':'#584e462e';c.fillRect(left+.8,front-.25,width-1.6,style.block==='matriz'?1.65:1.3);
   c.fillStyle=[palette.wall,'#ead7c7','#d4ded1','#dfd6c5'][style.shade];c.fillRect(left+1,front+1,width-2,Math.max(1,faceH-2));
+  // Residential edges ease from the warmer centre into quieter plaster and
+  // limewashed lower walls. Every mark stays within the existing footprint.
+  const residentialEdge=['joao','clovis','vicente'].includes(style.block);
+  if(residentialEdge){
+   c.fillStyle=night?'#8e88751f':'#fbf3dd52';
+   c.fillRect(left+1.15,front+1.2,width-2.3,Math.max(.6,faceH*.29));
+   c.fillStyle=style.shade%2?'#8d87772e':'#9a907c23';
+   c.fillRect(left+1,front+faceH-1.45,width-2,Math.min(1.05,faceH*.16));
+   if(!distant&&seed%4===2){
+    // Sparse worn-plaster strokes, not identical damage on every facade.
+    c.fillStyle='#f9edd76b';
+    c.fillRect(left+width*.28,front+faceH-2.4,Math.min(2.4,width*.16),.45);
+   }
+  }
+  if(style.block==='matriz'){
+   // Illustrated plaster plinth and a soft side edge; no footprint change.
+   c.fillStyle='#a995802c';c.fillRect(left+1,front+faceH-1.35,width-2,.8);
+   c.fillStyle='#fff6e35c';c.fillRect(left+1.05,front+1,.55,Math.max(.5,faceH-2.6));
+  }
   c.fillStyle=palette.trim;c.fillRect(left+.75,front+1,1,faceH-1.5);
   c.fillRect(left+width-1.75,front+1,1,faceH-1.5);
   const windowY=front+2.05,windowH=Math.max(2.1,faceH-3.8),windowX=left+2.4;
@@ -2858,6 +3220,9 @@
    c.fillStyle=palette.wall;c.fillRect(left+.5,front-3.5,width-1,3.6);
    c.fillStyle=palette.trim;c.fillRect(left+.5,front-3.7,width-1,.85);
    c.fillStyle='#fff4db';c.fillRect(left+1.2,front-2.5,width-2.4,.55);
+   if(style.block==='matriz'){
+    c.fillStyle='#68584930';c.fillRect(left+.8,front-.15,width-1.6,.65);
+   }
   }else if(style.roof===2){
    c.fillStyle='#b47b61';c.fillRect(left+.4,front-1.7,width-.8,1.6);
    c.fillStyle='#e3b18a';for(let i=1.5;i<width-1;i+=2.4)c.fillRect(left+i,front-1.7,.8,1.1);
@@ -2894,15 +3259,15 @@
    c.fillStyle='#ffd88620';c.fillRect(windowX-1,windowY-1,Math.min(6.6,width*.43),windowH+2);
   }
   // Authentic Belém/PB house micro-details: tile number plaque, meter box & rooftop water tank
-  if(seed%2===0){
+  if(!distant&&seed%2===0){
    c.fillStyle='#3b6e8c';c.fillRect(left+1.4,windowY-.3,2.1,1.3);
    c.fillStyle='#ffffff';c.fillRect(left+1.7,windowY,1.5,.6);
   }
-  if(seed%3===1){
+  if(!distant&&seed%3===1){
    c.fillStyle='#b8bec4';c.fillRect(left+width-2.8,windowY+.6,1.5,2.1);
    c.strokeStyle='#6e767d';c.lineWidth=.4;c.strokeRect(left+width-2.8,windowY+.6,1.5,2.1);
   }
-  if(seed%5===0){
+  if(!distant&&seed%5===0){
    c.fillStyle='#4a90c2';c.beginPath();c.ellipse(left+width*.72,top+height*.22,2.4,1.6,0,0,Math.PI*2);c.fill();
    c.strokeStyle='#2f658d';c.lineWidth=.45;c.stroke();
   }
@@ -3197,7 +3562,7 @@
       <button class="dialog-close" data-close="kawaiiStyleDialog" aria-label="Fechar estúdio kawaii">×</button>
       <span class="eyebrow">✨ (o˘◡˘o) ✨ ESTÚDIO KAWAII DE BELÉM · VIBE TSULIPA⭐WORLD</span>
       <h2 id="kawaiiStyleTitle">Motinha Cozy, Sorda Quentinha & Estilo</h2>
-      <div class="tsulipa-banner"><span>🌸 <strong>Toque no seu personagem, no Pingo ou buzine (G)</strong> para soltar emojis e corações pelas ruas!</span><strong id="kawaiiStatsBadge">★ 0</strong></div>
+      <div class="tsulipa-banner"><span>🌸 <strong>Toque no seu personagem, no Bolt ou buzine (G)</strong> para soltar emojis e corações pelas ruas!</span><strong id="kawaiiStatsBadge">★ 0</strong></div>
       <h3>🛵 Escolha a pintura da sua Motinha Kawaii (Tecla X)</h3>
       <div id="motoSkinGrid" class="kawaii-style-grid"></div>
       <h3>👑 Escolha seu Acessório Kawaii (Inspirado no TsuLiPa⭐World)</h3>
@@ -3412,7 +3777,7 @@
    These are artistic routines, not measured pedestrian traffic. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorCrowdFlow=api;})(typeof window==='undefined'?null:window,function(){
  'use strict';
- const waves=new Map();
+ const waves=new Map(),slots=new Map();
 
  // Fictional conversations inspired by the author's Belém/PB references.
  // One short line per tap, varied locally; no network, personal data or save.
@@ -3518,25 +3883,32 @@
    const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];
    // Small fictional routines without simulation ticks or persistent saves.
    const shop=['sonho_doce','bar_prosa','parque_sao_luis'].includes(hub);
-   const role=hub==='mercado'?'feira':shop&&i%3===0?'vitrine':
+   const central=['igreja','mercado','rodoviaria'].includes(hub);
+   const role=hub==='mercado'?'feira':hub==='rodoviaria'?'espera':hub==='igreja'?'observador':shop&&i%3===0?'vitrine':
     i%5===0?'senhora':i%4===0?'vizinho':'passeante';
    // Time-driven short routines: different villagers linger at different moments.
    // Seconds provide a gentle rhythm without persistent schedules or timers.
    const cycle=Number.isFinite(now)?now:Number(world?.minute)||0;
    const phase=((cycle*.62+i*13)%59+59)%59;
-   const resting=phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine'||role==='feira');
-   const neighborWave=(role==='vizinho'||role==='senhora')&&phase>=11&&phase<14;
-   const waveStrength=neighborWave?Math.min(1,(phase-11)/.7,(14-phase)/.7):0;
+   // Established central sidewalks get quiet, staggered beats; no extra NPCs.
+   const centralPhase=central?((phase+i*3)%59):phase;
+   const resting=central?centralPhase<4.5:phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine');
+   const looking=central&&centralPhase>=6&&centralPhase<9;
+   const neighborWave=(role==='vizinho'||role==='senhora'||central)&&centralPhase>=12&&centralPhase<14.5;
+   const waveStrength=neighborWave?Math.max(0,Math.min(.72,(centralPhase-12)/.8,(14.5-centralPhase)/.8)):0;
    const wavedUntil=waves.get(id)||0;
    const waving=Number.isFinite(now)&&now<wavedUntil;
    const waveAge=waving?3.8-(wavedUntil-now):0;
    const activity=role==='senhora'?(hour<10?'passeio matinal tranquilo':'passeando sem pressa'):
-    role==='feira'?(hour<12?'indo à feira':'voltando da feira'):
+    role==='feira'?(resting?'observando as bancas':hour<12?'indo à feira':'voltando da feira'):
     role==='vitrine'?'observando a vitrine':
+    role==='espera'?(resting?'aguardando com calma':looking?'observando chegadas':neighborWave?'acenando numa despedida':'seguindo seu caminho'):
+    role==='observador'?(resting?'apreciando a praça':looking?'observando a Matriz':neighborWave?'cumprimentando conhecidos':'caminhando pelo centro'):
     role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
-   const kind=role==='vitrine'?'look':role==='senhora'?'rest':role==='feira'?'rest':'rest';
+   const kind=(role==='vitrine'||role==='feira'||role==='observador')?'look':'rest';
+   const gestureStrength=resting?Math.max(0,Math.min(.65,centralPhase/.9,(4.5-centralPhase)/.9)):looking?Math.max(0,Math.min(.6,(centralPhase-6)/.6,(9-centralPhase)/.6)):0;
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
-    pause:resting||waving||neighborWave,moment:resting?{kind,strength:Math.min(1,phase/.8,(5-phase)/.8)}:null,
+    pause:resting||looking||waving||neighborWave,moment:resting||looking?{kind:looking?'look':kind,strength:gestureStrength}:null,
     social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
      neighborWave?{pose:'wave',facing:i%2?1:-1,intensity:waveStrength}:null,
     greeting:waving?{age:waveAge}:null};
@@ -3544,10 +3916,19 @@
  }
  // Prefer an uncrowded place along the SAME mapped itinerary. With no safe
  // slot, a purely decorative passer may be omitted for this frame.
- function openSlot(sample,people=[],junctions=[],clearance=23){
+ function openSlot(sample,people=[],junctions=[],clearance=23,entrances=[],id=null,now=NaN,quietZones=[]){
   // Try nearby points first, then a few farther points along the same
   // mapped walking path. Never draw a decorative walker on a busy corner.
   const offsets=[0,14,-14,29,-29,45,-45,61,-61,78,-78,94,-94];
+  // Keep a walker's chosen spot while it remains safe. A temporary crowd
+  // must not make the target oscillate between two sides of the street.
+  if(typeof id==='string'&&Number.isFinite(now)){
+   const prior=slots.get(id);
+   if(prior&&now>=prior.time&&now-prior.time<18){
+    offsets.splice(offsets.indexOf(prior.offset),1);
+    offsets.unshift(prior.offset);
+   }else if(prior)slots.delete(id);
+  }
   const cornerRadius=20;
   const separation=Math.max(23,Number.isFinite(clearance)?clearance:23);
   for(const offset of offsets){
@@ -3555,6 +3936,10 @@
    if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
    if(people.some(other=>Number.isFinite(other?.x)&&Number.isFinite(other?.y)&&Math.hypot(p.x-other.x,p.y-other.y)<separation))continue;
    if(junctions.some(j=>Number.isFinite(j?.x)&&Number.isFinite(j?.y)&&Math.hypot(p.x-j.x,p.y-j.y)<cornerRadius))continue;
+   // House/shop footprints also reserve a small access strip for doorways.
+   if(entrances.some(e=>Number.isFinite(e?.x)&&Number.isFinite(e?.y)&&Math.hypot(p.x-e.x,p.y-e.y)<15))continue;
+   if(quietZones.some(q=>Number.isFinite(q?.x)&&Number.isFinite(q?.y)&&Math.hypot(p.x-q.x,p.y-q.y)<46))continue;
+   if(typeof id==='string'&&Number.isFinite(now))slots.set(id,{offset,time:now});
    return p;
   }
   // Omitting an ambient passer is preferable to a pile-up at a junction.
@@ -3579,25 +3964,26 @@
    if(!Number.isFinite(target.x)||!Number.isFinite(target.y))return person;
    let s=states.get(person.id);
    if(!s||day!==s.day||now<s.last-.001||now-s.last>18){
-    s={x:target.x,y:target.y,day,last:now,heading:0,stride:0,pace:0,bridge:null,bridgeIndex:1};states.set(person.id,s);
+    s={x:target.x,y:target.y,day,last:now,heading:0,stride:0,pace:0,bridge:null,bridgeIndex:1,blockedUntil:0};states.set(person.id,s);
     return{...person,heading:0,stridePhase:0,arriving:false};
    }
    if(now===s.last&&s.result)return{...person,...s.result};
    const dt=Math.min(.09,Math.max(0,now-s.last));s.last=now;
    const held=holds.has(person.id)&&!person.meeting&&!person.travel;
    const from={x:s.x,y:s.y},gap=distance(from,target);
-   if(!held&&!s.bridge&&gap>11&&graph?.route){
+   if(!held&&!person.pause&&!s.bridge&&gap>11&&graph?.route&&now>=s.blockedUntil){
     const route=graph.route([s.x,s.y],[target.x,target.y]);
     // In disconnected OSM components there is no verified pedestrian route;
     // never draw a fictional connector through a house or private parcel.
     if(route?.points?.length&&route.distance<1600){
      s.bridge=[{x:s.x,y:s.y},...route.points.filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))];
-     s.bridgeIndex=1;
-    }else{s.x=target.x;s.y=target.y;}
+     s.bridgeIndex=1;s.blockedUntil=0;
+    }else{s.blockedUntil=now+1.5;}
    }
    // A short, optional roadside gesture holds the *same* mapped location.
    // Never interrupt a resident already following a bridging road route.
-   const resting=(!!person.pause||held)&&!s.bridge;
+   const waitingForPath=gap>11&&!s.bridge&&(!graph?.route||s.blockedUntil>now);
+   const resting=(!!person.pause||held||waitingForPath)&&!s.bridge;
    const intent=!resting&&(!!s.bridge||gap>.035);
    s.pace+=(Number(intent)-s.pace)*(1-Math.exp(-dt*(intent?5.5:7)));
    let remaining=resting?0:dt*(person.meeting?37:person.travel?82:43)*(.38+.62*s.pace);
@@ -3627,10 +4013,29 @@
    return{...person,...s.result};
   }
   function present(person,now,reduce){
+   // A subtle reach uses the existing gesture renderer and carried props:
+   // Damião's basket, Lúcia's flower and Bia's notebook. Never move their feet.
+   const gestures={damiao:{kind:'rest',pose:'offer',facing:1},
+    lucia:{kind:'flower',pose:'receive',facing:1},
+    bia:{kind:'read',pose:'receive',facing:-1}};
+   const cue=gestures[person.id],moment=person.moment;
+   if(cue&&moment?.kind===cue.kind&&!person.social&&!person.walking&&!person.arriving&&!person.meeting&&!person.travel){
+    person.social={pose:cue.pose,facing:cue.facing,intensity:Math.min(.55,Math.max(0,moment.strength)*.55),react:false,stage:'routine'};
+   }
    const desired=person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
    let v=visuals.get(person.id);
-   if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now};visuals.set(person.id,v);}
+   if(!v||now<v.last||now-v.last>10){v={gaze:desired,lean:0,last:now,socialStrength:0,lastSocial:null};visuals.set(person.id,v);}
    const dt=Math.max(0,Math.min(.09,now-v.last));v.last=now;
+   // Gentle entrance and exit of a greeting; do not wave while feet are moving.
+   const requested=person.social?Math.max(0,Math.min(1,Number(person.social.intensity??1))):0;
+   v.socialStrength=(v.socialStrength||0)+(requested-(v.socialStrength||0))*(1-Math.exp(-dt*(requested?8:6)));
+   if(person.social){
+    person.social={...person.social,intensity:reduce?requested:v.socialStrength};
+    v.lastSocial={...person.social};
+   }else if(!reduce&&!person.walking&&v.socialStrength>.045&&v.lastSocial&&(person.walkBlend||0)<.3){
+    person.social={...v.lastSocial,pose:'wave',stage:'farewell',react:false,intensity:v.socialStrength};
+   }
+
    v.gaze=reduce?desired:v.gaze+(desired-v.gaze)*(1-Math.exp(-dt*10));
    person.gaze=v.gaze;
    // Ease the body's slight lean as the walker slows, turns, or greets someone.
@@ -3909,7 +4314,7 @@
 (()=>{
 const $=id=>document.getElementById(id),canvas=$('world'),ctx=canvas.getContext('2d'),mini=$('minimap'),mc=mini.getContext('2d'),big=$('bigmap'),bc=big.getContext('2d');
 const STORE='roncador-expedition-v2-referencias-gemini',keys=new Set(),touches=new Map(),reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?1.55:1.85,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
+let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?1.85:2.3,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
 let ambientHitTargets=[];
 let pathfinder=null,residentMotion=null,streetGreetings=null,guide={x:0,y:0},nearGuide=false,friendship=0,chapter=0,observations=new Set(),photos={};
 let nearCulture=null,cultureActiveId=null,cultureNotes={},gardenStep=0,gardenHarvests=0,scenicScenes=[],showScenery=true,festivalCelebrated=false,lightPhase='manha',showWildlife=true,wildlife=[],showGeology=false,geologyPoints=[],streetPaths=new Map(),nearResident=null,fairStalls=[];
@@ -3926,6 +4331,14 @@ let sideNeighbors=window.RoncadorSecondaryNeighbors.fresh();
 let belemContacts=window.RoncadorBelemContacts.fresh();
 let kawaiiState=window.RoncadorKawaiiMoto.fresh(),emojiParticles=[],engineTick=0;
 const treeCache=new Map();
+// Optional transport/time controls must not cover the opening action on phones.
+// These controls remain fully available as soon as the expedition begins.
+const openingHudStyle=document.createElement('style');
+openingHudStyle.textContent='@media (max-width:800px){.game:has(#welcome:not([hidden])) .kawaii-hud-bar{display:none!important}}';
+document.head.appendChild(openingHudStyle);
+const mobileHudStyle=document.createElement('style');
+mobileHudStyle.textContent='@media (max-width:800px){.sidebar .kawaii-hud-bar{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:14px 0;padding:10px;border:1px solid #e9dccb;background:#fffaf1;border-radius:13px;max-height:none;overflow:visible;box-shadow:none}.sidebar .kawaii-pill-btn{justify-content:center;min-width:0;white-space:normal;font-size:11px;padding:7px 8px}.sidebar .kawaii-pill-btn kbd{display:none}}';
+document.head.appendChild(mobileHudStyle);
 let saved=null;try{saved=JSON.parse(localStorage.getItem(STORE)||'null');}catch{storageWarning=true;}
 const hash=(x,y=0)=>{let n=Math.imul((x|0)^0x9e3779b9,0x85ebca6b)^Math.imul((y|0)^0x7f4a7c15,0xc2b2ae35);n^=n>>>16;return(n>>>0)/4294967295;};
 function affectionSnapshot(id){return window.RoncadorAffectionMemory.snapshot({living,communitySeen,sideNeighbors,marketMorning,luciaGarden,biaLetters,marketWitnessed},id);}
@@ -3942,6 +4355,40 @@ function note(freq=440,delay=0,length=.12){if(!sound)return;try{audio=audio||new
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
+function applyUserPublicPlaceCorrections(){
+ // Positions supplied by the author, checked against existing road/park geometry.
+ // Keep OSM source and private residential anchors untouched.
+ const positions=[
+  {id:'sagrada_familia',name:'Igreja Matriz Sagrada Família',p:[145,125]},
+  {id:'prefeitura',name:'Prefeitura Municipal',p:[-241.8,392]},
+  {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[106.5,95]},
+  {id:'pedra_cordeiro',name:'Mirante da Pedra do Cordeiro',geo:[-6.6984919,-35.5472188]},
+  {id:'parque_sao_luis',name:'Parque Artesanal São Luís',geo:[-6.7129197,-35.5237656]}
+ ];
+ for(const place of positions){
+  const landmark=data.landmarks.find(p=>p.id===place.id);
+  if(!landmark)continue;
+  const prior=landmark.p;
+  const projection=data.projection;
+  const corrected=place.geo?[(place.geo[1]-projection.originLon)*projection.metersPerDegreeLon,
+   (place.geo[0]-projection.originLat)*projection.metersPerDegreeLat]:place.p;
+  landmark.p=corrected.slice();
+  landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
+  for(const point of data.points){
+   if(point.tags?.name===landmark.name&&
+    Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
+    point.p=corrected.slice();
+   }
+  }
+ }
+ const plaza=data.cultureReferences?.find(p=>p.id==='praca_6_setembro');
+ if(plaza){
+  plaza.p=[139.7,145.5];
+  plaza.visualReference=plaza.p.slice();
+  plaza.positionStatus='user_reference_proposed';
+  plaza.artStatus='posição proposta no polígono de parque existente; desenho ainda conceitual';
+ }
+}
 function preprocess(){
  areas=data.areas;roads=data.roads;missions=data.missions;
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
@@ -3955,7 +4402,10 @@ function preprocess(){
  pathfinder=window.RoncadorPathfinding.buildGraph(roads);
  residentMotion=window.RoncadorResidentMotion.create(pathfinder);
  streetGreetings=window.RoncadorStreetGreetings.create(pathfinder);
+ streetGreetings.setHouses(houses);
+ window.RoncadorStreetMoments.setHouses(houses);
  roadDetails=window.RoncadorRoadDetails.prepare(roads,pathfinder);
+ streetGreetings.setJunctions(roadDetails?.junctions||[]);
  terrainLayer=window.RoncadorTerrainRelief.prepare(data,terrainData);
  streetPaths.clear();
  wildlife=prepareWildlife();
@@ -3992,39 +4442,102 @@ function preprocess(){
  camera.x=player.x;camera.y=player.y;renderMissions();updateUI();
 }
 function syncRoute(){const open=$('sidebar').classList.contains('open');$('sidebar').inert=matchMedia('(max-width:800px)').matches&&!open;$('mobileRoute').setAttribute('aria-expanded',String(open));}
-function resize(){syncRoute();let r=canvas.getBoundingClientRect();w=r.width;h=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if($('mapDialog').open)drawBig();}
+function placeKawaiiHud(){
+ const hud=document.querySelector('.kawaii-hud-bar');
+ if(!hud)return;
+ const phone=matchMedia('(max-width:800px)').matches;
+ const destination=phone?$('sidebar'):document.querySelector('.game');
+ if(hud.parentElement===destination)return;
+ if(phone)destination.insertBefore(hud,destination.querySelector('.sidebar-footer'));
+ else destination.appendChild(hud);
+}
+function resize(){placeKawaiiHud();syncRoute();let r=canvas.getBoundingClientRect();w=r.width;h=r.height;dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if($('mapDialog').open)drawBig();}
 function path(c,pts,close=false){c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));if(close)c.closePath();}
 function roundRect(c,x,y,ww,hh,r,fill,stroke){c.beginPath();c.roundRect(x,y,ww,hh,r);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.stroke();}}
-function drawTree(c,x,y,r,seed){
+function drawTree(c,x,y,r,seed,tone='street'){
  c.save();
- c.fillStyle='#29493729';c.beginPath();c.ellipse(x+5,y+6,r*.93,r*.45,-.2,0,Math.PI*2);c.fill();
+ c.fillStyle=lightPhase==='anoitecer'?'#283e3235':lightPhase==='tarde'?'#4a513226':'#29493729';c.beginPath();c.ellipse(x+5,y+6,r*.93,r*.45,-.2,0,Math.PI*2);c.fill();
  roundRect(c,x-1.7,y-r*.2,3.4,r*.7,1,'#9c8969');
- const colors=['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
+ const colors=tone==='shade'?['#78977e','#7d9d82','#6f8e70','#8ca889','#76977b']:
+  tone==='canopy'?['#7ca06e','#7fa579','#719365','#94ad80','#88a579']:
+  ['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
  c.fillStyle=colors[seed%5];c.beginPath();c.arc(x,y-r*.39,r*.72,0,7);c.arc(x-r*.39,y-r*.67,r*.56,0,7);c.arc(x+r*.37,y-r*.68,r*.58,0,7);c.fill();
- c.fillStyle='#bad2a05e';c.beginPath();c.ellipse(x-r*.22,y-r*.87,r*.37,r*.24,-.2,0,7);c.fill();
+ c.fillStyle=lightPhase==='tarde'?'#e2d59b4a':lightPhase==='anoitecer'?'#98b28e38':'#bad2a05e';c.beginPath();c.ellipse(x-r*.22,y-r*.87,r*.37,r*.24,-.2,0,7);c.fill();
  c.fillStyle='#eff3cc70';for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
+ c.restore();
+}
+function drawRuralShrub(c,x,y,r,seed){
+ // Low, irregular scrub is an artistic variant, not a surveyed plant location.
+ const far=zoom<1.15;
+ c.save();c.translate(x,y);
+ c.fillStyle='#36503b26';c.beginPath();c.ellipse(2,3,r*.78,r*.28,0,0,Math.PI*2);c.fill();
+ const palette=['#728e60','#809a66','#637f58','#92a778'];
+ const color=palette[seed%palette.length];
+ c.fillStyle=color;c.beginPath();
+ c.ellipse(-r*.33,-r*.2,r*.48,r*.38,-.3,0,Math.PI*2);
+ c.ellipse(r*.25,-r*.24,r*.53,r*.42,.25,0,Math.PI*2);
+ c.ellipse(0,-r*.43,r*.47,r*.43,0,0,Math.PI*2);c.fill();
+ if(!far){
+  c.strokeStyle='#526d4c';c.lineWidth=.85;c.lineCap='round';
+  c.beginPath();c.moveTo(0,0);c.lineTo(-r*.28,-r*.38);
+  c.moveTo(0,0);c.lineTo(r*.31,-r*.42);c.stroke();
+  c.fillStyle='#b8c99b88';
+  for(const [dx,dy] of [[-.38,-.48],[.17,-.64],[.42,-.24]]){
+   c.beginPath();c.arc(dx*r,dy*r,1.1,0,Math.PI*2);c.fill();
+  }
+ }
  c.restore();
 }
 function house(c,b){
  c.save();c.translate(b.x,b.y);c.rotate(b.angle);
  const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
- roundRect(c,x+3,y+4,b.w,b.h,2,'#32503b2f');
- roundRect(c,x,y,b.w,b.h,1.6,'#f2e6cb','#ad9e8580');
+ const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
+ // A soft ground-contact shadow gives the house weight without inventing a
+ // surveyed footprint or adding another object to the mapped street.
+ c.fillStyle='#3b514321';c.beginPath();c.ellipse(1.5,b.h*.4,b.w*.57,b.h*.24,0,0,Math.PI*2);c.fill();
+ roundRect(c,x+2,y+3,b.w+1,b.h+1,2,'#32503b20');
+ const walls=['#f2e6cb','#e9dfc7','#e7d8bd','#f3e7d3'];
+ roundRect(c,x,y,b.w,b.h,1.6,walls[b.seed%walls.length],'#ad9e8560');
  const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
- roundRect(c,x-1,y-1,b.w+2,b.h*.62,1.5,roofs[b.color]);
+ roundRect(c,x-1,y-(roofType===1?2:1),b.w+2,b.h*(roofType===2?.56:.62),roofType===1?2.5:1.5,roofs[b.color]);
  // Tiny overlapping tile rhythm and warm edge highlight: stylized, not surveyed facades.
  c.strokeStyle='#fff4d244';c.lineWidth=.65;
- for(let row=2;row<b.h*.54;row+=3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
+ if(!far)for(let row=2;row<b.h*.54;row+=roofType===2?4.2:3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
+ if(!far){
+  // A slight ridge, a shaded overhang and varied gable treatment separate
+  // individual roofs without changing their shape or size.
+  c.strokeStyle='#fff7db80';c.lineWidth=.85;c.beginPath();c.moveTo(x+1,y+.7);c.lineTo(x+b.w-1,y+.7);c.stroke();
+  c.strokeStyle='#704b4650';c.lineWidth=1.5;c.beginPath();c.moveTo(x-.7,y+b.h*.59);c.lineTo(x+b.w+.7,y+b.h*.59);c.stroke();
+  if(roofType===2){c.fillStyle='#fff1d075';c.beginPath();c.moveTo(x+b.w*.5,y+1.5);c.lineTo(x+b.w*.5,y+b.h*.48);c.lineTo(x+b.w*.55,y+b.h*.48);c.closePath();c.fill();}
+ }
  c.fillStyle='#fff4d9a8';c.fillRect(x,y+b.h*.57,b.w,1.2);
+ if(!far){
+  // The roof overhang casts a slim shadow on the illustrated front wall;
+  // a shaded return face suggests volume without extending the lot.
+  c.fillStyle='#52443930';c.fillRect(x+.7,y+b.h*.62,b.w-1.4,Math.min(2,b.h*.1));
+  c.fillStyle='#574b3b25';c.fillRect(x+b.w-1.5,y+b.h*.64,1,b.h*.3);
+ }
  if(flat){roundRect(c,x-1,y+b.h*.48,b.w+2,2.7,.5,'#f8e1bc','#ad9882');}
  if(shop){
   roundRect(c,x+1,y+b.h*.61,b.w-2,3.3,.6,'#f9e7bf');
   c.fillStyle='#9fb9a3';c.fillRect(x+2,y+b.h*.65,b.w-4,2.4);
   c.fillStyle='#f4d5a1';for(let k=0;k<3;k++)c.fillRect(x+2+k*(b.w-4)/3,y+b.h*.59,(b.w-4)/5,1.6);
  }else{
-  c.fillStyle='#779d9a';c.fillRect(x+b.w*.2,y+b.h*.7,3.2,2.7);
-  c.strokeStyle='#f8f2df';c.lineWidth=.6;c.beginPath();c.moveTo(x+b.w*.2+1.6,y+b.h*.7);c.lineTo(x+b.w*.2+1.6,y+b.h*.7+2.7);c.stroke();
-  roundRect(c,x+b.w*.61,y+b.h*.7,b.w*.19,b.h*.28,1,'#8a7b67');
+  const windowX=x+b.w*(doorLeft?.58:.2),doorX=x+b.w*(doorLeft?.17:.61);
+  const glass=['#779d9a','#83a8a4','#9eaca0'][b.seed%3];
+  c.fillStyle=glass;c.fillRect(windowX,y+b.h*.7,3.2,2.7);
+  if(!far){
+   c.strokeStyle='#f8f2df';c.lineWidth=.6;c.beginPath();c.moveTo(windowX+1.6,y+b.h*.7);c.lineTo(windowX+1.6,y+b.h*.7+2.7);c.stroke();
+   if(b.seed%3===0){c.fillStyle='#a1847188';c.fillRect(windowX-1,y+b.h*.7,1,3.2);c.fillRect(windowX+3.4,y+b.h*.7,1,3.2);}
+   if(b.w>19&&b.seed%5===0){const second=windowX+(doorLeft?-5.1:5.1);c.fillStyle=glass;c.fillRect(second,y+b.h*.7,2.5,2.7);}
+  }
+  if(!far){c.fillStyle='#53453730';c.fillRect(doorX-.7,y+b.h*.685,b.w*.19+1.4,b.h*.3);}
+  roundRect(c,doorX,y+b.h*.7,b.w*.19,b.h*.28,1,roofType===2?'#967e6c':'#8a7b67');
+  if(!far){
+   c.fillStyle='#f9edcfbd';c.fillRect(doorX+.7,y+b.h*.77,.7,1.3);
+   c.fillStyle='#a59b8066';c.fillRect(doorX-1,y+b.h*.96,b.w*.19+2,1.2);
+   if(b.seed%7===0){c.fillStyle='#e8c59b';c.fillRect(doorX-.6,y+b.h*.64,b.w*.19+1.2,1.2);}
+  }
  }
  c.fillStyle='#eabbb0';c.beginPath();c.arc(x+b.w+2,y+b.h*.78,1.8,0,7);c.fill();
  c.fillStyle='#67977b';c.beginPath();c.ellipse(x+b.w+2,y+b.h*.66,2.6,1.4,-.5,0,7);c.fill();
@@ -4032,7 +4545,7 @@ function house(c,b){
  c.restore();
  if(detailedFacades){
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);
-  window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute);
+  window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute,zoom);
  }
 }
 function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,true);if(a.tags.landuse==='residential'){c.fillStyle='#bec59b';c.fill();c.strokeStyle='#adba8c';c.lineWidth=2;c.stroke();}else if(a.tags.landuse==='forest'||a.tags.leisure==='nature_reserve'){c.fillStyle='#8cba7c77';c.fill();if(!detail){c.strokeStyle='#61894d88';c.lineWidth=3;c.setLineDash([8,6]);c.stroke();c.setLineDash([]);}}else if(a.tags.landuse==='grass'||a.tags.landuse==='meadow'||a.tags.leisure==='park'||a.tags.leisure==='garden'){c.fillStyle='#b4cf8d';c.fill();}else if(a.tags.leisure==='pitch'){c.fillStyle='#88ab6c';c.fill();c.lineWidth=1.1;c.strokeStyle='#e7edd2b0';c.stroke();let xs=ring.map(p=>p[0]),ys=ring.map(p=>p[1]),x=Math.min(...xs),y=Math.min(...ys),ww=Math.max(...xs)-x,hh=Math.max(...ys)-y;const cx=x+ww/2,cy=y+hh/2;c.strokeRect(x+4,y+4,ww-8,hh-8);c.beginPath();c.moveTo(x+4,cy);c.lineTo(x+ww-4,cy);c.stroke();c.beginPath();c.arc(cx,cy,Math.min(ww,hh)*.16,0,Math.PI*2);c.stroke();}}
@@ -4040,12 +4553,44 @@ function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,tr
 function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoin='round';for(const r of roads){if(viewport&&r.bounds&&(r.bounds[2]<viewport.left||r.bounds[0]>viewport.right||r.bounds[3]<viewport.top||r.bounds[1]>viewport.bottom))continue;let major=/^(primary|secondary|trunk)/.test(r.tags.highway),trail=['path','footway','track','steps'].includes(r.tags.highway);
  const widths={primary:15,secondary:14,tertiary:11.7,primary_link:10.7,residential:9.6,unclassified:10,service:6.5,path:4.5,footway:4.5,track:5.5,steps:4};
  const width=widths[r.tags.highway]||10,materials={asphalt:'#cecfc1',paved:'#e2d9be',unpaved:'#d0c39a',paving_stones:'#e8d8ba',sett:'#deccaf'};
- path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b40';c.lineWidth=width+3;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
- if(major&&!simple){c.strokeStyle='#f2edcfb0';c.lineWidth=.8;c.setLineDash([7,7]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c';c.lineWidth=1;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
+ path(c,r.p);
+ if(simple){c.strokeStyle='#91a079';c.lineWidth=width+2;c.stroke();c.strokeStyle='#e6ddbc';c.lineWidth=width;c.stroke();continue;}
+ // Close-up illustration only: give urban carriageways breathing room without
+ // changing OSM geometry, navigation, sidewalks' coordinates or collision.
+ const street= !trail && r.tags.highway!=='service';
+ const pavementWidth=width*(street?1.2:1);
+ // The offset shadow reads as a shallow curb, beneath the same road centreline.
+ c.save();c.translate(0,street?.85:.3);
+ c.strokeStyle=trail?'#9d9c7950':'#5863483e';c.lineWidth=pavementWidth+3.5;c.stroke();c.restore();
+ // Pale shoulders and a fine warm curb make the road a place, not a map line.
+ c.strokeStyle=trail?'#9d9c7950':'#f1e3c6a0';c.lineWidth=pavementWidth+2.5;c.stroke();
+ c.strokeStyle=trail?'#c8ba96a8':'#b9ad938a';c.lineWidth=pavementWidth+1.15;c.stroke();
+ c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
+ if(z>=1.35&&!trail){
+  // Residential streets have no repeated centre dashes; the softly shaded
+  // curb edges carry the depth cue, without pretending to be road signage.
+  if(z>=1.85){c.strokeStyle='#9c998310';c.lineWidth=Math.max(1,pavementWidth-4);c.stroke();}
+ }
+ if(major){c.strokeStyle='#f2edcf88';c.lineWidth=.65;c.setLineDash([7,8]);c.stroke();c.setLineDash([]);}
+ if(trail){c.strokeStyle='#b5a87c99';c.lineWidth=.85;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
-function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
-function drawPin(c,m,i,time,miniMode=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
- c.save();c.translate(p[0],p[1]);const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
+function drawMappedPlaces(c,viewport){
+ if(zoom<1.1)return;
+ const market=data.landmarks?.find(l=>l.id==='mercado');
+ for(const place of data.points){
+  if(data.landmarks?.some(l=>l.name===place.tags.name))continue;
+  const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;
+  c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();
+  c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();
+  // Keep the real mapped POI, but reserve lettering for closer inspection in
+  // the busy market. Its precise coordinate and click target are unchanged.
+  const busyMarket=market&&Math.hypot(x-market.p[0],y-market.p[1])<115;
+  const mayLabel=zoom>(busyMarket?1.9:1.45)&&(!busyMarket||Math.hypot(player.x-x,player.y-y)<85);
+  if(mayLabel){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}
+ }
+}
+function drawPin(c,m,i,time,miniMode=false,subtle=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
+ c.save();c.translate(p[0],p[1]);if(subtle){c.globalAlpha*=.68;c.scale(.72,.72);}const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done&&!subtle){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
 function spawnEmojiBurst(x,y,list=['✨','🌸','💖','⭐'],count=5){
  if(reduce)count=Math.min(2,count);
  for(let i=0;i<count;i++){
@@ -4118,7 +4663,7 @@ function drawParkedMotosAndSorda(c,time,view){
  }
 }
 function drawPlayer(c,time){
- c.save();c.translate(player.x,player.y);const spriteScale=characterDrawScale(.80);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(player.x,player.y);const spriteScale=characterDrawScale(WORLD_CHARACTER_HEIGHT/34);c.scale(spriteScale,spriteScale);
  const riding=!!kawaiiState?.riding;
  const skin=window.RoncadorKawaiiMoto.currentSkin(kawaiiState);
  const acc=window.RoncadorKawaiiMoto.currentAccessory(kawaiiState);
@@ -4220,16 +4765,17 @@ function drawGroundedFlora(c,view,time){
   const {x,y,kind,seed}=item;
   if(x<view.left-22||x>view.right+22||y<view.top-23||y>view.bottom+23)continue;
   if(kind==='canopy'||kind==='shade'){
-   drawTree(c,x,y,kind==='canopy'?11+seed%4:7+seed%3,seed);
+   drawTree(c,x,y,kind==='canopy'?11+seed%4:7+seed%3,seed,kind);
    continue;
   }
   c.save();c.translate(x,y);
-  const soil=kind==='meadow'?'#a3bd8880':'#698f6770';
+  const soil=kind==='meadow'?(seed%2?'#acbd9080':'#9fb98777'):
+   seed%3===0?'#78916b6d':'#698f6770';
   c.fillStyle=soil;c.beginPath();c.ellipse(0,2,kind==='meadow'?8:6,3,seed*.1,0,7);c.fill();
   const stems=kind==='underbrush'?5:kind==='meadow'?7:4;
   for(let j=0;j<stems;j++){
    const px=(j-(stems-1)/2)*2.2,tip=kind==='underbrush'?7+(seed+j)%5:4+(seed+j)%4;
-   c.strokeStyle=j%2?'#658a55':'#79a66c';c.lineWidth=1.1;c.beginPath();c.moveTo(px,1);c.quadraticCurveTo(px+1.4,-tip*.6,px+(j%2?2:-2),-tip);c.stroke();
+   c.strokeStyle=(j+seed)%3===0?'#79976b':(j+seed)%2?'#658a55':'#79a66c';c.lineWidth=1.1;c.beginPath();c.moveTo(px,1);c.quadraticCurveTo(px+1.4,-tip*.6,px+(j%2?2:-2),-tip);c.stroke();
    if(kind==='flowerbed'){c.fillStyle=['#f2cb95','#f4e8bf','#eab4ad'][j%3];c.beginPath();c.arc(px+(j%2?2:-2),-tip,.9+(seed%3)*.22,0,7);c.fill();}
   }
   c.restore();
@@ -4285,6 +4831,68 @@ function drawWildlife(c,time,viewport){
   c.restore();
  }
 }
+function drawPedraLandscape(c,x,y){
+ // Illustrated mass of Pedra do Cordeiro, not an outcrop polygon or a walkable route.
+ // Keep the separate landmark overlay responsible for the cruzeiro and its label.
+ const distant=zoom<1.15;
+ c.save();c.translate(x,y);
+ // Ground contact and broad, irregular outline, kept legible at distant zoom.
+ c.fillStyle='#514b4226';c.beginPath();c.ellipse(1,23,106,20,-.03,0,Math.PI*2);c.fill();
+ const rock=c.createLinearGradient(-45,-56,58,26);
+ rock.addColorStop(0,'#c6bdab');rock.addColorStop(.49,'#a49a89');rock.addColorStop(1,'#756f64');
+ c.beginPath();
+ c.moveTo(-103,21);c.lineTo(-91,4);c.lineTo(-84,-14);c.lineTo(-67,-20);
+ c.lineTo(-55,-36);c.lineTo(-35,-42);c.lineTo(-19,-57);c.lineTo(-4,-64);
+ c.lineTo(17,-51);c.lineTo(35,-48);c.lineTo(51,-35);c.lineTo(69,-31);
+ c.lineTo(85,-11);c.lineTo(104,19);c.quadraticCurveTo(10,28,-103,21);
+ c.closePath();c.fillStyle=rock;c.fill();
+ c.strokeStyle='#716a5e';c.lineWidth=1.8;c.stroke();
+ // Sunlit left face, cool recessed central fracture and shaded right escarpment.
+ c.beginPath();c.moveTo(-91,9);c.lineTo(-68,-17);c.lineTo(-53,-28);
+ c.lineTo(-35,-34);c.lineTo(-16,-54);c.lineTo(-4,-58);
+ c.lineTo(-17,-29);c.lineTo(-31,-10);c.lineTo(-44,18);
+ c.lineTo(-87,19);c.closePath();c.fillStyle='#d8cdb8';c.fill();
+ c.beginPath();c.moveTo(-13,-50);c.lineTo(3,-57);c.lineTo(20,-43);
+ c.lineTo(11,-21);c.lineTo(24,-7);c.lineTo(4,22);
+ c.lineTo(-29,22);c.lineTo(-16,-6);c.lineTo(-21,-25);
+ c.closePath();c.fillStyle='#847b70';c.fill();
+ c.beginPath();c.moveTo(34,-42);c.lineTo(52,-30);c.lineTo(70,-24);
+ c.lineTo(91,-2);c.lineTo(102,19);c.lineTo(45,21);
+ c.lineTo(36,5);c.lineTo(42,-18);c.closePath();c.fillStyle='#77736b';c.fill();
+ c.beginPath();c.moveTo(19,-42);c.lineTo(31,-38);c.lineTo(24,-14);
+ c.lineTo(38,3);c.lineTo(31,21);c.lineTo(5,22);c.lineTo(17,-7);
+ c.lineTo(10,-25);c.closePath();c.fillStyle='#b7ac9c';c.fill();
+ // A few large seams survive a distant zoom; hairline cracks only appear nearby.
+ c.strokeStyle='#695f55';c.lineWidth=distant?1.5:1.1;c.lineCap='round';
+ c.beginPath();c.moveTo(-53,-24);c.lineTo(-47,-8);c.lineTo(-55,7);
+ c.moveTo(-10,-46);c.lineTo(-4,-33);c.lineTo(-13,-18);c.lineTo(-8,-5);
+ c.moveTo(51,-26);c.lineTo(44,-11);c.lineTo(54,5);c.stroke();
+ if(!distant){
+  c.strokeStyle='#e4d9c5';c.lineWidth=.85;c.beginPath();
+  c.moveTo(-76,-5);c.lineTo(-63,-19);c.moveTo(-29,-40);c.lineTo(-17,-49);
+  c.moveTo(20,-31);c.lineTo(26,-36);c.moveTo(58,-19);c.lineTo(72,-8);c.stroke();
+  c.fillStyle='#655e5360';
+  for(const [px,py,r] of [[-75,9,1.5],[-61,-6,1],[-36,8,1.6],[6,-16,1.2],[28,12,1.5],[64,6,1.7],[77,13,1]]){
+   c.beginPath();c.ellipse(px,py,r*2,r,0,0,Math.PI*2);c.fill();
+  }
+ }
+ // Caatinga vegetation: low scrub plus silhouettes of mandacaru and xique-xique.
+ for(const [px,py,w] of [[-98,20,9],[-79,19,7],[-65,20,6],[67,21,8],[88,22,10]]){
+  c.fillStyle='#627b55';c.beginPath();c.ellipse(px,py,w,4,0,0,Math.PI*2);c.fill();
+ }
+ c.strokeStyle='#4e7954';c.lineWidth=distant?2:2.3;c.lineCap='round';
+ for(const [px,py,h] of [[-83,15,14],[84,17,17]]){
+  c.beginPath();c.moveTo(px,py);c.lineTo(px,py-h);
+  c.moveTo(px,py-5);c.quadraticCurveTo(px-7,py-5,px-7,py-12);
+  c.moveTo(px,py-7);c.quadraticCurveTo(px+7,py-7,px+7,py-15);c.stroke();
+ }
+ if(!distant){
+  c.strokeStyle='#5a865a';c.lineWidth=1.7;c.beginPath();
+  c.moveTo(-64,20);c.lineTo(-64,11);c.moveTo(-64,16);c.lineTo(-69,13);
+  c.moveTo(70,21);c.lineTo(70,12);c.moveTo(70,17);c.lineTo(75,13);c.stroke();
+ }
+ c.restore();
+}
 function drawScenicLayer(c,viewport,details=false){
  if(!showScenery)return;
  for(const scene of scenicScenes){const [x,y]=scene.at;
@@ -4293,10 +4901,12 @@ function drawScenicLayer(c,viewport,details=false){
    // Thin tether connects the artistic position to the exact OSM reference dot.
    c.save();c.strokeStyle='#5b7b6680';c.lineWidth=.85;c.setLineDash([2.2,3.4]);c.beginPath();c.moveTo(x,y+15*scene.scale);c.lineTo(...scene.anchor);c.stroke();c.setLineDash([]);c.restore();
   }
+  if(scene.id==='pedra_cordeiro'&&details)drawPedraLandscape(c,x,y);
   c.save();c.translate(x,y);c.scale(scene.scale,scene.scale);
   const prop={p:[0,0],kind:scene.kind,name:scene.name};
-  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60);
-   if(scene.positionStatus!=='osm_point'){
+  const sceneDistance=Math.hypot(player.x-x,player.y-y);
+  if(details){window.RoncadorLandmarks.drawDetails(c,[prop],null,fairAtmosphere(),performance.now()/1000,lightPhase==='anoitecer'||living.minute>=18*60,{zoom,distance:sceneDistance});
+   if(scene.positionStatus!=='osm_point'&&zoom>=1.85&&sceneDistance<=90){
     c.fillStyle='#fff9e8';c.strokeStyle='#ac986d';c.lineWidth=1;
     c.beginPath();c.roundRect(-48,49,96,13,4);c.fill();c.stroke();
     c.fillStyle='#806c47';c.font='bold 7px system-ui';c.textAlign='center';c.fillText('ILUSTRAÇÃO · SEM LOCAL EXATO',0,57);
@@ -4354,24 +4964,36 @@ function residentsInStreets(){
    if(point)point.walking=false;
   }else point=walkingPoint(def.id,schedule.hub,i);
   const behavior={id:def.id,meeting:!!schedule.meeting,travel:!!schedule.travel};
-  const moment=window.RoncadorStreetMoments.choose(behavior,elapsed,living);
+  const moment=window.RoncadorStreetMoments.choose({...behavior,hub:schedule.hub,community:!!schedule.community,encounter:schedule.encounter,x:point?.x,y:point?.y},elapsed,living);
   return point?[residentMotion.resolve({...point,id:def.id,def,activity:schedule.activity,meeting:!!schedule.meeting,travel:!!schedule.travel,community:!!schedule.community,encounter:schedule.encounter||null,variant:i,pause:!!moment,moment},elapsed,living.day)]:[];
  });
 }
 function secondaryInStreets(primary=residentsInStreets()){
- return window.RoncadorSecondaryNeighbors.RESIDENTS.flatMap(def=>{
+ const placed=[];
+ for(const def of window.RoncadorSecondaryNeighbors.RESIDENTS){
   const duty=window.RoncadorSecondaryNeighbors.agenda(living,def);
-  if(!duty.present)return[];
+  if(!duty.present)continue;
   let at=duty.community&&duty.meeting?communityMeetingPoint(def.id,duty.hub):duty.travel?encounterRoadPoint(duty.encounter):walkingPoint(def.id,def.hub,def.variant);
-  // Separate neighbors from the established cast on the same mapped sidewalks.
-  if(at&&!duty.meeting&&primary.some(p=>Math.hypot(p.x-at.x,p.y-at.y)<30)){
+  // Reserve space against protagonists AND already placed neighbors.
+  // All alternatives are sampled from the same mapped road itinerary.
+  const occupied=primary.concat(placed);
+  if(at&&!duty.meeting&&occupied.some(p=>Math.hypot(p.x-at.x,p.y-at.y)<30)){
    const roadPath=streetPaths.get(def.id+':'+def.hub);
-   const next=roadPath?.length?window.RoncadorStreetLife.sample(roadPath,elapsed*(.72+def.variant*.07)+def.variant*12+63):null;
-   if(next&&primary.every(p=>Math.hypot(p.x-next.x,p.y-next.y)>21))at=next;
+   const base=elapsed*(.72+def.variant*.07)+def.variant*12;
+   const offsets=[63,90,117,145];
+   const next=roadPath?.length?offsets.map(delta=>window.RoncadorStreetLife.sample(roadPath,base+delta))
+    .find(candidate=>candidate&&occupied.every(p=>Math.hypot(p.x-candidate.x,p.y-candidate.y)>23)):null;
+   if(next)at=next;
   }
-  const moment=window.RoncadorStreetMoments.choose({id:def.id,meeting:!!duty.meeting,travel:!!duty.travel},elapsed,living);
-  return at?[residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day)]:[];
- });
+  if(!at)continue;
+  const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
+  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day);
+  // A narrow junction may lack a free roadside spot; omit this frame
+  // rather than stacking two illustrated bodies over the same sidewalk.
+  if(!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19))continue;
+  placed.push(person);
+ }
+ return placed;
 }
 function drawSocialGesture(c,pose,time){
  if(!pose)return;
@@ -4398,6 +5020,10 @@ function drawDailyGesture(c,person,time){
  if(moment.kind==='rest'){
   c.moveTo(-7,-9);c.quadraticCurveTo(-11,-4,-6,-2);
   c.moveTo(7,-9);c.quadraticCurveTo(10,-3,6,-2);
+ }else if(moment.kind==='sweep'){
+  c.moveTo(7,-8);c.quadraticCurveTo(13,-11,12,-14+sway*.45);
+ }else if(moment.kind==='chair'){
+  c.moveTo(7,-10);c.quadraticCurveTo(13,-8,12,-5+sway*.3);
  }else if(moment.kind==='flower'){
   c.moveTo(7,-10);c.quadraticCurveTo(13,-13,10,-16+sway*.35);
  }else if(moment.kind==='look'){
@@ -4411,6 +5037,13 @@ function drawDailyGesture(c,person,time){
   c.moveTo(7,-8);c.quadraticCurveTo(12,-13,13,-15+sway);
  }
  c.stroke();
+ if(moment.kind==='sweep'){
+  // A hand-held broom sweeps lightly; nothing is placed on the street.
+  c.strokeStyle='#96744c';c.lineWidth=1.4;c.beginPath();
+  c.moveTo(12,-14+sway*.45);c.lineTo(15+sway*.6,5);c.stroke();
+  c.strokeStyle='#cda974';c.lineWidth=2.5;c.beginPath();
+  c.moveTo(12+sway*.6,5);c.lineTo(18+sway*.6,5);c.stroke();
+ }
  // Props are worn/carried, never placed as purported real-world objects.
  if(moment.kind==='ribbon'||moment.kind==='flower'||moment.kind==='letter'){
   const color=moment.kind==='flower'?'#deafb7':moment.kind==='ribbon'?'#79b8af':'#eec9a4';
@@ -4420,7 +5053,38 @@ function drawDailyGesture(c,person,time){
 }
 // Keep characters in proportion to the tiny mapped houses even at maximum zoom.
 // The same local transform holds faces, limbs and carried props together.
+// Illustrative 14-unit facades and 23-unit characters share one world-scale family.
+// This is a visual ratio, not an assertion about building measurements.
+const WORLD_FACADE_HEIGHT=14,WORLD_CHARACTER_HEIGHT=WORLD_FACADE_HEIGHT*1.52;
 function characterDrawScale(base){return base*(zoom<=2?1:1-.12*Math.min(1,(zoom-2)/1.5));}
+// NPCs share a smaller visual scale; their accessories follow the same transform.
+function residentDrawScale(base){return characterDrawScale(base)*.88;}
+// Screen-space clutter is planned in world units so zoom changes cannot move
+// a label across another resident's face. A label may move sideways or vanish.
+function layoutResidentNameplates(people,playerPosition,scale,phone){
+ const market=typeof data==='undefined'?null:data?.landmarks?.find(place=>place.id==='mercado');
+ const marketCrowd=!!market&&Math.hypot(playerPosition.x-market.p[0],playerPosition.y-market.p[1])<145;
+ // The market has stalls, POIs and interaction icons: show only the closest
+ // resident's name there. The full cast is still available in the diary.
+ const limit=marketCrowd?1:phone?2:3,placed=[],used=[];
+ const nearby=people.filter(p=>p.def&&!p.meeting&&!p.greeting&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)<105)
+  .sort((a,b)=>Math.hypot(playerPosition.x-a.x,playerPosition.y-a.y)-Math.hypot(playerPosition.x-b.x,playerPosition.y-b.y));
+ const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
+ for(const p of nearby){
+  if(placed.length>=limit||scale<(marketCrowd?1.65:1.3))break;
+  if(marketCrowd&&Math.hypot(playerPosition.x-p.x,playerPosition.y-p.y)>65)continue;
+  const width=p.def.name.length*5.6+14;
+  for(const shift of [0,-24,24]){
+   const x=p.x+shift,y=p.y-34;
+   const box={left:x-width/2-2,right:x+width/2+2,top:y-7,bottom:y+7};
+   // All nearby faces reserve space, not only those with names.
+   if(people.some(other=>other.id!==p.id&&overlaps(box,{left:other.x-12,right:other.x+12,top:other.y-34,bottom:other.y-6})))continue;
+   if(used.some(other=>overlaps(box,other)))continue;
+   placed.push({id:p.id,name:p.def.name,x,y,width});used.push(box);break;
+  }
+ }
+ return placed;
+}
 function drawDistantResident(c,person){
  // A tiny connected silhouette for the town-wide view, keeping the street legible.
  c.save();c.translate(person.x,person.y);
@@ -4441,7 +5105,7 @@ function drawKawaiiWalker(c,person,time){
  const feelings=named?living.people[person.id]:null,affection=named?affectionSnapshot(person.id):null;
  const gaze=Number.isFinite(person.gaze)?person.gaze:person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
  // Common human scale: leads remain expressive without dwarfing facades.
- c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(named?.82:.67);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(named?WORLD_CHARACTER_HEIGHT/31:.64);c.scale(spriteScale,spriteScale);
  c.fillStyle='#3853442b';c.beginPath();c.ellipse(0,6.9,person.walking?8.1:8.5,person.walking?2.25:2.7,0,0,7);c.fill();c.translate(0,bob);
  if(!reduce)c.rotate(person.lean??0);
  const outfit=person.def?.tone||['#85a88f','#d6a16e','#b98c9d'][person.variant%3];
@@ -4449,7 +5113,7 @@ function drawKawaiiWalker(c,person,time){
  roundRect(c,-5.5,-1,4.4,8+legs,1.7,'#556251');roundRect(c,1.4,-1,4.4,8-legs,1.7,'#556251');
  roundRect(c,-6,5+legs,5.5,2.4,1.2,'#58483e');roundRect(c,1.2,5-legs,5.5,2.4,1.2,'#58483e');
  if(lucia){c.fillStyle='#ae92b8';c.beginPath();c.moveTo(-6,-7);c.lineTo(-9,3);c.quadraticCurveTo(0,6,9,3);c.lineTo(6,-7);c.fill();}
- roundRect(c,-7.5,-13,15,15,5,outfit,'#f7eedc8c');
+ roundRect(c,-7.8,-13,15.6,16,4.4,outfit,'#f7eedc8c');
  // Each fictional resident has an immediately recognisable job/interest.
  if(damiao){roundRect(c,-4.7,-12,9.4,12,2,'#f4dfb9');roundRect(c,-3.2,-10,6.4,1.4,1,'#ad866e');}
  if(lucia){roundRect(c,-2.4,-12,5,10,2,'#f8e0e4');c.fillStyle='#fff3b9';c.beginPath();c.arc(0,-8,1.6,0,7);c.fill();}
@@ -4459,9 +5123,9 @@ function drawKawaiiWalker(c,person,time){
  if(lucia){roundRect(c,-7,-11,3.8,12,2,'#c3a5bd');roundRect(c,3.5,-11,3.8,12,2,'#c3a5bd');}
  if(bia){roundRect(c,4,-11,4.2,11,2,'#5b8285');c.strokeStyle='#f1d6ab';c.lineWidth=1.6;c.beginPath();c.moveTo(5,-10);c.lineTo(8,-2);c.stroke();}
  const wave=reduce?0:Math.sin(phase)*.9*blend+Math.sin(time*1.1+person.variant)*1.2*(1-blend);
- roundRect(c,-10,-10+wave,4.3,10,2,'#e6b797');roundRect(c,6,-10-wave,4.3,10,2,'#e6b797');
+ roundRect(c,-9.7,-9.5+wave,4.1,9.5,2,'#e6b797');roundRect(c,5.6,-9.5-wave,4.1,9.5,2,'#e6b797');
  // Head and large, blushing kawaii eyes.
- roundRect(c,-7.5,-26,15,16,6,'#eac09d','#d4a784');
+ roundRect(c,-7,-25,14,15,5.5,'#eac09d','#d4a784');
  c.fillStyle=damiao?'#5b493e':lucia?'#584a53':person.localRole==='senhora'?'#b3a89c':'#59483d';
  c.beginPath();c.ellipse(0,-23,8,5.2,0,Math.PI,Math.PI*2);c.lineTo(7,-19);c.lineTo(5,-24);c.fill();
  if(damiao){c.fillStyle='#68564a';c.beginPath();c.ellipse(0,-27,7.9,2.4,0,Math.PI,Math.PI*2);c.fill();}
@@ -4515,7 +5179,7 @@ function drawSecondaryWalker(c,person,time){
  const blend=person.walkBlend??Number(!!person.walking);
  const anim=reduce?0:Math.sin(phase)*blend+Math.sin(time*2+person.variant)*(1-blend),step=reduce?0:Math.sin(phase)*1.85*blend;
  const outfit=person.def.tone;
- c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.73);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.73);c.scale(spriteScale,spriteScale);
  c.fillStyle='#34544230';c.beginPath();c.ellipse(0,7.5,person.walking?7.8:8.1,person.walking?2.15:2.6,0,0,7);c.fill();
  c.translate(0,reduce?0:anim*.4);
  if(!reduce)c.rotate(person.lean??0);
@@ -4541,6 +5205,24 @@ function drawSecondaryWalker(c,person,time){
  if(cica){roundRect(c,7,-8,8,5,2,'#e6b884');c.strokeStyle='#78b8b0';c.lineWidth=1.3;c.beginPath();c.arc(10,-8+anim*.7,3,0,7);c.arc(13,-8-anim*.7,3,0,7);c.stroke();if(person.meeting){c.lineWidth=1.9;c.beginPath();c.moveTo(15,-7);c.quadraticCurveTo(22+anim*2,-18,18,-25);c.stroke();}}
  if(nara){roundRect(c,-14,-8,9,9,2,'#faefd9','#a28b77');c.strokeStyle='#b6a3b7';c.lineWidth=.8;c.beginPath();c.moveTo(-12,-5);c.lineTo(-9,-7);c.lineTo(-7,-3);c.stroke();c.strokeStyle='#84665c';c.beginPath();c.moveTo(9,-9);c.lineTo(12,-2+anim);c.stroke();if(person.meeting){c.strokeStyle='#bd8f9b';c.lineWidth=1.2;c.beginPath();c.moveTo(-12,-3);c.quadraticCurveTo(-9+anim,-7,-6,-4);c.stroke();}}
  if(teo){roundRect(c,7,-10,9,11,2,'#c99d74','#987958');roundRect(c,8,-6,7,5,1,'#fff1d7');c.strokeStyle='#be8d77';c.beginPath();c.moveTo(8,-6);c.lineTo(11.5,-3);c.lineTo(15,-6);c.stroke();if(person.meeting){c.save();c.translate(0,anim*1.2);roundRect(c,13,-14,8,6,1.2,'#fff8e6','#c29c76');c.restore();}}
+ // The three newer neighbors carry props that echo their current daily routine.
+ // A lowered accessory during rest avoids miming work while the journal says resting.
+ const daily=(person.activity||'').toLowerCase(),resting=/descansa|pausa|repousa/.test(daily);
+ const gesture=reduce?0:Math.sin(time*2.2+person.variant)*(resting?.25:1);
+ const showing=!!(person.social?.react||person.social?.pose==='offer'||person.social?.pose==='receive');
+ const carry=resting?5:showing?-3+gesture*.45:gesture;
+ if(person.id==='rosa'){
+  roundRect(c,7,-9+(carry),9,10,1.4,'#d8b78f','#80695d');
+  c.strokeStyle='#8d7566';c.lineWidth=.65;c.beginPath();c.moveTo(11,-7+(carry));c.lineTo(11,0+(carry));c.stroke();
+ }else if(person.id==='zeca'){
+  roundRect(c,7,-6+(carry),9,7,2,'#bb8568','#8c6652');
+  c.strokeStyle='#64875c';c.lineWidth=1.2;c.beginPath();c.moveTo(11,-6+(carry));c.lineTo(11,-14+(carry));c.stroke();
+  for(const side of [-1,1]){c.fillStyle='#8db28a';c.beginPath();c.ellipse(11+side*3,-12+(carry),3.3,1.7,side*.4,0,7);c.fill();}
+ }else if(person.id==='mila'){
+  roundRect(c,7,-9+(carry),10,10,1.8,'#f5e2c8','#a6817a');
+  for(const [i,color] of ['#c598aa','#89a9a5','#e7c18a'].entries()){c.fillStyle=color;c.beginPath();c.arc(10+i*2,-5+(carry),1.25,0,7);c.fill();}
+ }
+
  drawSocialGesture(c,person.social,time);
  drawDailyGesture(c,person,time);
  if(!person.walking){c.fillStyle='#fffbec';c.beginPath();c.arc(8,-34,5,0,7);c.fill();c.fillStyle='#9e8764';c.font='8px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(affection?.remembered?'♥':'✧',8,-34);}
@@ -4578,7 +5260,9 @@ function drawStreetEncounter(c,time,residents,view){
  if(guests.length===3)c.fillText('✧',(guests[1].x+guests[2].x)/2,Math.min(guests[1].y,guests[2].y)-36-floating);
  // Distant conversations are visible as a small social signal; the full
  // text appears only when Lia can actually overhear the people on that street.
- if(Math.hypot(player.x-cx,player.y-cy)>135){c.restore();return;}
+ // A full speech card belongs to a close conversation, not to the entire
+ // market skyline. The encounter continues normally when its card is hidden.
+ if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76){c.restore();return;}
  const phrase=window.RoncadorStreetEncounters.line(living,encounter),colon=phrase.indexOf(':');
  const who=colon<0?'Encontro':phrase.slice(0,colon),spoken=colon<0?phrase:phrase.slice(colon+1).trim();
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(spoken,phone?21:28);
@@ -4608,17 +5292,30 @@ function drawCommunityEncounter(c,time,people,view){
  c.font='14px system-ui';c.textAlign='center';c.textBaseline='middle';
  c.fillText(event.icon,cx,cy-33+bounce);
  c.fillStyle='#e8bc83';for(let i=0;i<3;i++){const ox=(i-1)*9;c.beginPath();c.arc(cx+ox,cy-46+(i%2)*4+bounce,.8+(i%2)*.4,0,7);c.fill();}
- if(Math.hypot(player.x-cx,player.y-cy)>135){c.restore();return;}
+ if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76){c.restore();return;}
  const phrase=window.RoncadorStreetCommunity.line(living,event),separator=phrase.indexOf(':');
  const speaker=separator>=0?phrase.slice(0,separator):'Amigos',speech=separator>=0?phrase.slice(separator+1).trim():phrase;
  const phone=matchMedia('(max-width:800px)').matches,rows=wrapEncounterSpeech(speech,phone?20:26);
- const width=phone?114:139,height=27+rows.length*9,top=cy-91+bounce;
+ const width=phone?108:124,height=27+rows.length*9,top=cy-87+bounce;
  c.shadowColor='#344c4230';c.shadowBlur=5;c.shadowOffsetY=2;
  roundRect(c,cx-width/2,top,width,height,9,'#fff9edf5','#d6b8a2');c.shadowBlur=0;c.shadowOffsetY=0;
  c.fillStyle='#fff9ed';c.beginPath();c.moveTo(cx-6,top+height-1);c.lineTo(cx,top+height+6);c.lineTo(cx+7,top+height-1);c.fill();
  c.fillStyle='#a46e65';c.font='bold 8px system-ui';c.fillText(speaker,cx,top+9);
  c.fillStyle='#5a6655';c.font='7px system-ui';rows.forEach((row,i)=>c.fillText(row,cx,top+21+i*9));
  c.restore();
+}
+function chooseConversationLayer(streetEvent,communityEvent,people,playerPosition){
+ if(!streetEvent||streetEvent.phase!=='visit')return 'community';
+ if(!communityEvent||communityEvent.phase!=='visit')return 'street';
+ const distanceToEvent=(event)=>{
+  const ids=event.cast||[event.host,event.visitor];
+  const cast=ids.map(id=>people.find(p=>p.id===id));
+  if(cast.some(p=>!p||p.arriving))return Infinity;
+  const x=cast.reduce((sum,p)=>sum+p.x,0)/cast.length;
+  const y=cast.reduce((sum,p)=>sum+p.y,0)/cast.length;
+  return Math.hypot(playerPosition.x-x,playerPosition.y-y);
+ };
+ return distanceToEvent(streetEvent)<=distanceToEvent(communityEvent)?'street':'community';
 }
 function drawStreetLife(c,time,view){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
@@ -4627,18 +5324,23 @@ function drawStreetLife(c,time,view){
  const greeted=streetGreetings.apply(residents.concat(secondaries),elapsed,living);
  residentMotion.hold(greeted);
  const event=window.RoncadorEncounterChoreography.current(living);
- if(event&&residents.concat(secondaries).filter(p=>(event.cast||[event.host,event.visitor]).includes(p.id)).every(p=>!p.arriving))window.RoncadorEncounterChoreography.apply(residents.concat(secondaries),living,event);
+ if(event&&residents.concat(secondaries).filter(p=>(event.cast||[event.host,event.visitor]).includes(p.id)).every(p=>!p.arriving&&!p.walking))window.RoncadorEncounterChoreography.apply(residents.concat(secondaries),living,event);
  const ambientPeople=[];
+ const conversationSpace=residents.concat(secondaries).filter(p=>greeted.includes(p.id));
  for(const passer of walkers){
   const occupied=residents.concat(secondaries,ambientPeople);
-  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[]);
+  const at=window.RoncadorCrowdFlow.openSlot(shift=>walkingPoint(passer.id,passer.hub,passer.variant,shift),occupied,roadDetails?.junctions||[],23,houses,passer.id,elapsed,conversationSpace);
   if(!at)continue;
   const passerNow=residentMotion.resolve({...passer,...at},elapsed,living.day);
+  // A detour in progress keeps its walking pose; no mid-step wave or pause.
+  if(passerNow.arriving||passerNow.walking){passerNow.moment=null;passerNow.social=null;}
   if(residents.concat(secondaries,ambientPeople).some(p=>Math.hypot(p.x-passerNow.x,p.y-passerNow.y)<22))continue;
   ambientPeople.push(passerNow);
  }
  ambientHitTargets=ambientPeople;
  const people=[...ambientPeople,...residents,...secondaries].sort((a,b)=>a.y-b.y);
+ // Labels are a proximity aid, not a second layer of billboards over the town.
+ const nameplates=layoutResidentNameplates(people,player,zoom,matchMedia('(max-width:800px)').matches);
  for(const person of people){
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
    const age=elapsed-(marketReaction.until-5.5);
@@ -4646,20 +5348,26 @@ function drawStreetLife(c,time,view){
   }
   residentMotion.present(person,elapsed,reduce);
   if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
-  // Cross-fade the full portrait into a compact silhouette on wide map views.
-  const detail=Math.max(0,Math.min(1,(zoom-.95)/.30));
-  if(detail<1){c.save();c.globalAlpha*=1-detail;drawDistantResident(c,person);c.restore();}
-  if(detail>0){c.save();c.globalAlpha*=detail;if(person.secondary)drawSecondaryWalker(c,person,time);else drawKawaiiWalker(c,person,time);c.restore();}
-  if(zoom>=1.2&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
-   c.save();c.globalAlpha*=Math.min(1,person.greeting.age/.45,(3.8-person.greeting.age)/.45);
-   c.fillStyle='#fff8e8';c.strokeStyle='#bda78e';c.lineWidth=.8;c.beginPath();c.roundRect(person.x-14,person.y-55,28,14,6);c.fill();c.stroke();
-   c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText('Oi! ♡',person.x,person.y-45);c.restore();
+  // One representation per frame avoids ghost outlines at intermediate zoom.
+  if(zoom<1.15)drawDistantResident(c,person);
+  else if(person.secondary)drawSecondaryWalker(c,person,time);
+  else drawKawaiiWalker(c,person,time);
+  if(zoom>=1.3&&person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<95){
+   const greeting=person.greeting,parting=['look','wave','turn'].includes(greeting.stage);
+   const afternoon=greeting.nearPorch&&living.minute>=16*60+30&&living.minute<18*60+30;
+   const label=parting?'Até já! ♡':afternoon?'Boa tardinha ♡':'Oi! ♡';
+   const width=afternoon&&!parting?72:parting?46:28;
+   const opacity=Math.max(0,Math.min(1,greeting.age/.45,(4.4-greeting.age)/.35));
+   c.save();c.globalAlpha*=opacity;
+   c.fillStyle='#fff8e8';c.strokeStyle='#bda78e';c.lineWidth=.8;c.beginPath();
+   c.roundRect(person.x-width/2,person.y-55,width,14,6);c.fill();c.stroke();
+   c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText(label,person.x,person.y-45);c.restore();
   }
   if(zoom>=1.2&&person.id==='bia'&&person.activity&&(person.activity.includes('lendo')||person.activity.includes('estudando')||person.encounter?.id==='caderno-na-feira')){
    // A page-turning pocket notebook follows Bia's fictional routine along the
    // mapped streets; no reading spot or bench is added at invented coordinates.
    const turn=!reduce&&Math.sin(time*1.75)>.83;
-   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(9,-10);c.scale(.84,.84);
    c.fillStyle='#547d91';c.beginPath();c.moveTo(-9,-6);c.quadraticCurveTo(-4,-9,0,-5);c.quadraticCurveTo(5,-9,9,-6);c.lineTo(9,4);c.quadraticCurveTo(4,1,0,4);c.quadraticCurveTo(-4,1,-9,4);c.closePath();c.fill();
    c.fillStyle='#fcf8e8';c.beginPath();c.moveTo(-7,-5);c.quadraticCurveTo(-3,-7,0,-3);c.lineTo(0,2);c.quadraticCurveTo(-4,0,-7,2);c.closePath();c.fill();
    c.beginPath();c.moveTo(0,-3);c.quadraticCurveTo(4,-7,7,-5);c.lineTo(7,2);c.quadraticCurveTo(3,0,0,2);c.closePath();c.fill();
@@ -4671,12 +5379,13 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='lucia'&&person.activity&&(person.activity.includes('jardins')||person.activity.includes('flores'))){
    // Portable fictional flowerpot near Lúcia's hands; no asserted garden GPS.
    const nod=reduce?0:Math.sin(time*2.1)*.9;
-   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82,.82);
+   const bloom=window.RoncadorLuciaGarden.growth(luciaGarden,living.day);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-7);c.scale(.82*bloom.scale,.82*bloom.scale);
    c.fillStyle='#5e6f592c';c.beginPath();c.ellipse(0,13,8,3,0,0,7);c.fill();
    roundRect(c,-5,1,10,10,2,'#c68e80','#8f7268');
    c.strokeStyle='#65966c';c.lineWidth=1.6;c.beginPath();c.moveTo(0,2);c.lineTo(nod,-11);c.stroke();
    c.fillStyle='#87ac77';c.beginPath();c.ellipse(-3,-7,4,2,-.6,0,7);c.ellipse(3,-10,4,2,.6,0,7);c.fill();
-   c.fillStyle='#e6b5cc';c.beginPath();c.arc(nod,-12,luciaGarden.claimed?3.8:2.6,0,7);c.fill();
+   c.fillStyle='#e6b5cc';c.beginPath();c.arc(nod,-12,[1.1,1.7,2.6,3.8][bloom.stage],0,7);c.fill();
    if(luciaGarden.work.includes('agua')){c.fillStyle='#94b6d0';c.beginPath();c.arc(9,-9+nod,1.2,0,7);c.arc(11,-5-nod,1,0,7);c.fill();}
    if(luciaGarden.claimed){c.fillStyle='#f5efd5';c.font='bold 8px system-ui';c.fillText('♥',-11,-17);}
    c.restore();
@@ -4684,7 +5393,7 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&person.id==='damiao'&&(person.activity==='organizando a feira'||person.encounter?.phase==='visit')&&(!marketMorning.claimed||nearMarket(130)||person.encounter?.phase==='visit')){
    // Attached to the fictional character, not an invented vendor coordinate.
    const wiggle=reduce?0:Math.sin(time*2.5)*1.6;
-   c.save();c.translate(person.x,person.y);const spriteScale=characterDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
+   c.save();c.translate(person.x,person.y);const spriteScale=residentDrawScale(.82);c.scale(spriteScale,spriteScale);c.translate(11,-8);c.scale(.84,.84);
    c.fillStyle='#947458';c.beginPath();c.ellipse(3,8,10,3,0,0,7);c.fill();
    roundRect(c,-4,-5,15,11,2,'#b18b61','#806c4c');
    for(let k=0;k<3;k++){c.fillStyle=['#e7b85e','#c98c52','#97a66c'][k];c.beginPath();c.arc(-1+k*4,-7+wiggle*(k===1?1:0),2.5,0,7);c.fill();}
@@ -4694,31 +5403,108 @@ function drawStreetLife(c,time,view){
   if(zoom>=1.2&&marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
    roundRect(c,person.x-49,person.y-79,98,16,6,'#fff8e9','#c4ae8c');c.font='7px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#7d7258';c.fillText('Ficou bonita, Damião!',person.x,person.y-71);
   }
-  if(person.def&&!person.meeting&&Math.hypot(player.x-person.x,player.y-person.y)<140&&zoom>1.2){
-   const width=person.def.name.length*5.6+14;
-   roundRect(c,person.x-width/2,person.y-(person.secondary?54:58),width,13,5,'#fffcf1ee','#b4c2a1');
-   c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(person.def.name,person.x,person.y-(person.secondary?47.5:51.5));
-  }
+ }
+ // Labels are the last resident layer: another passing sprite cannot cut them
+ // in half, and the higher-priority conversation overlay comes after them.
+ for(const label of nameplates){
+  roundRect(c,label.x-label.width/2,label.y-6.5,label.width,13,5,'#fffcf1ed','#b4c2a1');
+  c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(label.name,label.x,label.y);
  }
 }
+let boltMarketRoad=null;
+function boltCityPoint(){
+ if(boltMarketRoad===null){
+  // Use the existing game start on the mapped road, never an absent private-house POI.
+  const home={p:data.start};
+  const market=data.landmarks.find(p=>p.id==='mercado');
+  const route=home&&market&&pathfinder?.route(home.p,market.p);
+  // The final point is a POI connector, not necessarily a street: stay on road vertices.
+  const points=route?.points?.slice(0,-1);
+  const valid=points?.length>=2&&points.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y));
+  boltMarketRoad=valid?points:false;
+ }
+ if(!boltMarketRoad)return walkingPoint('bolt','inicio',5)||{x:data.start[0],y:data.start[1],walking:false};
+ const clock=living.minute;
+ const going=clock>=8*60&&clock<9*60+15;
+ const returning=clock>=10*60&&clock<11*60+15;
+ const progress=going?(clock-8*60)/75:returning?1-(clock-10*60)/75:
+  clock>=9*60+15&&clock<10*60?1:0;
+ const points=boltMarketRoad;
+ let total=0;
+ for(let i=1;i<points.length;i++)total+=Math.hypot(points[i].x-points[i-1].x,points[i].y-points[i-1].y);
+ if(total<1)return walkingPoint('bolt','inicio',5)||{x:data.start[0],y:data.start[1],walking:false};
+ let remaining=Math.max(0,Math.min(1,progress))*total;
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],length=Math.hypot(b.x-a.x,b.y-a.y);
+  if(remaining<=length||i===points.length-1){
+   const t=length?Math.min(1,remaining/length):0;
+   return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,walking:going||returning};
+  }
+  remaining-=length;
+ }
+ return {x:points[0].x,y:points[0].y,walking:false};
+}
+function boltRestingByGreen(at){
+ if(!at||at.walking)return false;
+ const nearby=(p,r)=>Math.hypot(p.x-at.x,p.y-at.y)<r;
+ return floraLayer.points.some(p=>['canopy','shade','flowerbed'].includes(p.kind)&&nearby(p,27))||
+  detailedFacades&&houses.some(h=>h.seed%7===2&&['matriz','joao','clovis'].includes(h.centralBlock)&&nearby(h,30));
+}
+function streetPetBehavior(pet,at,minute,weather,playerPoint){
+ // Pure, deterministic poses: no new coordinates, timers or saved state.
+ const rain=weather==='chuvisco';
+ const night=minute<7*60||minute>=20*60;
+ const resting=!!pet.bolt&&boltRestingByGreen(at)||!at.walking&&(rain||pet.cat&&night);
+ const curious=!rain&&!at.walking&&playerPoint&&Math.hypot(playerPoint.x-at.x,playerPoint.y-at.y)<34;
+ return {resting,curious:!!curious,tailRate:curious?4:resting?1.2:pet.cat?2.4:3.2,bounce:resting?.18:at.walking?.78:.45};
+}
 function drawStreetPets(c,time,view){
- const candidates=[{id:'pingo',name:'Pingo 🐕',hub:'casa_varanda',variant:5,cat:false},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
+ const candidates=[{id:'bolt',name:'Bolt 🐕',hub:'inicio',variant:5,cat:false,bolt:true},{id:'gatinho',hub:'inicio',variant:7,cat:true},{id:'cachorrinho',hub:'mercado',variant:8,cat:false},{id:'gatinho-2',hub:'igreja',variant:9,cat:true}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  for(const pet of candidates){
   if(!daylight&&pet.variant!==7)continue;
-  const at=walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
+  const at=pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant);if(!at)continue;
+  const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode,player);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
-  const bounce=reduce?0:Math.sin(time*(pet.cat?3.7:5.2)+pet.variant)*.65;
+  const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)+pet.variant)*behavior.bounce;
   c.save();c.translate(at.x,at.y+bounce);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
-  const fur=pet.cat?'#f0d3ac':'#cd9870';
-  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*2+pet.variant)*2),9,-13);c.stroke();
+  const fur=pet.bolt?'#eee0c3':pet.cat?'#f0d3ac':'#cd9870';
+  if(zoom<1.15){
+   // At wide zoom, avoid subpixel eyes, ears and overlapping fine outlines.
+   c.strokeStyle='#8f765e';c.lineWidth=1.3;c.lineCap='round';
+   c.beginPath();c.moveTo(4,-3);c.quadraticCurveTo(9,-9,7,-11);c.stroke();
+   roundRect(c,-6,-7,12,8,3.5,fur,'#977861');
+   c.fillStyle=fur;c.beginPath();c.arc(-4,-7,3.6,0,Math.PI*2);c.fill();
+   if(pet.bolt){
+    c.fillStyle='#75665e';c.beginPath();c.ellipse(-6,-8,1.8,2.7,-.4,0,Math.PI*2);c.fill();
+    // Keep the familiar name readable even in the simplified far-zoom sprite.
+    c.fillStyle='#fff9eb';c.strokeStyle='#9b8068';c.lineWidth=.6;
+    roundRect(c,-12,-20,24,8,3,'#fff9eb','#9b8068');
+    c.fillStyle='#5c4a38';c.font='bold 6px system-ui';c.textAlign='center';c.fillText('Bolt',0,-14);
+   }
+   c.restore();continue;
+  }
+  c.strokeStyle=fur;c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(4,-1);c.quadraticCurveTo(13,-11+(reduce?0:Math.sin(time*behavior.tailRate+pet.variant)*(behavior.resting?.7:2)),9,-13);c.stroke();
   roundRect(c,-6,-7,12,9,4,fur,'#9c846b');
-  c.fillStyle=fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
+  c.fillStyle=pet.bolt?'#d7bb91':fur;c.beginPath();c.arc(-3,-6,5,0,7);c.fill();
+  if(pet.bolt){
+   // Bolt's pale coat, darker floppy ears and charcoal muzzle come from the
+   // author's photographs; the source photos stay outside the game/repository.
+   c.fillStyle='#6d5d55';c.beginPath();c.ellipse(-6.5,-8,2.2,4,-.3,0,Math.PI*2);c.fill();
+   c.fillStyle='#8d7868';c.beginPath();c.ellipse(-1,-7,2.6,3.2,.25,0,Math.PI*2);c.fill();
+   c.fillStyle='#aa998b';c.beginPath();c.ellipse(-4.8,-4.1,3.7,2.2,0,0,Math.PI*2);c.fill();
+   c.fillStyle='#393536';c.beginPath();c.arc(-7,-4.2,1.4,0,Math.PI*2);c.fill();
+   c.strokeStyle='#4c4740';c.lineWidth=1.2;c.beginPath();c.moveTo(-5,-1.9);c.lineTo(3,-1.9);c.stroke();
+  }
   if(pet.cat){c.beginPath();c.moveTo(-7,-9);c.lineTo(-7,-15);c.lineTo(-2,-11);c.moveTo(0,-11);c.lineTo(4,-15);c.lineTo(4,-8);c.fill();}
   else{roundRect(c,-8,-10,4,8,2,'#a47359');}
-  c.fillStyle='#51483e';c.beginPath();c.arc(-5,-7,0.8,0,7);c.arc(-1,-7,0.8,0,7);c.fill();
+  c.fillStyle='#51483e';c.beginPath();c.arc(-5+(behavior.curious?.4:0),-7,0.8,0,7);c.arc(-1+(behavior.curious?.4:0),-7,0.8,0,7);c.fill();
   c.strokeStyle='#a77a67';c.lineWidth=.6;c.beginPath();c.moveTo(-3,-5);c.lineTo(-3,-3);c.stroke();
+  if(greenRest&&zoom>=1.15){
+   // Bolt quietly watches the plants during a natural stop on his street route.
+   c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
+  }
   if(pet.name&&zoom>1.2){
    roundRect(c,-18,-22,36,10,4,'#fff9ebee','#b89f7d');
    c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,-17);
@@ -4766,7 +5552,7 @@ function drawGeology(c,view){
  }
 }
 function drawGuide(c,time){
- c.save();c.translate(guide.x,guide.y);const spriteScale=characterDrawScale(.73);c.scale(spriteScale,spriteScale);
+ c.save();c.translate(guide.x,guide.y);const spriteScale=characterDrawScale(WORLD_CHARACTER_HEIGHT/38);c.scale(spriteScale,spriteScale);
  const bob=reduce?0:Math.sin(time*2.1)*1.2;
  c.fillStyle='#2947372d';c.beginPath();c.ellipse(0,8,11,5,0,0,7);c.fill();
  c.translate(0,bob);roundRect(c,-7,1,5,7,2,'#5b6474');roundRect(c,2,1,5,7,2,'#5b6474');
@@ -4802,15 +5588,30 @@ function render(time){
    let seed=Math.floor(hash(gx*7,gy*11)*10000),x=gx*45+hash(gx,gy)*32,y=gy*45+hash(gy+30,gx+2)*32;
    const village=areas.some(a=>a.tags.landuse==='residential'&&inside(x,y,a.p[0]));
    tree=null;
-   if((seed%10)>=(village?8:2)&&nearestRoad(x,y).d>=22&&(!marketStall||Math.hypot(x-marketStall.p[0],y-marketStall.p[1])>=22)&&!houses.some(b=>Math.hypot(x-b.x,y-b.y)<20)&&!scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,12),x,y))&&!areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))tree={x,y,seed,r:10+seed%8};
+   if((seed%10)>=(village?8:2)&&nearestRoad(x,y).d>=22&&(!marketStall||Math.hypot(x-marketStall.p[0],y-marketStall.p[1])>=22)&&!houses.some(b=>Math.hypot(x-b.x,y-b.y)<20)&&!scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,12),x,y))&&!areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))tree={x,y,seed,r:10+seed%8,rural:!village};
    treeCache.set(key,tree);
   }
-  if(tree)drawTree(ctx,tree.x,tree.y,tree.r,tree.seed);
+  if(tree){if(tree.rural&&tree.seed%5===0)drawRuralShrub(ctx,tree.x,tree.y,tree.r,tree.seed);else drawTree(ctx,tree.x,tree.y,tree.r,tree.seed);}
  }
  drawWildlife(ctx,time,{left,right,top,bottom});
  if(showScenery){
   const stalls=fairAtmosphere()?fairStalls:marketStallVisible()?[marketStall]:[];
   window.RoncadorFairStreets.draw(ctx,stalls,{left,right,top,bottom},time,reduce,marketMorning.talked&&marketStall?{stall:marketStall,state:marketMorning,slots:marketFruitSlots,label:zoom>1.2&&Math.hypot(player.x-marketStall.p[0],player.y-marketStall.p[1])<130}:null);
+  // Decorative reward tied to the existing fictional market stall and saved choice.
+  // It is not a mapped building, business sign or newly invented coordinate.
+  if(marketStall&&stalls.includes(marketStall)&&marketMorning.claimed&&sideNeighbors.choices?.cica==='banca'){
+   const [rx,ry]=marketStall.p;
+   if(rx>=left-35&&rx<=right+35&&ry>=top-35&&ry<=bottom+35){
+    ctx.save();ctx.translate(rx,ry-17);
+    ctx.strokeStyle='#658d87';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-5,-4);ctx.quadraticCurveTo(0,-1,5,-4);ctx.stroke();
+    ctx.fillStyle='#79bbb3';ctx.strokeStyle='#477b74';ctx.lineWidth=.7;
+    for(const flip of [-1,1]){ctx.beginPath();ctx.moveTo(0,-4);ctx.quadraticCurveTo(flip*9,-13,flip*10,-4);ctx.quadraticCurveTo(flip*8,3,0,-4);ctx.fill();ctx.stroke();}
+    ctx.fillStyle='#e8ca8c';ctx.beginPath();ctx.arc(0,-4,2.1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#76afa6';ctx.beginPath();ctx.moveTo(-2,-2);ctx.lineTo(-5,7);ctx.lineTo(-1,5);ctx.lineTo(1,-2);ctx.moveTo(1,-2);ctx.lineTo(4,7);ctx.lineTo(6,4);ctx.lineTo(2,-3);ctx.fill();
+    ctx.restore();
+   }
+  }
  }
  drawScenicLayer(ctx,{left,right,top,bottom},true);
  drawClovisNeighborhoodScene(ctx,time,{left,right,top,bottom});drawParkedMotosAndSorda(ctx,time,{left,right,top,bottom});drawDailyActivity(ctx,time,{left,right,top,bottom});
@@ -4824,7 +5625,8 @@ function render(time){
  // exact mapped coordinate but draw it behind the sprite instead of across a
  // face. Pins away from characters keep their usual foreground contrast.
  const castNow=residentsInStreets(),pinsBehind=new Set();
- for(let i=0;i<missions.length;i++)if(castNow.some(p=>Math.hypot(missions[i].p[0]-p.x,missions[i].p[1]-p.y)<28)){drawPin(ctx,missions[i],i,time);pinsBehind.add(i);}
+ const peopleNearPins=[...castNow,...secondaryInStreets(castNow),player,guide];
+ for(let i=0;i<missions.length;i++)if(peopleNearPins.some(p=>Math.hypot(missions[i].p[0]-p.x,missions[i].p[1]-p.y)<35)){drawPin(ctx,missions[i],i,time,false,true);pinsBehind.add(i);}
  drawStreetLife(ctx,time,{left,right,top,bottom});
  drawStreetPets(ctx,time,{left,right,top,bottom});
  for(let i=0;i<missions.length;i++)if(!pinsBehind.has(i))drawPin(ctx,missions[i],i,time);
@@ -4846,7 +5648,11 @@ function render(time){
  }
  // Conversation lettering stays above the pets, quest pins and player so none
  // of those animated objects can cover the words mid-sentence.
- drawStreetEncounter(ctx,time,castNow,{left,right,top,bottom});drawCommunityEncounter(ctx,time,castNow.concat(secondaryInStreets()),{left,right,top,bottom});ctx.restore();
+ const speakers=castNow.concat(secondaryInStreets(castNow));
+ const conversationLayer=chooseConversationLayer(window.RoncadorStreetEncounters.current(living),window.RoncadorStreetCommunity.current(living),speakers,player);
+ if(conversationLayer==='street')drawStreetEncounter(ctx,time,castNow,{left,right,top,bottom});
+ else drawCommunityEncounter(ctx,time,speakers,{left,right,top,bottom});
+ ctx.restore();
  // Purely pictorial daylight: no claim about the current sky, climate or lamp coordinates.
  if(lightPhase==='tarde'){
   const gold=ctx.createLinearGradient(0,0,w,h);gold.addColorStop(0,'#f9df9c3d');gold.addColorStop(.58,'#f9c89c22');gold.addColorStop(1,'#ba926519');
@@ -4866,11 +5672,14 @@ function render(time){
  }
  drawSkyWeather(time);
 }
-function explorationBounds(){const pts=[data.start,...missions.map(m=>m.p)];let xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);return{minX:Math.min(...xs)-130,maxX:Math.max(...xs)+130,minY:Math.min(...ys)-130,maxY:Math.max(...ys)+130};}
-function wholeBounds(){let pts=roads.flatMap(r=>r.p).concat(areas.flatMap(a=>a.p.flat()));return{minX:Math.min(...pts.map(p=>p[0]))-100,maxX:Math.max(...pts.map(p=>p[0]))+100,minY:Math.min(...pts.map(p=>p[1]))-100,maxY:Math.max(...pts.map(p=>p[1]))+100};}
+function explorationBounds(){const radius=400;return{minX:player.x-radius,maxX:player.x+radius,minY:player.y-radius,maxY:player.y+radius};}
+function wholeBounds(){if(wholeBounds.cache)return wholeBounds.cache;const pts=roads.flatMap(r=>r.p).concat(areas.flatMap(a=>a.p.flat()));return wholeBounds.cache={minX:Math.min(...pts.map(p=>p[0]))-100,maxX:Math.max(...pts.map(p=>p[0]))+100,minY:Math.min(...pts.map(p=>p[1]))-100,maxY:Math.max(...pts.map(p=>p[1]))+100};}
 function overview(c,ww,hh,bounds,large){c.clearRect(0,0,ww,hh);c.fillStyle='#b8c79c';c.fillRect(0,0,ww,hh);let s=Math.min((ww-26)/(bounds.maxX-bounds.minX),(hh-26)/(bounds.maxY-bounds.minY)),ox=ww/2-(bounds.minX+bounds.maxX)/2*s,oy=hh/2-(bounds.minY+bounds.maxY)/2*s;c.save();c.translate(ox,oy);c.scale(s,s);region(c,false);drawRoads(c,s,true);c.restore();if(showGeology&&large){for(const rock of geologyPoints){const x=rock.p[0]*s+ox,y=rock.p[1]*s+oy;if(x<0||x>ww||y<0||y>hh)continue;c.fillStyle='#fff3df';c.strokeStyle='#7c6174';c.lineWidth=1;c.beginPath();c.arc(x,y,3,0,7);c.fill();c.stroke();}}for(let i=0;i<missions.length;i++){let m=missions[i],x=m.p[0]*s+ox,y=m.p[1]*s+oy,done=collected.has(i);c.fillStyle=done?'#6a8b51':i===target?'#d7ad50':'#f1e7b6';c.strokeStyle='#f9f8e4';c.lineWidth=large?2:1;c.beginPath();c.arc(x,y,large?12:4.5,0,7);c.fill();c.stroke();if(large){c.fillStyle=done?'#f9f8e4':'#745f32';c.font='600 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':i+1,x,y);}}
+ // Map stays north-up; orientation is never tied to the character's heading.
+ c.save();c.fillStyle='#3d6048';c.font=(large?'600 12px':'600 9px')+' system-ui';
+ c.textAlign='right';c.textBaseline='top';c.fillText('N ↑',ww-7,6);c.restore();
  const px=player.x*s+ox,py=player.y*s+oy;c.fillStyle='#ce7758';c.strokeStyle='#fff4d5';c.lineWidth=2;c.beginPath();c.arc(px,py,large?6:4,0,7);c.fill();c.stroke();if(!large){c.strokeStyle='#496e4050';c.lineWidth=.8;c.strokeRect((camera.x-w/2/zoom)*s+ox,(camera.y-h/2/zoom)*s+oy,w/zoom*s,h/zoom*s);}return{s,ox,oy};}
-function drawMini(){if(data)overview(mc,mini.width,mini.height,explorationBounds(),false);}
+function drawMini(){if(data)overview(mc,mini.width,mini.height,wholeBounds(),false);}
 function drawBig(){if(!data)return;let r=big.getBoundingClientRect(),dd=Math.min(devicePixelRatio||1,2);big.width=Math.round(r.width*dd);big.height=Math.round(r.height*dd);bc.setTransform(dd,0,0,dd,0,0);mapTransform=overview(bc,r.width,r.height,fullMap?wholeBounds():explorationBounds(),true);$('fullMap').textContent=fullMap?'Voltar à expedição':'Ver todo o arquivo';$('mapScale').textContent=fullMap?'Mostrando a extensão completa dos dados.':'Uma região de aproximadamente 800 metros.';$('geologyLegend').hidden=!showGeology;}
 function setRoute(x,y,stopRadius=0){
  const road=nearestRoad(x,y),end=[road.x,road.y];
@@ -4889,6 +5698,12 @@ function blockedByHouse(x,y){
   if(Math.abs(lx)<house.w/2+5&&Math.abs(ly)<house.h/2+5)return true;
  }
  return false;
+}
+// Houses are artistic footprints, while road centerlines come from the mapped
+// network. A route may stay on its road when a decorative house overlaps it;
+// ordinary off-road movement still respects every house collision.
+function mayAdvanceOnMappedRoute(houseBlocked,routeActive,fromRoadDistance,toRoadDistance){
+ return !houseBlocked||(routeActive&&fromRoadDistance<=9&&toRoadDistance<=9);
 }
 function chapterUI(){
  const tasks=[
@@ -5106,7 +5921,7 @@ function renderLuciaGarden(line){
  $('luciaGardenThanks').hidden=!luciaGarden.claimed;
  const chosen=logic.MEMORIES.find(m=>m.id===luciaGarden.memory);
  $('luciaGardenFarewell').textContent=chosen?'Lúcia: “'+chosen.title+'... Uma lembrança assim merece crescer com carinho. Obrigada por dividir este instante comigo.”':'Lúcia sorri ao ver as primeiras folhas.';
- $('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “O carinho que a gente planta permanece.”':'Lúcia: “Minha mãe dizia que uma plantinha cresce junto das nossas histórias. Vamos cuidar desta?”';
+ $('luciaWorkerSpeech').textContent=luciaGarden.claimed?'Lúcia: “'+logic.growth(luciaGarden,living.day).caption+' O carinho que a gente planta permanece.”':'Lúcia: “Minha mãe dizia que uma plantinha cresce junto das nossas histórias. Vamos cuidar desta?”';
  $('luciaGardenFinish').disabled=!logic.ready(luciaGarden);
  $('luciaGardenFinish').textContent=luciaGarden.claimed?'◫ Ver a lembrança no álbum ↗':logic.ready(luciaGarden)?'♡ Guardar a memória com Lúcia':'Cuide da planta e escolha uma memória';
 }
@@ -5120,7 +5935,7 @@ function showLuciaGarden(){
 function claimLuciaGarden(){
  if(!active)return;
  if(luciaGarden.claimed){$('luciaGardenDialog').close();renderAlbum();showDialog('albumDialog');return;}
- if(!nearChurch(100)||!luciaAvailable()||!window.RoncadorLuciaGarden.claim(luciaGarden))return;
+ if(!nearChurch(100)||!luciaAvailable()||!window.RoncadorLuciaGarden.claim(luciaGarden,living.day))return;
  const chosen=window.RoncadorLuciaGarden.MEMORIES.find(m=>m.id===luciaGarden.memory);
  living.notes.unshift({day:living.day,text:'Você cuidou de uma mudinha fictícia com Dona Lúcia e escolheu a memória: '+chosen.title+'.'});
  living.notes=living.notes.slice(0,12);
@@ -5382,7 +6197,7 @@ function renderAlbum(){
   const description=document.createElement('span');description.textContent=chosen?'Com Dona Lúcia você cuidou de uma muda fictícia e guardou: '+chosen.title+'. '+chosen.story:'Um cuidado e uma conversa perto da Matriz.';
   content.append(title,description);article.append(thumbnail,content);grid.append(article);
  }
- if(sideNeighbors.seen.length===3){
+ if(window.RoncadorSecondaryNeighbors.coreProgress(sideNeighbors)===3){
   const article=document.createElement('article');article.className='album-card side-memory';
   const thumbnail=document.createElement('div');thumbnail.className='fair-memory-thumbnail';thumbnail.textContent='🧵 ✏️ ✉️';thumbnail.setAttribute('aria-label','Três pequenos desenhos: fitas, lápis e carta');
   const content=document.createElement('div');content.className='album-card-content';
@@ -5468,6 +6283,7 @@ function renderAlbum(){
   const description=document.createElement('span');description.textContent='Você observou os três trechos do ateliê e imaginou suas fachadas: Matriz, Feira e Rua João Pessoa. A arte não representa casas reais identificadas.';
   content.append(title,description);article.append(preview,content);grid.append(article);
  }
+ window.RoncadorAffectionMemory.appendSocialKeepsakes(grid,{marketMorning,luciaGarden,biaLetters,communitySeen},document);
 }
 function observe(){
  if(!active||anyDialog()){if(!active)notify('Comece a expedição para registrar suas paisagens.');return;}
@@ -5515,8 +6331,15 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  nearGuide=guideDistance<32;
  nearCulture=data.landmarks.find(l=>Math.hypot(player.x-l.p[0],player.y-l.p[1])<43)||null;
  const residentSnapshot=residentsInStreets(),secondarySnapshot=secondaryInStreets(residentSnapshot);
- nearResident=residentSnapshot.find(p=>Math.hypot(player.x-p.x,player.y-p.y)<42)||null;
- nearSecondary=secondarySnapshot.find(p=>Math.hypot(player.x-p.x,player.y-p.y)<42)||null;
+ // Select the nearest available speaker across both casts. Otherwise a
+ // primary resident can hide a closer neighbour's conversation button.
+ const closestSpeaker=residentSnapshot.concat(secondarySnapshot).reduce((best,p)=>{
+  const d=Math.hypot(player.x-p.x,player.y-p.y);
+  return d<42&&(!best||d<best.d)?{person:p,d}:best;
+ },null);
+ nearResident=closestSpeaker&&!closestSpeaker.person.secondary?closestSpeaker.person:null;
+ nearSecondary=closestSpeaker?.person.secondary?closestSpeaker.person:null;
+ if(closestSpeaker&&closestSpeaker.d<guideDistance)nearGuide=false;
  $('interact').hidden=!active||(near<0&&!nearGuide&&!nearCulture&&!nearResident&&!nearSecondary)||anyDialog();
  if(nearGuide)$('interact').innerHTML='♥ Conversar com Lia <kbd>E</kbd>';
  else if(nearResident?.meeting)$('interact').innerHTML='♡ Participar da conversa <kbd>E</kbd>';
@@ -5524,7 +6347,7 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  else if(nearSecondary)$('interact').innerHTML='✿ Conversar com '+nearSecondary.def.name+' <kbd>E</kbd>';
  else if(near>=0)$('interact').innerHTML='✦ '+missions[near].title+' <kbd>E</kbd>';
  else if(nearCulture)$('interact').innerHTML='✿ Visitar '+nearCulture.name+' <kbd>E</kbd>';
- $('cozyGuideHint').hidden=!active||zoom<1.15||guideDistance>85||guideDistance<32||Math.abs((guide.x-camera.x)*zoom)>w/2-30||Math.abs((guide.y-camera.y)*zoom)>h/2-30||anyDialog();
+ $('cozyGuideHint').hidden=!active||w<600||zoom<1.15||guideDistance>85||guideDistance<32||Math.abs((guide.x-camera.x)*zoom)>w/2-30||Math.abs((guide.y-camera.y)*zoom)>h/2-30||anyDialog();
  const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();syncContactsUI();syncKawaiiUI();observeMarketChange(secondarySnapshot);drawMini();}
 function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('Chegue perto de um marco dourado para guardar o selo.');return;}const i=near,m=missions[i];collected.add(i);target=missions.findIndex((_,j)=>!collected.has(j));for(let n=0;n<22;n++){const a=n/22*Math.PI*2;particles.push({x:m.p[0],y:m.p[1]-16,vx:Math.cos(a)*18,vy:Math.sin(a)*18-10,life:1.5,r:1.2+hash(n)*2,color:n%2?'#f3d586':'#faf0be'});}note(523,0,.2);note(659,.1,.2);note(784,.2,.35);notify('Selo '+(collected.size)+'/6 · '+m.name+' — '+m.description);renderMissions();updateUI();save();if(collected.size===missions.length)setTimeout(()=>{if(collected.size===6){$('winTime').textContent=formatTime(elapsed);showDialog('winDialog');note(1046,.1,.4);}},950);}
 function gpsFor(p){const proj=data.projection;return{lat:proj.originLat-p[1]/proj.metersPerDegreeLat,lon:proj.originLon+p[0]/proj.metersPerDegreeLon};}
@@ -5542,22 +6365,22 @@ const CULTURE={
  sagrada_familia:{title:'Igreja Matriz Sagrada Família · R. Florânea com Clóvis Bezerra',kind:'chapel',description:'Situada no encontro da Rua Florânea com a Rua Clóvis Bezerra, a Igreja Matriz Sagrada Família marca a chegada da rua residencial ao miolo central de Belém.',lead:'Registre uma lembrança da esquina da Rua Florânea com a Clóvis Bezerra:',choices:['O encontro da Rua Clóvis Bezerra com a Rua Florânea','A fachada acolhedora da Matriz Sagrada Família','O caminho entre a escola, a igreja e os Correios'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
  hospital_santa_lucia:{title:'Hospital Santa Lúcia & Vizinhança Sul',kind:'hall',description:'Ponto mapeado no OpenStreetMap logo atrás da Rua Clóvis Bezerra e da Rua Antônio Alfredo Guedes, compondo a paisagem cotidiana de quem mora perto do sem número residencial.',lead:'Guarde um registro desta quadra da vizinhança:',choices:['A tranquilidade das ruas ao redor do Hospital Santa Lúcia','O cruzamento da Antônio Alfredo Guedes com a Rua Nunes','A caminhada de volta para a calçada da Casa da Varanda'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'},
   parque_sao_luis:{title:'Parque Artesanal São Luís · Roda-Gigante & Criatividade Popular',kind:'amusement',description:'Inspirado no famoso Parque de Diversões São Luís (Lagoa de Serra, Belém/PB), construído pelo Sr. José Luís com materiais reciclados e sucata. A roda-gigante colorida e o carrossel giram trazendo alegria para toda a cidade!',lead:'Escolha o que viver no Parque Artesanal São Luís:',choices:['Dar uma volta na Roda-Gigante artesanal 🎡','Admirar a engenhosidade dos brinquedos reciclados ✨','Tirar uma foto kawaii com os amigos no parque 📸'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
- pedra_cordeiro:{title:'Mirante da Pedra do Cordeiro · Fronteira Agreste–Brejo',kind:'rockview',description:'A pouco mais de 1 km a oeste do centro de Belém, a formação granítica da Pedra do Cordeiro reúne um cruzeiro no topo, vegetação de transição com mandacarus e xique-xiques e vista panorâmica da Serra da Copaoba.',lead:'Qual detalhe do Mirante da Pedra do Cordeiro você quer guardar?',choices:['Subir até o Cruzeiro e sentir a brisa da Serra ⛰','Observar os mandacarus e xique-xiques floridos 🌵','Contemplar o pôr do sol dourado sobre Belém ☀'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
+ pedra_cordeiro:{title:'Mirante da Pedra do Cordeiro · Fronteira Agreste–Brejo',kind:'rockview',description:'A oeste do centro de Belém, a Pedra do Cordeiro reúne um cruzeiro no alto, mandacarus, xique-xiques e vista panorâmica da cidade e das serras do Brejo. A trilha existe na documentação municipal, mas seu percurso ainda não foi mapeado no jogo.',lead:'Escolha um detalhe para registrar no caderno de referências (sem simular uma visita):',choices:['Conhecer a história do cruzeiro no alto ⛰','Reconhecer mandacarus e xique-xiques na encosta 🌵','Imaginar a vista de Belém e das serras ☀'],source:'https://www.belem.pb.gov.br/public/index.php/noticia/turismo-projeto-destino-brejo-destaca-atrativos-do-munic-pio-de-bel-m'},
  capela_luz:{title:'Capela Nossa Senhora da Luz & Bairro da Luz',kind:'chapel',description:'No alto da Rua Mário Barbosa (acessada pela Rua Vicente Cado e Rua Abdias Machado), a Capela da Luz guarda a devoção histórica do bairro e a tradição festiva do Bloco da Paz Risca Faca na segunda de Carnaval.',lead:'Qual memória do Bairro da Luz você quer guardar?',choices:['A subida pelas ruas Vicente Cado e Abdias Machado','A arquitetura acolhedora da Capela na Rua Mário Barbosa','A alegria tradicional do Bloco da Paz Risca Faca'],source:'https://www.belem.pb.gov.br/a-cidade/aspectos-gerais'}
 };
 function culturePlace(id){return data.landmarks.find(l=>l.id===id)||data.cultureReferences?.find(l=>l.id===id);}
 function cultureWithinReach(place){return !!(active&&place?.p&&Math.hypot(player.x-place.p[0],player.y-place.p[1])<43);}
 function syncMarketToggle(){const toggle=$('marketAtmosphere'),automatic=isMarketMorning();toggle.hidden=cultureActiveId!=='mercado';toggle.disabled=automatic;toggle.setAttribute('aria-pressed',String(fairAtmosphere()));toggle.textContent=automatic?'☀ A feira aparece automaticamente na segunda do jogo':marketDay?'✿ Encerrar feira ilustrativa adicional':'✿ Imaginar um dia de feira agora';}
-function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const reachable=cultureWithinReach(place);
+function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlace(id),story=CULTURE[id];cultureActiveId=id;const documentary=id==='pedra_cordeiro';const reachable=documentary||cultureWithinReach(place);
  $('cultureTitle').textContent=story.title;$('cultureDescription').textContent=story.description;
- $('cultureReliability').textContent=place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados': 'Apenas referência documental · sem posição no mapa';
+ $('cultureReliability').textContent=documentary?'Pino público de referência · contorno e entrada da trilha não verificados':place?.p?'Marcador do OpenStreetMap · edifício e acesso não verificados':'Apenas referência documental · sem posição no mapa';
  $('cultureActionLead').textContent=reachable?story.lead:story.choices.length?'Caminhe até o marcador para realizar esta atividade. Você pode marcar a rota abaixo.':story.lead;
  const options=$('cultureOptions');options.replaceChildren();for(const choice of story.choices){const button=document.createElement('button');button.type='button';button.textContent=choice;button.disabled=!reachable;button.setAttribute('aria-pressed',String(cultureNotes[id]===choice));button.onclick=()=>{cultureNotes[id]=choice;chapterUI();if(id==='mercado')recordFairQuest('mercado');
  const contactMatch=window.RoncadorBelemContacts?.CONTACTS.find(c=>c.hub===id);
  if(contactMatch)window.RoncadorBelemContacts.completeHangout(belemContacts,contactMatch.id);
  syncContactsUI();save();showCulture(id);notify('Uma nova memória de Belém foi guardada no caderno!');};options.append(button);}
- $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':'As escolhas são do jogador, não depoimentos de moradores.';
- $('cultureRoute').hidden=!place?.p||!active||reachable;
+ $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':documentary?'Registro documental: nenhuma caminhada ou chegada ao cruzeiro é simulada.':'As escolhas são do jogador, não depoimentos de moradores.';
+ $('cultureRoute').hidden=documentary||!place?.p||!active||reachable;
  const evidence=id==='igreja'?{archive:'archiveChurch',title:'Igreja da Conceição · 2007',caption:'Foto histórica: torre, relógio, três arcos e acabamento escuro. A ilustração se inspira nesses traços, mas não é uma planta fiel.',url:'https://commons.wikimedia.org/wiki/File:Igreja_N%C2%AA_Sr%C2%AA_da_Concei%C3%A7%C3%A3o_Bel%C3%A9m-PB.jpg'}:
   id==='mercado'?{archive:'archiveMarket',title:'Feira Livre de Belém · 2007',caption:'Foto histórica de toldos, cestos e comércio de rua; não documenta a fachada ou as barracas atuais do Mercado.',url:'https://commons.wikimedia.org/wiki/File:Feira_Livre_de_Bel%C3%A9m-PB.jpg'}:null;
  $('cultureEvidence').hidden=!evidence;
@@ -5601,7 +6424,7 @@ function lifeSummary(){
  $('carePreview').textContent=world.careProgress(living)+'/3 gestos';
  const out=residentsInStreets();
  const other=secondaryInStreets(),number=out.length+other.length;
- $('sideProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos';
+ $('sideProgress').textContent=sideNeighbors.seen.length+'/'+window.RoncadorSecondaryNeighbors.RESIDENTS.length+' conhecidos';
  $('streetResidentsCount').textContent=number+' vizinhos pelas ruas';
  $('streetResidentsHint').textContent=community?community.icon+' '+community.title:encounter?encounter.icon+' '+encounter.title:number?out.concat(other).map(p=>p.def.name.replace('Seu ','').replace('Dona ','')).join(' · '):'Noite de descanso e boas lembranças';
  $('streetPulse').setAttribute('aria-label',number+' pessoas pela cidade. Abrir o caderno de rotinas fictícias.');
@@ -5658,7 +6481,9 @@ function drawResidentPortrait(def,index){
  portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Retrato kawaii ilustrado de '+def.name);
  const pc=portrait.getContext('2d');pc.fillStyle='#f1eee3';pc.fillRect(0,0,92,104);
  pc.fillStyle=def.tone+'24';pc.beginPath();pc.ellipse(46,86,34,19,0,0,7);pc.fill();
- pc.save();pc.translate(46,82);pc.scale(1.42,1.42);
+ // Portrait cards need a readable face at sidebar sizes; this only affects
+ // the offscreen portrait canvas, never the walking sprite or its world scale.
+ pc.save();pc.translate(46,91);pc.scale(2.5,2.5);
  drawKawaiiWalker(pc,{x:0,y:0,id:def.id,def,walking:false,meeting:false,variant:index},1.3);
  pc.restore();
  return portrait;
@@ -5689,7 +6514,7 @@ function renderCareChoices(){
 }
 function renderSideJournal(){
  const library=window.RoncadorSecondaryNeighbors,grid=$('sideJournalList');grid.replaceChildren();
- $('sideJournalProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos'+(sideNeighbors.seen.length===3?' · álbum ✓':'');
+ $('sideJournalProgress').textContent=sideNeighbors.seen.length+'/'+library.RESIDENTS.length+' conhecidos'+(library.coreProgress(sideNeighbors)===3?' · álbum ✓':'');
  for(const def of library.RESIDENTS){
   const duty=library.agenda(living,def),found=sideNeighbors.seen.includes(def.id),position=secondaryInStreets().find(p=>p.id===def.id),recollection=affectionSnapshot(def.id);
   const row=document.createElement('div');row.className='side-journal-entry';
@@ -5714,12 +6539,15 @@ function renderSecondaryDialog(def,feedback){
  const portrait=document.createElement('canvas');portrait.width=110;portrait.height=107;portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Ilustração original de '+def.name);
  const c=portrait.getContext('2d');c.fillStyle='#edf0e5';c.fillRect(0,0,110,107);c.save();c.translate(55,82);c.scale(1.7,1.7);drawSecondaryWalker(c,{x:0,y:0,id:def.id,def,walking:false,variant:def.variant},.3);c.restore();wrap.append(portrait);
  const options=$('secondaryChoices');options.replaceChildren();
- for(const choice of def.options){
-  const button=document.createElement('button');button.type='button';button.disabled=already;button.textContent=choice.label;
+ for(const choice of window.RoncadorSecondaryNeighbors.availableOptions(def,{marketMorning,biaLetters,luciaGarden,sideNeighbors})){
+  const button=document.createElement('button');button.type='button';button.disabled=already;
+  // A quiet cue appears only when a contextual story is actually available.
+  const special=['banca','janela-bia','paisagem-bia','muda-lucia','amigas'].includes(choice.id);
+  button.textContent=(special&&!already?'✦ ':'')+choice.label;
   button.onclick=()=>{
    const position=secondaryInStreets().find(p=>p.id===def.id);
    if(!position||Math.hypot(player.x-position.x,player.y-position.y)>=44){renderSecondaryDialog(def,'Caminhe até '+def.name+' novamente para continuar.');return;}
-   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id);
+   const result=window.RoncadorSecondaryNeighbors.interact(sideNeighbors,living,def.id,choice.id,{marketMorning,biaLetters,luciaGarden,sideNeighbors});
    renderSecondaryDialog(def,result.ok?result.reply:result.reason);
    if(result.ok){note(590,0,.12);note(740,.09,.14);save();if(result.unlocked&&result.first)notify('♡ Três novos vizinhos conhecidos! Uma lembrança apareceu no álbum.');}
   };options.append(button);
@@ -6110,8 +6938,12 @@ function move(dt,time){
    const vx=dx/length*speed*factor*dt,vy=dy/length*speed*factor*dt;
    const nx=Math.max(data.bounds[0],Math.min(data.bounds[2],player.x+vx));
    const ny=Math.max(data.bounds[1],Math.min(data.bounds[3],player.y+vy));
-   if(!blockedByHouse(nx,player.y))player.x=nx;
-   if(!blockedByHouse(player.x,ny))player.y=ny;
+   const onMappedRoute=!!waypoint;
+   const fromRoadDistance=road.d;
+   const xBlocked=blockedByHouse(nx,player.y);
+   if(mayAdvanceOnMappedRoute(xBlocked,onMappedRoute,fromRoadDistance,xBlocked?nearestRoad(nx,player.y).d:0))player.x=nx;
+   const yBlocked=blockedByHouse(player.x,ny);
+   if(mayAdvanceOnMappedRoute(yBlocked,onMappedRoute,fromRoadDistance,yBlocked?nearestRoad(player.x,ny).d:0))player.y=ny;
    if(dx)player.dir=dx>0?1:-1;
    step+=dt;
    if(step>(kawaiiState?.riding?.16:.34)){
@@ -6147,11 +6979,11 @@ function clickWorld(e){
   notify('✨ (o˘◡˘o) ✨ Prontinho para explorar Belém! Aperte X para a Motinha Kawaii ou G para buzinar!');
   return;
  }
- const pingoAt=walkingPoint('pingo','casa_varanda',5);
- if(pingoAt&&Math.hypot(x-pingoAt.x,y-pingoAt.y)<20){
-  spawnEmojiBurst(pingoAt.x,pingoAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
+ const boltAt=boltCityPoint();
+ if(boltAt&&Math.hypot(x-boltAt.x,y-boltAt.y)<20){
+  spawnEmojiBurst(boltAt.x,boltAt.y-10,['🐕','🐾','💖','✨','🦴'],6);
   note(659,0,.09);note(880,.09,.13);
-  notify('🐕 💕 Pingo abanou o rabo todo feliz na calçada da Rua Clóvis Bezerra!');
+  notify(boltRestingByGreen(boltAt)?'🐕 🌿 Bolt descansou um instante perto das plantas e recebeu seu carinho!':'🐕 💕 Bolt abanou o rabo todo feliz com seu carinho!');
   return;
  }
  if(Math.hypot(x-guide.x,y-guide.y)<22&&Math.hypot(player.x-guide.x,player.y-guide.y)<32){talkGuide();return;}
@@ -6182,7 +7014,7 @@ function clickWorld(e){
  }
  if(showGeology&&geologyPoints.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<9)){showGeologicalAtlas();return;}
  const scene=showScenery?scenicScenes.find(s=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(s,3),x,y)):null;
- if(scene){const place=culturePlace(scene.id);if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
+ if(scene){const place=culturePlace(scene.id);if(scene.id==='pedra_cordeiro')showCulture(scene.id);else if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
  const landmark=data.landmarks.find(l=>Math.hypot(x-l.p[0],y-l.p[1])<10);
  if(landmark){if(cultureWithinReach(landmark))showCulture(landmark.id);else setRoute(...landmark.p);return;}
  if(data.points.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<8)){showRealCity();return;}
@@ -6193,7 +7025,7 @@ $('blockFacadesToggle').onclick=()=>{detailedFacades=!detailedFacades;$('blockFa
 $('natureAction').onclick=()=>{if(gardenStep===3){gardenStep=0;rainCare=0;gardenHarvests++;living.notes.unshift({day:living.day,text:'Você concluiu uma colheita no canteiro imaginário.'});living.notes=living.notes.slice(0,12);recordFairQuest('colheita');notify('🌾 Uma colheita guardada! A terra já pode receber novo plantio.');}else{gardenStep++;rainCare=0;}showNature();save();note(587,0,.15);};
 $('wildlifeToggle').onclick=()=>{showWildlife=!showWildlife;showNature();save();};
 $('groundedFloraToggle').onclick=()=>{showGroundedFlora=!showGroundedFlora;showNature();save();};
-$('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};
+$('cultureRoute').onclick=()=>{const place=culturePlace(cultureActiveId);if(place?.p&&cultureActiveId!=='pedra_cordeiro'){$('cultureDialog').close();setRoute(...place.p);}};$('openAlbum').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();renderAlbum();showDialog('albumDialog');};$('help').onclick=()=>showDialog('helpDialog');$('mapButton').onclick=()=>showDialog('mapDialog');$('restart').onclick=()=>showDialog('resetDialog');$('confirmReset').onclick=reset;$('playAgain').onclick=reset;$('keepExploring').onclick=()=>{$('winDialog').close();updateUI();canvas.focus({preventScroll:true});};
 $('goHomeVaranda').onclick=()=>{
  const home=data?{p:data.start}:null;
  if(!home)return;
@@ -6231,23 +7063,12 @@ $('goParqueSaoLuisBtn').onclick=()=>{
  if(!p)return;
  $('kawaiiStyleDialog').close();
  if(!active)start();
- kawaiiState.ferrisRides++;
- player.x=p.p[0];player.y=p.p[1];camera.x=player.x;camera.y=player.y;waypoint=null;
- spawnEmojiBurst(player.x,player.y-16,['🎡','✨','💖','🎉'],7);
- note(523,0,.12);note(659,.11,.12);note(784,.22,.18);
- updateUI();save();
- notify('🎡 Você chegou ao Parque Artesanal São Luís! Veja a Roda-Gigante girando!');
+ if(setRoute(p.p[0],p.p[1]))notify('🎡 Caminho até a região do Parque São Luís marcado nas vias existentes. O parque é uma memória local, não uma atração confirmada como aberta.');
 };
 $('goPedraCordeiroBtn').onclick=()=>{
- const p=data?.landmarks?.find(l=>l.id==='pedra_cordeiro');
- if(!p)return;
  $('kawaiiStyleDialog').close();
  if(!active)start();
- player.x=p.p[0];player.y=p.p[1];camera.x=player.x;camera.y=player.y;waypoint=null;
- spawnEmojiBurst(player.x,player.y-16,['⛰','🌵','✨','☀️'],6);
- note(587,0,.14);note(784,.12,.18);
- updateUI();save();
- notify('⛰ Você chegou ao Mirante da Pedra do Cordeiro, entre mandacarus e a brisa da Serra!');
+ notify('⛰ Pedra do Cordeiro localizada no mapa. A trilha até o mirante ainda não está mapeada; nenhum atalho foi criado.');
 };
 window.addEventListener('keydown',e=>{
  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)||anyDialog()||e.repeat)return;
@@ -6313,7 +7134,7 @@ $('festivalRoute').onclick=festivalNextStep;
 $('lightButton').onclick=()=>{const phases=['manha','tarde','anoitecer'];lightPhase=phases[(phases.indexOf(lightPhase)+1)%phases.length];syncLightButton();save();};
 $('marketAtmosphere').onclick=()=>{if(isMarketMorning())return;marketDay=!marketDay;syncMarketToggle();syncFairUI();window.RoncadorLandmarks.drawPostcard($('cultureArtwork'),'market',fairAtmosphere());save();};
 $('sceneryToggle').onclick=()=>{showScenery=!showScenery;syncSceneryToggle();syncFairUI();save();};
-$('zoomIn').onclick=()=>{zoom=Math.min(3.5,zoom*1.2);drawMini();};$('zoomOut').onclick=()=>{zoom=Math.max(.65,zoom/1.2);drawMini();};$('recenter').onclick=()=>{camera.x=player.x;camera.y=player.y;zoom=matchMedia('(max-width:800px)').matches?1.55:1.85;};$('sound').onclick=()=>{sound=!sound;$('sound').classList.toggle('sound-on',sound);$('sound').setAttribute('aria-label',sound?'Desativar sons':'Ativar sons');$('sound').title=sound?'Desativar sons':'Ativar sons';if(sound){note(523,0,.15);note(784,.12,.2);}};
+$('zoomIn').onclick=()=>{zoom=Math.min(3.5,zoom*1.2);drawMini();};$('zoomOut').onclick=()=>{zoom=Math.max(.65,zoom/1.2);drawMini();};$('recenter').onclick=()=>{camera.x=player.x;camera.y=player.y;zoom=matchMedia('(max-width:800px)').matches?1.85:2.3;};$('sound').onclick=()=>{sound=!sound;$('sound').classList.toggle('sound-on',sound);$('sound').setAttribute('aria-label',sound?'Desativar sons':'Ativar sons');$('sound').title=sound?'Desativar sons':'Ativar sons';if(sound){note(523,0,.15);note(784,.12,.2);}};
 $('mobileRoute').onclick=()=>{$('sidebar').classList.add('open');syncRoute();keys.clear();$('closeRoute').focus();};$('closeRoute').onclick=()=>{$('sidebar').classList.remove('open');syncRoute();$('mobileRoute').focus();};document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{$(b.dataset.close).close();updateUI();});document.querySelectorAll('dialog').forEach(d=>{d.addEventListener('close',()=>{keys.clear();updateUI();});d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}});});
 $('fullMap').onclick=()=>{fullMap=!fullMap;drawBig();};big.addEventListener('click',e=>{if(!mapTransform||!active)return;const r=big.getBoundingClientRect();const x=Math.max(data.bounds[0],Math.min(data.bounds[2],(e.clientX-r.left-mapTransform.ox)/mapTransform.s)),y=Math.max(data.bounds[1],Math.min(data.bounds[3],(e.clientY-r.top-mapTransform.oy)/mapTransform.s));$('mapDialog').close();setRoute(x,y);});
 canvas.addEventListener('pointerdown',e=>{dragStart={x:e.clientX,y:e.clientY};});canvas.addEventListener('pointerup',e=>{if(dragStart&&Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)<8)clickWorld(e);dragStart=null;});canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.65,Math.min(3.5,zoom*Math.exp(-e.deltaY*.001)));},{passive:false});
@@ -6326,7 +7147,7 @@ const embeddedGeology=$('embedded-geology-data');
 const geologyPromise=Promise.resolve().then(()=>embeddedGeology?JSON.parse(embeddedGeology.textContent):{points:[]}).catch(()=>({points:[]}));
 const embeddedTerrain=$('embedded-terrain-data');
 const terrainPromise=Promise.resolve().then(()=>embeddedTerrain?JSON.parse(embeddedTerrain.textContent):null).catch(()=>null);
-Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
+Promise.all([mapPromise,geologyPromise,terrainPromise]).then(([map,geology,terrain])=>{data=map;applyUserPublicPlaceCorrections();terrainData=terrain;geologyPoints=Array.isArray(geology.points)?geology.points:[];preprocess();loaded=true;$('loading').hidden=true;resize();updateUI();requestAnimationFrame(frame);}).catch(err=>{console.error(err);document.querySelector('.game').classList.add('error');$('loading').replaceChildren();let text=document.createElement('p');text.textContent='Não foi possível abrir o mapa. Recarregue a página para tentar novamente.';let b=document.createElement('button');b.textContent='Tentar novamente';b.className='primary';b.onclick=()=>location.reload();$('loading').append(text,b);});
 // Small read-only inspection surface for diagnostics; does not mutate game state.
 Object.defineProperty(window,'expeditionState',{get:()=>({loaded,active,spontaneousGreeting:streetGreetings?.snapshot(),collected:[...collected],target,elapsed,position:{x:player.x,y:player.y},missionCount:missions.length,roadCount:roads.length,streetNameCount:data?.streetNameCount,pointCount:data?.points?.length,landmarkCount:data?.landmarks?.length,showScenery,scenicScenes:scenicScenes.map(s=>({id:s.id,at:[...s.at],scale:s.scale,positionStatus:s.positionStatus})),marketDay,marketAtmosphere:fairAtmosphere(),marketStreetStalls:fairStalls.length,marketWitnessed,marketStall:marketStall?{p:[...marketStall.p],visible:marketStallVisible()}:null,marketFruitSlots:[...marketFruitSlots],marketMorning:{...marketMorning,work:[...marketMorning.work]},marketNext:window.RoncadorMarketMorning.next(marketMorning),luciaGarden:{...luciaGarden,work:[...luciaGarden.work]},luciaNext:window.RoncadorLuciaGarden.next(luciaGarden),mapSource:data?.source,near,zoom,friendship,chapter,observations:[...observations],photoCount:Object.keys(photos).length,festivalCelebrated,festivalPrepared:Object.values(festivalChecklist()).filter(Boolean).length,lightPhase,skyMode,rainCare,showWildlife,wildlifeCount:wildlife.length,showGroundedFlora,greenPolygons:floraLayer.greenPolygons,floralDecorations:floraLayer.points.length,momentsSeen:[...momentsSeen],dailyMoment:window.RoncadorDailyMoments.current(living)?.id||null,centralBlocks:centralBlocks.map(b=>({id:b.id,count:b.count,at:b.at})),detailedFacades,careProgress:window.RoncadorLivingWorld.careProgress(living),gardenHarvests,gardenStep,neighborProgress:window.RoncadorNeighborhoodQuest.progress(living),lifeDay:living.day,lifeMinute:living.minute,residentBonds:Object.fromEntries(Object.entries(living.people).map(([id,p])=>[id,p.bond])),streetResidents:residentsInStreets().map(p=>({id:p.id,x:p.x,y:p.y,meeting:p.meeting})),geologyCount:geologyPoints.length,showGeology,routeRemaining:waypoint?waypoint.points.length-waypoint.index:0,guide:{...guide}})});
 })();
