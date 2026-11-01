@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const {plan}=require('../dist/crowd-flow.js');
+const {plan,openSlot}=require('../dist/crowd-flow.js');
 assert.equal(plan({day:1,minute:6*60},false).length,0,'the streets must rest at dawn');
 const morning=plan({day:1,minute:9*60},false);
 assert.equal(morning.length,4,'ordinary mornings remain lightly populated');
@@ -11,4 +11,7 @@ assert.equal(plan({day:1,minute:21*60},true).length,0,'no passers after evening'
 assert.equal(plan({day:2,minute:9*60},false)[3].hub,'missao:1');
 assert.equal(plan({day:3,minute:9*60},false)[3].hub,'missao:2');
 assert.deepEqual(plan({day:1,minute:9*60},false),plan({day:1,minute:9*60},false),'routes must be deterministic');
+assert.equal(openSlot(offset=>({x:offset,y:0}),[],[{x:0,y:0}],5)?.x,14,'passer steps away from junction when a safe slot exists');
+assert.equal(openSlot(()=>({x:0,y:0}),[],[{x:0,y:0}]),null,'omit passer rather than crowd an unavoidable junction');
+assert.equal(openSlot(()=>({x:0,y:0}),[{x:0,y:0}],[]),null,'omit passer rather than overlap another resident');
 console.log('V2.23 crowd: distinct existing street anchors, cycles and fair-day rhythm OK');

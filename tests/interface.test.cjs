@@ -8,7 +8,7 @@ const html = read('index.html');
 const ui = read('cozy-ui.js');
 const game = read('game.js');
 const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map(match => match[1]);
-assert.deepEqual(scripts, ['market-scene.js', 'street-moments.js', 'street-greetings.js', 'pathfinding.js', 'landmarks.js', 'scenic-placement.js', 'street-encounters.js', 'street-community.js', 'encounter-choreography.js', 'road-details.js', 'terrain-relief.js', 'affection-memory.js', 'living-world.js', 'street-life.js', 'fair-streets.js', 'cozy-quests.js', 'cozy-atmosphere.js', 'neighborhood-quest.js', 'central-blocks.js', 'grounded-flora.js', 'daily-moments.js', 'market-morning.js', 'lucia-garden.js', 'bia-letters.js', 'secondary-neighbors.js', 'facade-studio.js', 'crowd-flow.js', 'resident-motion.js', 'cozy-ui.js', 'game.js']);
+assert.deepEqual(scripts, ['market-scene.js', 'street-moments.js', 'street-greetings.js', 'pathfinding.js', 'landmarks.js', 'scenic-placement.js', 'street-encounters.js', 'street-community.js', 'encounter-choreography.js', 'road-details.js', 'local-road-references.js', 'terrain-relief.js', 'affection-memory.js', 'living-world.js', 'street-life.js', 'fair-streets.js', 'cozy-quests.js', 'cozy-atmosphere.js', 'neighborhood-quest.js', 'central-blocks.js', 'grounded-flora.js', 'daily-moments.js', 'market-morning.js', 'lucia-garden.js', 'bia-letters.js', 'secondary-neighbors.js', 'facade-studio.js', 'crowd-flow.js', 'resident-motion.js', 'cozy-ui.js', 'game.js']);
 
 const availableIds = new Set([...(html + ui).matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
 const referencedIds = [...game.matchAll(/\$\('([^']+)'\)/g)].map(match => match[1]);

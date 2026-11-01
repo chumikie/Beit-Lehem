@@ -1,0 +1,431 @@
+{
+  "schemaVersion": 1,
+  "project": "Beit Lehem",
+  "baseCommit": "a5f61fef6f5dd233786830ef2977af3d790eb99e",
+  "status": "draft_not_integrated",
+  "coordinateSystem": "mesma projeção local de dist/map.json, em metros",
+  "rules": [
+    "Nenhum item habilitado. Não carregar este arquivo no jogo.",
+    "candidateLocalPoint é hipótese recebida, não coordenada validada nem entrada de edifício.",
+    "Endereço residencial, nomes da família e do grupo real removidos do rascunho.",
+    "Nomes históricos de ruas e instituições públicas podem permanecer como referência documental.",
+    "Existência, posição, arte e narrativa têm validações independentes."
+  ],
+  "places": [
+    {
+      "id": "casa_varanda",
+      "displayName": "Casa da Varanda",
+      "sourceType": "fictionalized_personal_memory",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": null,
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "portão metálico prateado",
+        "vasos",
+        "cadeiras na calçada",
+        "cão fictício chamado Pingo"
+      ],
+      "sources": [],
+      "phase": "residential_identity_first",
+      "narrativeStatus": "fictional_only",
+      "note": "Não reproduzir moradores reais ou associar personagens fictícios a um domicílio particular identificável."
+    },
+    {
+      "id": "escola_anita",
+      "displayName": "EMEF Anita de Melo Barbosa Lima",
+      "sourceType": "user_reference_pending",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        227.84,
+        286.1
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "fachada escolar",
+        "portão azul e branco a conferir com referência"
+      ],
+      "sources": [],
+      "phase": "later"
+    },
+    {
+      "id": "xaviezao",
+      "displayName": "Ginásio O Xaviezão",
+      "sourceType": "user_reference_pending",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        -101.59,
+        533.98
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "cobertura metálica arqueada",
+        "entrada e arquibancadas como proposta artística"
+      ],
+      "sources": [],
+      "phase": "later"
+    },
+    {
+      "id": "bar_prosa",
+      "displayName": "Bar da Prosa",
+      "sourceType": "fictionalized_personal_memory",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        29.35,
+        -249.25
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "mesas amarelas",
+        "churrasqueira de espetinhos",
+        "luzes quentes",
+        "referência visual de karaokê, sem atividade nova"
+      ],
+      "sources": [],
+      "phase": "later",
+      "narrativeStatus": "fictional_only",
+      "note": "Não reproduzir moradores reais ou associar personagens fictícios a um domicílio particular identificável."
+    },
+    {
+      "id": "sonho_doce",
+      "displayName": "Confeitaria Sonho Doce",
+      "sourceType": "user_reference_pending",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        157.54,
+        -107.72
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "vitrine de bolos",
+        "marquise ou toldo a conferir",
+        "composição comercial distinta"
+      ],
+      "sources": [],
+      "phase": "later"
+    },
+    {
+      "id": "prefeitura",
+      "displayName": "Prefeitura Municipal de Belém",
+      "sourceType": "official_documentary_reference",
+      "enabled": false,
+      "identityStatus": "documented",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        -109.85,
+        49.24
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "fachada cívica própria",
+        "endereço público documentado; posição ainda a confirmar"
+      ],
+      "sources": [
+        "https://www.belem.pb.gov.br/a-cidade/aspectos-gerais"
+      ],
+      "phase": "later"
+    },
+    {
+      "id": "capela_luz",
+      "displayName": "Capela Nossa Senhora da Luz",
+      "sourceType": "user_reference_pending",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        129.83,
+        -755.82
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "pequena capela de bairro",
+        "caminho e fachada a confirmar"
+      ],
+      "sources": [],
+      "phase": "later"
+    },
+    {
+      "id": "sagrada_familia",
+      "displayName": "Igreja Sagrada Família",
+      "sourceType": "user_reference_pending",
+      "enabled": false,
+      "identityStatus": "pending_local_review",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": [
+        262.96,
+        196.98
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "fachada própria; não reutilizar a identidade da Capela da Luz"
+      ],
+      "sources": [],
+      "phase": "later"
+    },
+    {
+      "id": "hospital_santa_lucia",
+      "displayName": "Hospital Santa Lúcia",
+      "sourceType": "existing_osm_point",
+      "enabled": false,
+      "identityStatus": "documented",
+      "positionStatus": "existing_base_point",
+      "candidateLocalPoint": [
+        85.55,
+        623.46
+      ],
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "identidade hospitalar própria; não usar desenho nem placa da Prefeitura"
+      ],
+      "sources": [
+        "dist/map.json:points[name=Hospital Santa Lúcia]"
+      ],
+      "phase": "later"
+    },
+    {
+      "id": "parque_sao_luis",
+      "displayName": "Parque São Luís",
+      "sourceType": "official_documentary_reference",
+      "enabled": false,
+      "identityStatus": "documented",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": null,
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "brinquedos construídos com material reaproveitado",
+        "paisagem rural e serrana"
+      ],
+      "sources": [
+        "https://www.belem.pb.gov.br/a-cidade/aspectos-gerais"
+      ],
+      "phase": "later",
+      "note": "Candidato central do anexo rejeitado: documentação descreve Lagoa de Serra, cerca de 2 km do centro. Não inferir nova coordenada."
+    },
+    {
+      "id": "pedra_cordeiro",
+      "displayName": "Pedra do Cordeiro",
+      "sourceType": "official_documentary_reference",
+      "enabled": false,
+      "identityStatus": "documented",
+      "positionStatus": "pending_local_review",
+      "candidateLocalPoint": null,
+      "placementStatus": "blocked_pending_review",
+      "artStatus": "concept_not_visual_qa",
+      "visualCues": [
+        "afloramento",
+        "cruzeiro como referência documental",
+        "mandacaru e xique-xique documentados no entorno da trilha"
+      ],
+      "sources": [
+        "https://www.belem.pb.gov.br/a-cidade/aspectos-gerais"
+      ],
+      "phase": "later",
+      "note": "Candidato central do anexo rejeitado: documentação descreve região oeste, pouco mais de 1 km do centro. Não inferir nova coordenada."
+    }
+  ],
+  "roadProposals": [
+    {
+      "roadId": "way/264042917",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/264042926",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/264042932",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/264042957",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/264043004",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/489113154",
+      "proposedTags": {
+        "surface": "paving_stones",
+        "name": "Travessa Vinte e Um de Abril"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/542266717",
+      "proposedTags": {
+        "name": "Vila Sul · Clóvis Bezerra",
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/542266718",
+      "proposedTags": {
+        "name": "Travessa Sul · Clóvis Bezerra",
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/542266725",
+      "proposedTags": {
+        "name": "Rua Clóvis Bezerra (Trecho Sul)",
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/814044852",
+      "proposedTags": {
+        "name": "Acesso Leste · Clóvis Bezerra",
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/814055923",
+      "proposedTags": {
+        "name": "Travessa residencial — nome a confirmar",
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/826372311",
+      "proposedTags": {
+        "surface": "asphalt"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/826372315",
+      "proposedTags": {
+        "surface": "asphalt"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/826372810",
+      "proposedTags": {
+        "surface": "asphalt"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/1087044412",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/1387659863",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    },
+    {
+      "roadId": "way/1387659864",
+      "proposedTags": {
+        "surface": "paving_stones"
+      },
+      "enabled": false,
+      "sourceType": "user_reference_pending",
+      "geometryChanged": false,
+      "note": "Proposta local separada dos tags de origem OSM; confirmar antes de aplicar."
+    }
+  ],
+  "deferred": [
+    "contatos e mensagens",
+    "moto, acessórios e buzina",
+    "sorda como inventário ou presente",
+    "teletransportes",
+    "novas missões e recompensas",
+    "aumento global de casas e figurantes"
+  ]
+}

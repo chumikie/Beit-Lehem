@@ -1,0 +1,12 @@
+{
+  "file": "experimento-anonimizado.html.txt",
+  "bytes": 1082868,
+  "sha256": "380fa44ceca0a1685125743dfc79dd02f8e02f455943d697aac3f6d673389812",
+  "status": "anonymized_reference_not_playable",
+  "syntaxChecksPassed": 32,
+  "mapGeometryUnchanged": true,
+  "privateHomePointRemoved": true,
+  "householdSceneRemoved": true,
+  "privateSourceLinksIncluded": false,
+  "notes": "Code retained for review; known prototype defects are not repaired or approved."
+}

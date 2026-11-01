@@ -33,9 +33,9 @@ function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 function preprocess(){
- areas=data.areas;roads=data.roads;missions=data.missions;
+ areas=data.areas;roads=window.RoncadorLocalRoadReferences.apply(data.roads);data.streetNameCount=window.RoncadorLocalRoadReferences.countDistinctNames(roads);missions=data.missions;
  const used=new Set();for(const road of roads){let length=0;const xs=road.p.map(p=>p[0]),ys=road.p.map(p=>p[1]);road.bounds=[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)];for(let i=1;i<road.p.length;i++){const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);if(len<.05)continue;segments.push({ax:a[0],ay:a[1],dx,dy,len2:len*len,len,road});length+=len;}
- if(road.tags.name&&!used.has(road.tags.name)&&length>40){used.add(road.tags.name);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:road.tags.name,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
+ const displayName=road.displayTags?.name||road.tags.name;if(displayName&&!used.has(displayName)&&length>40){used.add(displayName);const i=Math.max(1,Math.floor(road.p.length/2));let a=road.p[i-1],b=road.p[i];labels.push({x:(a[0]+b[0])/2,y:(a[1]+b[1])/2,name:displayName,angle:Math.atan2(b[1]-a[1],b[0]-a[0])});}}
  scenicScenes=window.RoncadorScenicPlacement.layout(data);
  const occupied=[];let id=1;const center=data.urbanCenter||data.start;for(const s of segments){if(s.road.tags.highway!=='residential'||houses.length>=650)continue;for(let v=18;v<s.len;v+=33){let t=v/s.len;for(const side of [-1,1]){let r=hash(id++,side),offset=20+r*8,x=s.ax+s.dx*t-s.dy/s.len*offset*side,y=s.ay+s.dy*t+s.dx/s.len*offset*side;if(Math.hypot(x-center[0],y-center[1])>1900)continue;if(nearestRoad(x,y).d<16||occupied.some(p=>Math.hypot(x-p[0],y-p[1])<19))continue;if(scenicScenes.some(scene=>window.RoncadorScenicPlacement.contains(window.RoncadorScenicPlacement.bounds(scene,11),x,y)))continue;if(areas.some(a=>a.tags.leisure==='pitch'&&inside(x,y,a.p[0])))continue;occupied.push([x,y]);houses.push({x,y,angle:Math.atan2(s.dy,s.dx),w:10+r*8,h:10+hash(id,2)*8,color:Math.floor(hash(id,3)*5),seed:id});}}}
  centralBlocks=window.RoncadorCentralBlocks.prepare(data,houses);
@@ -87,7 +87,11 @@ function drawTree(c,x,y,r,seed){
  c.save();
  c.fillStyle='#29493729';c.beginPath();c.ellipse(x+5,y+6,r*.93,r*.45,-.2,0,Math.PI*2);c.fill();
  roundRect(c,x-1.7,y-r*.2,3.4,r*.7,1,'#9c8969');
- const colors=['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
+ // Gradual visual vocabulary outside the central neighborhood: quieter,
+ // earthier foliage without moving or multiplying existing trees.
+ const outlying=data&&Math.hypot(x-data.start[0],y-data.start[1])>450;
+ const colors=outlying?['#7d996c','#79956b','#6c8b61','#91a079','#84976c']:
+  ['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
  c.fillStyle=colors[seed%5];c.beginPath();c.arc(x,y-r*.39,r*.72,0,7);c.arc(x-r*.39,y-r*.67,r*.56,0,7);c.arc(x+r*.37,y-r*.68,r*.58,0,7);c.fill();
  c.fillStyle='#bad2a05e';c.beginPath();c.ellipse(x-r*.22,y-r*.87,r*.37,r*.24,-.2,0,7);c.fill();
  c.fillStyle='#eff3cc70';for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
@@ -96,15 +100,23 @@ function drawTree(c,x,y,r,seed){
 function house(c,b){
  c.save();c.translate(b.x,b.y);c.rotate(b.angle);
  const x=-b.w/2,y=-b.h/2,shop=b.seed%9===0,flat=b.seed%4===0;
+ const distantDetail=zoom<1.45;
+ const outlying=!b.centralBlock&&data&&Math.hypot(b.x-data.start[0],b.y-data.start[1])>450;
  roundRect(c,x+3,y+4,b.w,b.h,2,'#32503b2f');
  roundRect(c,x,y,b.w,b.h,1.6,'#f2e6cb','#ad9e8580');
- const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
+ const roofs=outlying?['#b7896e','#b49a78','#a5a993','#bd9278','#8caa96']:
+  ['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
  roundRect(c,x-1,y-1,b.w+2,b.h*.62,1.5,roofs[b.color]);
  // Tiny overlapping tile rhythm and warm edge highlight: stylized, not surveyed facades.
  c.strokeStyle='#fff4d244';c.lineWidth=.65;
- for(let row=2;row<b.h*.54;row+=3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
+ if(!distantDetail)for(let row=2;row<b.h*.54;row+=3.3){c.beginPath();c.moveTo(x+1,y+row);c.lineTo(x+b.w-1,y+row);c.stroke();}
  c.fillStyle='#fff4d9a8';c.fillRect(x,y+b.h*.57,b.w,1.2);
  if(flat){roundRect(c,x-1,y+b.h*.48,b.w+2,2.7,.5,'#f8e1bc','#ad9882');}
+ if(outlying&&b.seed%5===1){
+  // A soft eave and pale wall wash: landscape transition, not another house.
+  c.fillStyle='#f0e3c88c';c.fillRect(x+1,y+b.h*.6,b.w-2,.9);
+  c.fillStyle='#c3b2906e';c.fillRect(x+1,y+b.h*.62,1,b.h*.3);
+ }
  if(shop){
   roundRect(c,x+1,y+b.h*.61,b.w-2,3.3,.6,'#f9e7bf');
   c.fillStyle='#9fb9a3';c.fillRect(x+2,y+b.h*.65,b.w-4,2.4);
@@ -116,7 +128,7 @@ function house(c,b){
  }
  c.fillStyle='#eabbb0';c.beginPath();c.arc(x+b.w+2,y+b.h*.78,1.8,0,7);c.fill();
  c.fillStyle='#67977b';c.beginPath();c.ellipse(x+b.w+2,y+b.h*.66,2.6,1.4,-.5,0,7);c.fill();
- if(b.seed%11===0){c.fillStyle='#f4e2c4';c.beginPath();c.arc(x+b.w*.38,y+b.h*.92,2.6,0,7);c.fill();c.fillStyle='#9c8f7e';c.fillRect(x+b.w*.38-1,y+b.h*.86,2,.9);}
+ if(!distantDetail&&b.seed%11===0){c.fillStyle='#f4e2c4';c.beginPath();c.arc(x+b.w*.38,y+b.h*.92,2.6,0,7);c.fill();c.fillStyle='#9c8f7e';c.fillRect(x+b.w*.38-1,y+b.h*.86,2,.9);}
  c.restore();
  if(detailedFacades){
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);
@@ -128,13 +140,101 @@ function region(c,detail){for(const a of areas){const ring=a.p[0];path(c,ring,tr
 function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoin='round';for(const r of roads){if(viewport&&r.bounds&&(r.bounds[2]<viewport.left||r.bounds[0]>viewport.right||r.bounds[3]<viewport.top||r.bounds[1]>viewport.bottom))continue;let major=/^(primary|secondary|trunk)/.test(r.tags.highway),trail=['path','footway','track','steps'].includes(r.tags.highway);
  const widths={primary:15,secondary:14,tertiary:11.7,primary_link:10.7,residential:9.6,unclassified:10,service:6.5,path:4.5,footway:4.5,track:5.5,steps:4};
  const width=widths[r.tags.highway]||10,materials={asphalt:'#cecfc1',paved:'#e2d9be',unpaved:'#d0c39a',paving_stones:'#e8d8ba',sett:'#deccaf'};
- path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b40';c.lineWidth=width+3;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
+ path(c,r.p);c.strokeStyle=simple?'#91a079':'#788c5b40';c.lineWidth=width+3;c.stroke();c.strokeStyle=simple?'#e6ddbc':materials[r.displayTags?.surface||r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=width;c.stroke();
  if(major&&!simple){c.strokeStyle='#f2edcfb0';c.lineWidth=.8;c.setLineDash([7,7]);c.stroke();c.setLineDash([]);}if(trail&&!simple){c.strokeStyle='#b5a87c';c.lineWidth=1;c.setLineDash([2,5]);c.stroke();c.setLineDash([]);}}
 }
-function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();c.fillStyle='#587960';c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
+// Local landmarks from Matheus's Gemini study, confirmed through his own
+// familiarity with Belém/PB and photographs. These are user-verified positions,
+// NOT new OpenStreetMap points or surveyed building footprints.
+const GEMINI_LOCAL_PLACES=[
+ {id:'escola_anita',name:'Escola Anita Barbosa',p:[227.84,286.1],kind:'school'},
+ {id:'xaviezao',name:'Ginásio O Xaviezão',p:[-101.59,533.98],kind:'gym'},
+ {id:'sonho_doce',name:'Confeitaria Sonho Doce',p:[157.54,-107.72],kind:'bakery'},
+ {id:'bar_prosa',name:'Bar da Prosa',p:[29.35,-249.25],kind:'bar',fictionalName:true},
+ {id:'prefeitura',name:'Prefeitura de Belém',p:[-109.85,49.24],kind:'civic'},
+ {id:'capela_luz',name:'Capela N. Sra. da Luz',p:[129.83,-755.82],kind:'chapel'},
+ {id:'sagrada_familia',name:'Igreja Sagrada Família',p:[262.96,196.98],kind:'church'}
+];
+function drawGeminiLocalPlaces(c,viewport){
+ if(zoom<1.25)return;
+ const night=living?.minute>=18*60||living?.minute<6*60;
+ for(const place of GEMINI_LOCAL_PLACES){
+  const [x,y]=place.p;
+  if(x<viewport.left-48||x>viewport.right+48||y<viewport.top-48||y>viewport.bottom+48)continue;
+  c.save();c.translate(x,y);
+  // Illustrated vignette at a user-confirmed anchor, never a surveyed lot.
+  // Its framing makes the scene visibly distinct from cadastral buildings.
+  c.fillStyle='#435c472d';c.beginPath();c.ellipse(1,9,19,5,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#fff6e5';c.strokeStyle='#a8957b';c.lineWidth=.9;
+  c.beginPath();c.roundRect(-18,-27,36,34,5);c.fill();c.stroke();
+  c.fillStyle='#e3d7bf';c.fillRect(-15,2,30,2);
+  const wall=place.kind==='school'?'#c8dfe2':place.kind==='gym'?'#c5dbd6':
+   place.kind==='bakery'?'#f3d7d6':place.kind==='bar'?'#ead0ac':
+   place.kind==='civic'?'#ebdfc3':place.kind==='chapel'?'#f1e4cc':'#f5e2cf';
+  c.fillStyle='#655d4b22';c.fillRect(-13,-16,28,19);
+  c.fillStyle=wall;c.fillRect(-14,-18,28,20);
+  if(place.kind==='gym'){
+   c.fillStyle='#6f94a5';c.beginPath();c.arc(0,-17,14,Math.PI,0);c.lineTo(14,-17);c.closePath();c.fill();
+   c.strokeStyle='#e7f3eb';c.lineWidth=1.1;c.beginPath();c.arc(0,-17,10,Math.PI,0);c.stroke();
+   c.fillStyle='#91afb0';c.fillRect(-10,-13,20,13);
+   c.strokeStyle='#f6e7cb';c.lineWidth=.8;c.strokeRect(-8,-11,16,9);
+   c.beginPath();c.moveTo(0,-11);c.lineTo(0,-2);c.stroke();
+  }else if(place.kind==='school'){
+   c.fillStyle='#638d9e';c.fillRect(-15,-21,30,4);
+   c.fillStyle='#fff4df';for(const q of [-9,-3,5,11])c.fillRect(q-2,-13,4,4);
+   c.fillStyle='#688b87';c.fillRect(-3,-5,6,7);
+   c.strokeStyle='#f8efe1';c.lineWidth=.7;c.strokeRect(-3,-5,6,7);
+   c.fillStyle='#f6ecd8';c.beginPath();c.arc(0,-19,1.6,0,Math.PI*2);c.fill();
+  }else if(place.kind==='bakery'||place.kind==='bar'){
+   const sweet=place.kind==='bakery';
+   c.fillStyle=sweet?'#cd8e9f':'#9f725b';c.fillRect(-16,-21,32,5);
+   c.fillStyle='#fff0d5';for(let q=-14;q<16;q+=6)c.fillRect(q,-21,2.5,5);
+   c.fillStyle=night?'#edc28b':'#a6c6c1';c.fillRect(-11,-13,22,14);
+   c.strokeStyle='#fff0d5';c.lineWidth=1;c.strokeRect(-11,-13,22,14);
+   if(sweet){
+    // Pastry display, two cake silhouettes and a little bakery awning.
+    c.fillStyle='#f5e3bb';c.fillRect(-9,-5,18,1.4);
+    for(const q of [-5,5]){
+     c.fillStyle='#e7adad';c.fillRect(q-3,-4,6,2.6);
+     c.fillStyle='#fff2dc';c.beginPath();c.arc(q,-5,3,Math.PI,0);c.fill();
+    }
+   }else{
+    c.fillStyle='#f2ca82';c.fillRect(-9,-5,18,2);
+    for(const q of [-7,7]){c.fillStyle='#72594c';c.fillRect(q,-3,1.5,4);}
+    c.fillStyle='#e8c077';c.beginPath();c.arc(-11,-24,2.1,0,Math.PI*2);c.fill();
+    c.beginPath();c.arc(11,-24,2.1,0,Math.PI*2);c.fill();
+   }
+  }else if(place.kind==='civic'){
+   c.fillStyle='#a78968';c.beginPath();c.moveTo(-17,-18);c.lineTo(0,-26);c.lineTo(17,-18);c.fill();
+   c.fillStyle='#e8d7b5';for(const q of [-10,-4,4,10])c.fillRect(q-1.5,-16,3,17);
+   c.fillStyle='#8c9f98';c.fillRect(-2,-6,4,8);
+   c.fillStyle='#a78968';c.fillRect(-16,1,32,2);
+  }else{
+   const chapel=place.kind==='chapel';
+   c.fillStyle=chapel?'#9eaaa1':'#c1927e';c.beginPath();c.moveTo(-16,-18);c.lineTo(0,-27);c.lineTo(16,-18);c.fill();
+   c.fillStyle='#8eaa9b';c.beginPath();c.roundRect(-3,-7,6,9,3);c.fill();
+   c.fillStyle='#8ba9a8';for(const q of [-10,10])c.fillRect(q-2,-12,4,5);
+   if(!chapel){c.fillStyle='#e6d7bc';c.fillRect(-4,-29,8,11);c.fillStyle='#6e9898';c.fillRect(-2,-25,4,4);}
+   c.strokeStyle='#986f67';c.lineWidth=1.2;c.beginPath();c.moveTo(0,-33);c.lineTo(0,-27);c.moveTo(-3,-30);c.lineTo(3,-30);c.stroke();
+  }
+  // Inset pots and shadows add neighborhood warmth without extra map objects.
+  for(const q of [-13,13]){
+   c.fillStyle='#b58e76';c.fillRect(q-2,0,4,3);
+   c.fillStyle='#80a176';c.beginPath();c.arc(q,-1,3,0,Math.PI*2);c.fill();
+  }
+  if(night){c.fillStyle='#ffe4a020';c.fillRect(-12,-15,24,16);}
+  if(zoom>1.55){
+   c.textAlign='center';c.textBaseline='middle';c.font='600 7px system-ui';
+   c.lineWidth=2.5;c.strokeStyle='#fff8e9';c.strokeText(place.name,0,-40,110);
+   c.fillStyle='#536c61';c.fillText(place.name,0,-40,110);
+  }
+  c.restore();
+ }
+}
+function drawMappedPlaces(c,viewport){if(zoom<1.1)return;for(const place of data.points){if(data.landmarks?.some(l=>l.name===place.tags.name))continue;const [x,y]=place.p;if(x<viewport.left||x>viewport.right||y<viewport.top||y>viewport.bottom)continue;c.fillStyle='#fffaf0';c.strokeStyle='#587960';c.lineWidth=1.5;c.beginPath();c.arc(x,y,5.5,0,Math.PI*2);c.fill();c.stroke();const isHospital=place.tags.name==='Hospital Santa Lúcia';c.fillStyle=isHospital?'#b66d72':'#587960';if(isHospital){c.fillRect(x-3,y-.8,6,1.6);c.fillRect(x-.8,y-3,1.6,6);}else{c.beginPath();c.arc(x,y,2.3,0,Math.PI*2);c.fill();}if(zoom>1.45){c.font='600 7px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=2.5;c.strokeStyle='#fff9e5';c.strokeText(place.tags.name,x,y-13);c.fillStyle='#4d6d53';c.fillText(place.tags.name,x,y-13);}}}
 function drawPin(c,m,i,time,miniMode=false){const p=m.p,done=collected.has(i);if(miniMode){c.fillStyle=done?'#5d8052':i===target?'#d4a642':'#eee6bb';c.strokeStyle='#fff6de';c.lineWidth=1.5;c.beginPath();c.arc(p[0],p[1],done?4:5,0,Math.PI*2);c.fill();c.stroke();return;}
  c.save();c.translate(p[0],p[1]);const pulse=reduce?0:Math.sin(time*2+i)*2;c.fillStyle=done?'#70975d40':'#eccb6d30';c.beginPath();c.ellipse(0,6,18+pulse,9+pulse*.4,0,0,Math.PI*2);c.fill();if(!done){c.strokeStyle='#f5de9b50';c.lineWidth=1;c.beginPath();c.ellipse(0,6,23+pulse,12+pulse*.4,0,0,Math.PI*2);c.stroke();}c.fillStyle='#866f42';c.fillRect(-1.2,-20,2.4,24);roundRect(c,-9,-29-pulse,18,18,5,done?'#718e54':'#eac76f',done?'#e7edc0':'#fff2bd');c.fillStyle=done?'#f0f2d6':'#80672d';c.font='bold 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':String(i+1),0,-20-pulse);c.restore();}
-function drawPlayer(c,time){c.save();c.translate(player.x,player.y);c.scale(1.1,1.1);const bob=player.moving&&!reduce?Math.sin(time*17)*1.3:0,leg=player.moving?Math.sin(time*17)*2:0;const face=player.dir;
+function drawPlayer(c,time){c.save();c.translate(player.x,player.y);const desktopScale=matchMedia('(min-width:801px)').matches?.72:1.1;c.scale(desktopScale,desktopScale);const bob=player.moving&&!reduce?Math.sin(time*17)*1.3:0,leg=player.moving?Math.sin(time*17)*2:0;const face=player.dir;
  c.fillStyle='#264a3630';c.beginPath();c.ellipse(0,7,9,4,0,0,Math.PI*2);c.fill();c.translate(0,bob);roundRect(c,-7,0,5,7+leg,1.5,'#5c6554');roundRect(c,2,0,5,7-leg,1.5,'#5c6554');roundRect(c,-8,-12,16,16,5,'#f0cf7e','#c4a75e');roundRect(c,face<0?5:-10,-10,6,13,2,'#a26748');roundRect(c,-6,-25,12,14,5,'#e9c6a0');c.fillStyle='#554a34';c.fillRect(face<0?-5:2,-19,1.5,2.2);c.fillStyle='#d9b96c';c.beginPath();c.ellipse(0,-24,12,4,0,0,Math.PI*2);c.fill();roundRect(c,-7,-33,14,10,4,'#e8ce8c');c.fillStyle='#8c9c62';c.fillRect(-7,-26,14,2.4);c.fillStyle='#f5e3af';c.fillRect(-4,-10,3,5);c.restore();}
 function drawFlowers(c,left,right,top,bottom){
  for(let gx=Math.floor(left/65);gx<right/65;gx++)for(let gy=Math.floor(top/65);gy<bottom/65;gy++){
@@ -358,7 +458,7 @@ function drawKawaiiWalker(c,person,time){
  const feelings=named?living.people[person.id]:null,affection=named?affectionSnapshot(person.id):null;
  const gaze=Number.isFinite(person.gaze)?person.gaze:person.social?.facing?person.social.facing*.65:person.walking&&Number.isFinite(person.heading)?Math.cos(person.heading)*.76:0;
  // Common human scale: leads remain expressive without dwarfing facades.
- c.save();c.translate(person.x,person.y);c.scale(named?1.20:.85,named?1.20:.85);
+ c.save();c.translate(person.x,person.y);const castScale=matchMedia('(min-width:801px)').matches?(named?1.04:.85):(named?1.20:.85);c.scale(castScale,castScale);
  c.fillStyle='#3853442b';c.beginPath();c.ellipse(0,6.9,person.walking?8.1:8.5,person.walking?2.25:2.7,0,0,7);c.fill();c.translate(0,bob);
  if(!reduce)c.rotate(person.lean??0);
  const outfit=person.def?.tone||['#85a88f','#d6a16e','#b98c9d'][person.variant%3];
@@ -562,6 +662,9 @@ function drawStreetLife(c,time,view){
   }
   residentMotion.present(person,elapsed,reduce);
   if(person.x<view.left-25||person.x>view.right+25||person.y<view.top-25||person.y>view.bottom+25)continue;
+  // Keep body, props, gestures and conversation markers in one coherent desktop scale.
+  c.save();
+  if(matchMedia('(min-width:801px)').matches){c.translate(person.x,person.y);c.scale(.72,.72);c.translate(-person.x,-person.y);}
   if(person.secondary)drawSecondaryWalker(c,person,time);
   else drawKawaiiWalker(c,person,time);
   if(person.greeting&&Math.hypot(player.x-person.x,player.y-person.y)<130){
@@ -613,6 +716,7 @@ function drawStreetLife(c,time,view){
    roundRect(c,person.x-width/2,person.y-(person.secondary?54:58),width,13,5,'#fffcf1ee','#b4c2a1');
    c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(person.def.name,person.x,person.y-(person.secondary?47.5:51.5));
   }
+  c.restore();
  }
 }
 function drawStreetPets(c,time,view){
@@ -676,7 +780,7 @@ function drawGeology(c,view){
  }
 }
 function drawGuide(c,time){
- c.save();c.translate(guide.x,guide.y);c.scale(.91,.91);
+ c.save();c.translate(guide.x,guide.y);c.scale(matchMedia('(min-width:801px)').matches?.68:.91,matchMedia('(min-width:801px)').matches?.68:.91);
  const bob=reduce?0:Math.sin(time*2.1)*1.2;
  c.fillStyle='#2947372d';c.beginPath();c.ellipse(0,8,11,5,0,0,7);c.fill();
  c.translate(0,bob);roundRect(c,-7,1,5,7,2,'#5b6474');roundRect(c,2,1,5,7,2,'#5b6474');
@@ -704,6 +808,7 @@ function render(time){
  drawPuddles(ctx,time,{left,right,top,bottom});
  drawMappedPlaces(ctx,{left,right,top,bottom});
  const visibleHouses=houses.filter(b=>b.x>left&&b.x<right&&b.y>top&&b.y<bottom);for(const b of visibleHouses)house(ctx,b);
+ drawGeminiLocalPlaces(ctx,{left,right,top,bottom});
  drawGroundedFlora(ctx,{left,right,top,bottom},time);
  // Trees are illustrative scenery. Keep roads, the field and homes clear.
  for(let gx=Math.floor(left/45);gx<right/45;gx++)for(let gy=Math.floor(top/45);gy<bottom/45;gy++){
@@ -728,7 +833,7 @@ function render(time){
  window.RoncadorLandmarks?.drawMarkers(ctx,data.landmarks,{left,right,top,bottom},zoom);
  drawGeology(ctx,{left,right,top,bottom});
  // Low-key real street labels.
- ctx.textAlign='center';ctx.textBaseline='middle';for(const l of labels){if(l.x<left||l.x>right||l.y<top||l.y>bottom)continue;ctx.save();ctx.translate(l.x,l.y);let angle=l.angle;if(angle>Math.PI/2)angle-=Math.PI;if(angle<-Math.PI/2)angle+=Math.PI;ctx.rotate(angle);ctx.font=`500 ${Math.max(5,9/zoom)}px system-ui`;ctx.lineWidth=2/zoom;ctx.strokeStyle='#e5ddbd';ctx.strokeText(l.name,0,0);ctx.fillStyle='#7e8261';ctx.fillText(l.name,0,0);ctx.restore();}
+ ctx.textAlign='center';ctx.textBaseline='middle';for(const l of labels){if(l.x<left||l.x>right||l.y<top||l.y>bottom)continue;ctx.save();ctx.translate(l.x,l.y);let angle=l.angle;if(angle>Math.PI/2)angle-=Math.PI;if(angle<-Math.PI/2)angle+=Math.PI;ctx.rotate(angle);ctx.font=`500 ${Math.max(4.8,8/zoom)}px system-ui`;ctx.lineWidth=1.35/zoom;ctx.strokeStyle='#e5ddbdba';ctx.strokeText(l.name,0,0);ctx.fillStyle='#7e8261';ctx.fillText(l.name,0,0);ctx.restore();}
  if(waypoint){const route=[{x:player.x,y:player.y},...waypoint.points.slice(waypoint.index)];ctx.strokeStyle='#f8f1cbbe';ctx.lineWidth=5/zoom;path(ctx,route.map(p=>[p.x,p.y]));ctx.stroke();ctx.strokeStyle='#487a5bc8';ctx.lineWidth=2.5/zoom;ctx.setLineDash([6/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#426d4b';ctx.lineWidth=2/zoom;ctx.beginPath();ctx.arc(waypoint.x,waypoint.y,5,0,Math.PI*2);ctx.stroke();}
  // When a larger character crosses a mission marker, keep the GPS pin at its
  // exact mapped coordinate but draw it behind the sprite instead of across a
@@ -765,15 +870,15 @@ function explorationBounds(){const pts=[data.start,...missions.map(m=>m.p)];let 
 function wholeBounds(){let pts=roads.flatMap(r=>r.p).concat(areas.flatMap(a=>a.p.flat()));return{minX:Math.min(...pts.map(p=>p[0]))-100,maxX:Math.max(...pts.map(p=>p[0]))+100,minY:Math.min(...pts.map(p=>p[1]))-100,maxY:Math.max(...pts.map(p=>p[1]))+100};}
 function overview(c,ww,hh,bounds,large){c.clearRect(0,0,ww,hh);c.fillStyle='#b8c79c';c.fillRect(0,0,ww,hh);let s=Math.min((ww-26)/(bounds.maxX-bounds.minX),(hh-26)/(bounds.maxY-bounds.minY)),ox=ww/2-(bounds.minX+bounds.maxX)/2*s,oy=hh/2-(bounds.minY+bounds.maxY)/2*s;c.save();c.translate(ox,oy);c.scale(s,s);region(c,false);drawRoads(c,s,true);c.restore();if(showGeology&&large){for(const rock of geologyPoints){const x=rock.p[0]*s+ox,y=rock.p[1]*s+oy;if(x<0||x>ww||y<0||y>hh)continue;c.fillStyle='#fff3df';c.strokeStyle='#7c6174';c.lineWidth=1;c.beginPath();c.arc(x,y,3,0,7);c.fill();c.stroke();}}for(let i=0;i<missions.length;i++){let m=missions[i],x=m.p[0]*s+ox,y=m.p[1]*s+oy,done=collected.has(i);c.fillStyle=done?'#6a8b51':i===target?'#d7ad50':'#f1e7b6';c.strokeStyle='#f9f8e4';c.lineWidth=large?2:1;c.beginPath();c.arc(x,y,large?12:4.5,0,7);c.fill();c.stroke();if(large){c.fillStyle=done?'#f9f8e4':'#745f32';c.font='600 11px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(done?'✓':i+1,x,y);}}
  const px=player.x*s+ox,py=player.y*s+oy;c.fillStyle='#ce7758';c.strokeStyle='#fff4d5';c.lineWidth=2;c.beginPath();c.arc(px,py,large?6:4,0,7);c.fill();c.stroke();if(!large){c.strokeStyle='#496e4050';c.lineWidth=.8;c.strokeRect((camera.x-w/2/zoom)*s+ox,(camera.y-h/2/zoom)*s+oy,w/zoom*s,h/zoom*s);}return{s,ox,oy};}
-function drawMini(){if(data)overview(mc,mini.width,mini.height,explorationBounds(),false);}
-function drawBig(){if(!data)return;let r=big.getBoundingClientRect(),dd=Math.min(devicePixelRatio||1,2);big.width=Math.round(r.width*dd);big.height=Math.round(r.height*dd);bc.setTransform(dd,0,0,dd,0,0);mapTransform=overview(bc,r.width,r.height,fullMap?wholeBounds():explorationBounds(),true);$('fullMap').textContent=fullMap?'Voltar à expedição':'Ver todo o arquivo';$('mapScale').textContent=fullMap?'Mostrando a extensão completa dos dados.':'Uma região de aproximadamente 800 metros.';$('geologyLegend').hidden=!showGeology;}
+function drawMini(){if(data)overview(mc,mini.width,mini.height,wholeBounds(),false);}
+function drawBig(){if(!data)return;let r=big.getBoundingClientRect(),dd=Math.min(devicePixelRatio||1,2);big.width=Math.round(r.width*dd);big.height=Math.round(r.height*dd);bc.setTransform(dd,0,0,dd,0,0);mapTransform=overview(bc,r.width,r.height,fullMap?wholeBounds():explorationBounds(),true);$('fullMap').textContent=fullMap?'Voltar à expedição':'Ver todo o território';$('mapScale').textContent=fullMap?'Extensão completa: vias urbanas, rurais e serranas do território carregado.':'Entorno da expedição. O minimapa mantém a visão do território completo.';$('geologyLegend').hidden=!showGeology;}
 function setRoute(x,y,stopRadius=0){
  const road=nearestRoad(x,y),end=[road.x,road.y];
  if(road.d>85){notify('Escolha um ponto mais próximo de uma rua ou trilha para marcar a rota.');return false;}
  const route=pathfinder?.route([player.x,player.y],end);
  if(!route){notify('Ainda não encontramos um caminho conectado até esse lugar.');return false;}
  waypoint={points:route.points,index:0,x:end[0],y:end[1],stopRadius};
- notify('Caminho marcado pelas ruas · '+Math.round(route.distance)+' m aproximadamente.');
+ notify(route.usedSharedComponentFallback?'Caminho aproximado por uma via conectada · aproximação de '+Math.round(route.fromRoadMetres)+' m e chegada de '+Math.round(route.toRoadMetres)+' m.':'Caminho marcado pelas ruas · '+Math.round(route.distance)+' m aproximadamente.');
  return true;
 }
 function blockedByHouse(x,y){
@@ -1342,14 +1447,14 @@ function renderAlbum(){
   const description=document.createElement('span');description.textContent='Uma ajuda na feira, um cuidado com as plantas e uma conversa sobre sonhos.';
   content.append(title,description);article.append(thumbnail,content);grid.append(article);
  }
- if(facadeSketches.length===3){
+ if(facadeSketches.length>=3){
   const article=document.createElement('article');article.className='album-card facade-memory';
   const preview=document.createElement('canvas');preview.width=186;preview.height=90;
   preview.className='facade-memory-preview';preview.setAttribute('role','img');preview.setAttribute('aria-label','Três casinhas imaginadas com portas, flores e toldos');
   window.RoncadorFacadeStudio.drawPreview(preview,'feira',lightPhase);
   const content=document.createElement('div');content.className='album-card-content';
   const title=document.createElement('strong');title.textContent='Um caderno de portas e janelas';
-  const description=document.createElement('span');description.textContent='Você observou os três trechos do ateliê e imaginou suas fachadas: Matriz, Feira e Rua João Pessoa. A arte não representa casas reais identificadas.';
+  const description=document.createElement('span');description.textContent=facadeSketches.length>=6?'Você registrou seis estudos visuais: Matriz, Feira, Rua João Pessoa e três setores preliminares. As fachadas continuam sendo composições artísticas.':'Seu caderno preserva os três estudos iniciais e agora pode crescer até seis áreas: três referências centrais e três estudos visuais preliminares de outros setores.';
   content.append(title,description);article.append(preview,content);grid.append(article);
  }
 }
@@ -1409,7 +1514,7 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  else if(near>=0)$('interact').innerHTML='✦ '+missions[near].title+' <kbd>E</kbd>';
  else if(nearCulture)$('interact').innerHTML='✿ Visitar '+nearCulture.name+' <kbd>E</kbd>';
  $('cozyGuideHint').hidden=!active||guideDistance>85||guideDistance<32||anyDialog();
- const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();observeMarketChange(secondarySnapshot);drawMini();}
+ const road=nearestRoad(player.x,player.y);$('location').textContent=road.d<35?(road.s.road.displayTags?.name||road.s.road.tags.name||'Um caminho de Belém'):'Pelos caminhos de Belém';observeMarketArrival();observeLuciaArrival();observeBiaArrival();observeCommunity();chapterUI();lifeSummary();renderMarketChapter();renderLuciaChapter();renderBiaChapter();renderFairQuest();renderMomentsUI();syncFairUI();observeMarketChange(secondarySnapshot);drawMini();}
 function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('Chegue perto de um marco dourado para guardar o selo.');return;}const i=near,m=missions[i];collected.add(i);target=missions.findIndex((_,j)=>!collected.has(j));for(let n=0;n<22;n++){const a=n/22*Math.PI*2;particles.push({x:m.p[0],y:m.p[1]-16,vx:Math.cos(a)*18,vy:Math.sin(a)*18-10,life:1.5,r:1.2+hash(n)*2,color:n%2?'#f3d586':'#faf0be'});}note(523,0,.2);note(659,.1,.2);note(784,.2,.35);notify('Selo '+(collected.size)+'/6 · '+m.name+' — '+m.description);renderMissions();updateUI();save();if(collected.size===missions.length)setTimeout(()=>{if(collected.size===6){$('winTime').textContent=formatTime(elapsed);showDialog('winDialog');note(1046,.1,.4);}},950);}
 function gpsFor(p){const proj=data.projection;return{lat:proj.originLat-p[1]/proj.metersPerDegreeLat,lon:proj.originLon+p[0]/proj.metersPerDegreeLon};}
 function locationLinks(p){const {lat,lon}=gpsFor(p),at=lat.toFixed(6)+','+lon.toFixed(6);return{maps:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(at),streetView:'https://www.google.com/maps/@?api=1&map_action=pano&viewpoint='+encodeURIComponent(at)};}
@@ -1704,7 +1809,7 @@ function showGeologicalAtlas(){if(!loaded)return;
  showDialog('geologyDialog');
 }
 function showRealCity(){if(!loaded)return;const n=data.streetNameCount||new Set(roads.map(r=>r.tags.name).filter(Boolean)).size;$('realCityStats').textContent=`${roads.length} trechos de vias · ${n} nomes de ruas · ${data.points.length} pontos nomeados dentro do limite municipal IBGE. Comece pelo centro e amplie o mapa para explorar os povoados.`;
- const road=nearestRoad(player.x,player.y);$('realCityCurrent').textContent=(road.s?.road.tags.name||'Caminho sem nome mapeado')+' · posição aproximada do personagem';const links=locationLinks([player.x,player.y]);$('currentMaps').href=links.maps;$('currentStreetView').href=links.streetView;
+ const road=nearestRoad(player.x,player.y);$('realCityCurrent').textContent=(road.s?.road.displayTags?.name||road.s?.road.tags.name||'Caminho sem nome mapeado')+' · posição aproximada do personagem';const links=locationLinks([player.x,player.y]);$('currentMaps').href=links.maps;$('currentStreetView').href=links.streetView;
  const container=$('realCityPlaces');container.replaceChildren();const places=data.points.filter(p=>Math.hypot(p.p[0],p.p[1])<2500).sort((a,b)=>Math.hypot(...a.p)-Math.hypot(...b.p));for(const place of places){const card=document.createElement('article');card.className='real-city-place';const name=document.createElement('strong');name.textContent=place.tags.name;const desc=document.createElement('small');desc.textContent='Ponto do OpenStreetMap · sem fachada nem contorno cadastrado';const anchor=document.createElement('a');anchor.textContent='Consultar no mapa ↗';anchor.href=locationLinks(place.p).maps;anchor.target='_blank';anchor.rel='noopener noreferrer';card.append(name,desc,anchor);const landmark=data.landmarks.find(l=>l.name===place.tags.name);if(landmark){const visit=document.createElement('button');visit.type='button';visit.className='culture-visit';visit.textContent='✿ Abrir cena cultural';visit.onclick=()=>openCultureFromGuide(landmark.id);card.append(visit);}container.append(card);}const plaza=document.createElement('button');plaza.type='button';plaza.className='culture-visit';plaza.textContent='♧ Ver a Praça 6 de Setembro (sem localização confirmada)';plaza.onclick=()=>openCultureFromGuide('praca_6_setembro');container.append(plaza);showDialog('realCityDialog');}
 function showCentralBlocks(){
  if(!loaded)return;
@@ -1740,17 +1845,17 @@ function showCentralBlocks(){
    const result=window.RoncadorFacadeStudio.recordSketch(facadeSketches,block.id,inReach);
    if(!result.recorded)return;
    sketch.disabled=true;sketch.textContent='✓ Detalhe guardado no caderno';
-   $('blockSketchStatus').textContent=facadeSketches.length+'/3 detalhes registrados'+(facadeSketches.length===3?' · cartão no álbum ✓':'');
+   $('blockSketchStatus').textContent=facadeSketches.length+'/6 detalhes registrados'+(facadeSketches.length>=6?' · cartão completo no álbum ✓':' · progresso preservado');
    note(587,0,.13);note(784,.11,.17);save();
-   notify(result.unlocked?'✿ Três quadras registradas! O cartão entrou no álbum.':'✎ Detalhe de '+block.title+' guardado · '+facadeSketches.length+'/3');
+   notify(result.unlocked?'✿ Seis áreas registradas! O cartão completo entrou no álbum.':'✎ Detalhe de '+block.title+' guardado · '+facadeSketches.length+'/6');
   };
   card.append(art,copy,route,sketch);gallery.append(card);
  }
  $('blockFacadesToggle').setAttribute('aria-pressed',String(detailedFacades));
  $('blockFacadesToggle').textContent=detailedFacades?'▦ Ocultar acabamentos nas casas ilustrativas':'▦ Mostrar acabamentos nas casas ilustrativas';
- $('blockCount').textContent=centralBlocks.reduce((sum,b)=>sum+b.count,0)+' casas ilustrativas em três áreas de estudo';
- $('blockSketchStatus').textContent=facadeSketches.length+'/3 detalhes registrados'+(facadeSketches.length===3?' · cartão no álbum ✓':'');
- $('roadEvidence').textContent=roadDetails?`OSM: ${roadDetails.totalRoads} trechos viários, ${roadDetails.knownSurface} com piso descrito (${roadDetails.surfaceCounts.asphalt} asfalto, ${roadDetails.surfaceCounts.paved} pavimentados, ${roadDetails.surfaceCounts.unpaved} sem pavimentação, ${roadDetails.surfaceCounts.paving_stones+roadDetails.surfaceCounts.sett} em pedra) e ${roadDetails.junctions.length} entroncamentos. Elevação: ${terrainLayer?`${terrainLayer.values.length} amostras SRTM (terreno de ${terrainLayer.min} a ${terrainLayer.max} m), grade 140 m, curvas estimadas de 10 em 10 m`:'indisponível'}. O modelo não comprova o declive de uma rua curta ou calçada. Nenhuma medição direta de ladeira consta nos trechos OSM.`:'Aguardando análise das ruas.';
+ $('blockCount').textContent=centralBlocks.reduce((sum,b)=>sum+b.count,0)+' casas ilustrativas em seis áreas de estudo';
+ $('blockSketchStatus').textContent=facadeSketches.length+'/6 detalhes registrados'+(facadeSketches.length>=6?' · cartão completo no álbum ✓':' · progresso preservado');
+ $('roadEvidence').textContent=roadDetails?`Mapa: ${roadDetails.totalRoads} trechos viários e ${roadDetails.junctions.length} entroncamentos. A fonte OSM mantém suas próprias tags; ${roadDetails.localSurfaceCount} acabamentos adicionais são referências locais de superfície, exibidas sem alterar os dados originais. Elevação: ${terrainLayer?`${terrainLayer.values.length} amostras SRTM (terreno de ${terrainLayer.min} a ${terrainLayer.max} m), grade 140 m, curvas estimadas de 10 em 10 m`:'indisponível'}. O modelo não comprova o declive de uma rua curta ou calçada.`:'Aguardando análise das ruas.';
  $('terrainToggle').setAttribute('aria-pressed',String(showTerrain));
  $('terrainToggle').textContent=showTerrain?'⛰ Ocultar curvas do terreno':'⛰ Mostrar curvas do terreno';
  showDialog('blockDialog');
@@ -1837,6 +1942,13 @@ function clickWorld(e){
  if(scene){const place=culturePlace(scene.id);if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
  const landmark=data.landmarks.find(l=>Math.hypot(x-l.p[0],y-l.p[1])<10);
  if(landmark){if(cultureWithinReach(landmark))showCulture(landmark.id);else setRoute(...landmark.p);return;}
+ // Gemini landmarks confirmed by the author can be selected without
+ // changing OSM points, missions, diary records or the save format.
+ const localPlace=zoom>=1.25?GEMINI_LOCAL_PLACES.find(p=>Math.hypot(x-p.p[0],y-p.p[1])<20):null;
+ if(localPlace){
+  if(setRoute(...localPlace.p,18))notify('Passeio marcado: '+localPlace.name+(localPlace.fictionalName?' · nome artístico':'')+' · referência local conferida.');
+  canvas.focus({preventScroll:true});return;
+ }
  if(data.points.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<8)){showRealCity();return;}
  setRoute(x,y);canvas.focus({preventScroll:true});
 }

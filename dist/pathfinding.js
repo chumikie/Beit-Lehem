@@ -1,92 +1,21 @@
-/* Road-network routing for the illustrated Roncador game. Coordinates are local metres. */
-(function (root, factory) {
-  'use strict';
-  const api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  if (root) root.RoncadorPathfinding = api;
-})(typeof globalThis !== 'undefined' ? globalThis : null, function () {
-  'use strict';
-  const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-
-  function buildGraph(roads) {
-    const nodes = [];
-    const byPosition = new Map();
-    let edgeCount = 0;
-    for (const road of roads) {
-      let previous = null;
-      for (const point of road.p) {
-        // The source OSM ways share intersection vertices. A one-metre cell
-        // absorbs the small rounding differences in the local projection.
-        const key = `${Math.round(point[0])},${Math.round(point[1])}`;
-        let current = byPosition.get(key);
-        if (current === undefined) {
-          current = nodes.length;
-          byPosition.set(key, current);
-          nodes.push({ x: point[0], y: point[1], neighbours: [] });
-        }
-        if (previous !== null && previous !== current) {
-          const a = nodes[previous], b = nodes[current];
-          const metres = Math.hypot(a.x - b.x, a.y - b.y);
-          if (metres > 0) {
-            a.neighbours.push({ id: current, metres });
-            b.neighbours.push({ id: previous, metres });
-            edgeCount++;
-          }
-        }
-        previous = current;
-      }
-    }
-
-    function nearest(point) {
-      let best = -1, closest = Infinity;
-      for (let i = 0; i < nodes.length; i++) {
-        const candidate = nodes[i];
-        const d = Math.hypot(candidate.x - point[0], candidate.y - point[1]);
-        if (d < closest) { closest = d; best = i; }
-      }
-      return { id: best, distance: closest };
-    }
-
-    function route(start, destination) {
-      if (!nodes.length) return null;
-      const first = nearest(start), last = nearest(destination);
-      if (first.id < 0 || last.id < 0) return null;
-      const costs = new Float64Array(nodes.length).fill(Infinity);
-      const previous = new Int32Array(nodes.length).fill(-1);
-      const visited = new Uint8Array(nodes.length);
-      const queue = [{ id: first.id, score: distance(start, destination) }];
-      costs[first.id] = 0;
-      while (queue.length) {
-        queue.sort((a, b) => a.score - b.score);
-        const current = queue.shift().id;
-        if (visited[current]) continue;
-        if (current === last.id) break;
-        visited[current] = 1;
-        for (const edge of nodes[current].neighbours) {
-          const candidate = costs[current] + edge.metres;
-          if (candidate >= costs[edge.id]) continue;
-          costs[edge.id] = candidate;
-          previous[edge.id] = current;
-          const n = nodes[edge.id];
-          queue.push({ id: edge.id, score: candidate + Math.hypot(n.x - nodes[last.id].x, n.y - nodes[last.id].y) });
-        }
-      }
-      if (!Number.isFinite(costs[last.id])) return null;
-      const indices = [];
-      for (let node = last.id; node !== -1; node = previous[node]) indices.push(node);
-      indices.reverse();
-      const points = indices.map(i => ({ x: nodes[i].x, y: nodes[i].y }));
-      points.push({ x: destination[0], y: destination[1] });
-      return {
-        points,
-        roadMetres: costs[last.id],
-        distance: costs[last.id] + first.distance + last.distance,
-        fromRoadMetres: first.distance,
-        toRoadMetres: last.distance,
-      };
-    }
-
-    return { nodes, edgeCount, nearest, route };
-  }
-  return { buildGraph };
+/* Road-network routing for Beit Lehem. All route segments follow mapped road geometry. */
+(function(root,factory){'use strict';const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RoncadorPathfinding=api;})(typeof globalThis!=='undefined'?globalThis:null,function(){
+'use strict';
+function heap(){const h=[];function push(v){let i=h.length;h.push(v);while(i){const p=(i-1)>>1;if(h[p].score<=v.score)break;h[i]=h[p];i=p;}h[i]=v;}function pop(){if(!h.length)return null;const first=h[0],last=h.pop();if(h.length){let i=0;while(true){const l=i*2+1,r=l+1;if(l>=h.length)break;const c=r<h.length&&h[r].score<h[l].score?r:l;if(h[c].score>=last.score)break;h[i]=h[c];i=c;}h[i]=last;}return first;}return{push,pop,get length(){return h.length;}};}
+function buildGraph(roads){
+ const nodes=[],byPosition=new Map();let edgeCount=0;
+ for(const road of roads){let previous=null;for(const p of road.p||[]){if(!Array.isArray(p)||!p.every(Number.isFinite))continue;const key=`${Math.round(p[0])},${Math.round(p[1])}`;let id=byPosition.get(key);if(id===undefined){id=nodes.length;byPosition.set(key,id);nodes.push({x:p[0],y:p[1],neighbours:[],component:-1});}if(previous!==null&&previous!==id){const a=nodes[previous],b=nodes[id],metres=Math.hypot(a.x-b.x,a.y-b.y);if(metres>0){a.neighbours.push({id,metres});b.neighbours.push({id:previous,metres});edgeCount++;}}previous=id;}}
+ const components=[];for(let i=0;i<nodes.length;i++){if(nodes[i].component!==-1)continue;const id=components.length,stack=[i],members=[];nodes[i].component=id;while(stack.length){const n=stack.pop();members.push(n);for(const e of nodes[n].neighbours)if(nodes[e.id].component===-1){nodes[e.id].component=id;stack.push(e.id);}}components.push({id,size:members.length,nodes:members});}
+ function nearest(p,componentId=null){let best=-1,distance=Infinity;if(componentId===null){for(let i=0;i<nodes.length;i++){const n=nodes[i],d=Math.hypot(n.x-p[0],n.y-p[1]);if(d<distance){distance=d;best=i;}}}else{const c=components[componentId];if(!c)return{id:-1,distance:Infinity,component:null};for(const i of c.nodes){const n=nodes[i],d=Math.hypot(n.x-p[0],n.y-p[1]);if(d<distance){distance=d;best=i;}}}return{id:best,distance,component:best<0?null:nodes[best].component};}
+ function nearestByComponent(p){const best=components.map(c=>({id:-1,distance:Infinity,component:c.id}));for(let i=0;i<nodes.length;i++){const n=nodes[i],d=Math.hypot(n.x-p[0],n.y-p[1]),v=best[n.component];if(d<v.distance)best[n.component]={id:i,distance:d,component:n.component};}return best;}
+ function route(start,destination,options={}){if(!nodes.length||!Array.isArray(start)||!Array.isArray(destination)||![...start,...destination].every(Number.isFinite))return null;let first=nearest(start),last=nearest(destination),usedSharedComponentFallback=false;if(first.id<0||last.id<0)return null;
+  if(first.component!==last.component){const maxSnap=Number.isFinite(options.maxSnapMetres)&&options.maxSnapMetres>=0?options.maxSnapMetres:75,a=nearestByComponent(start),b=nearestByComponent(destination);let best=null;for(const c of components){const from=a[c.id],to=b[c.id];if(from.distance>maxSnap||to.distance>maxSnap)continue;const score=from.distance+to.distance;if(!best||score<best.score)best={first:from,last:to,score};}if(!best)return null;first=best.first;last=best.last;usedSharedComponentFallback=true;}
+  const target=nodes[last.id],costs=new Float64Array(nodes.length).fill(Infinity),previous=new Int32Array(nodes.length).fill(-1),visited=new Uint8Array(nodes.length),queue=heap();costs[first.id]=0;queue.push({id:first.id,cost:0,score:Math.hypot(nodes[first.id].x-target.x,nodes[first.id].y-target.y)});
+  while(queue.length){const item=queue.pop(),current=item.id;if(visited[current]||item.cost>costs[current]+1e-9)continue;if(current===last.id)break;visited[current]=1;for(const e of nodes[current].neighbours){const next=costs[current]+e.metres;if(next>=costs[e.id])continue;costs[e.id]=next;previous[e.id]=current;const n=nodes[e.id];queue.push({id:e.id,cost:next,score:next+Math.hypot(n.x-target.x,n.y-target.y)});}}
+  if(!Number.isFinite(costs[last.id]))return null;const ids=[];for(let id=last.id;id!==-1;id=previous[id])ids.push(id);ids.reverse();const points=ids.map(id=>({x:nodes[id].x,y:nodes[id].y}));if(!points.length||Math.hypot(points.at(-1).x-destination[0],points.at(-1).y-destination[1])>.01)points.push({x:destination[0],y:destination[1]});
+  return{points,roadMetres:costs[last.id],distance:costs[last.id]+first.distance+last.distance,fromRoadMetres:first.distance,toRoadMetres:last.distance,componentId:first.component,usedSharedComponentFallback};
+ }
+ return{nodes,edgeCount,components:components.map(c=>({id:c.id,size:c.size})),nearest,route};
+}
+return{buildGraph};
 });

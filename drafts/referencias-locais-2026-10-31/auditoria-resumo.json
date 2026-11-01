@@ -1,0 +1,31 @@
+{
+  "inputSha256": "0728e3a83f16ce426c1f41489110199a60d1c6fa12d2eabd860c7c1a97ceb706",
+  "baseCommit": "a5f61fef6f5dd233786830ef2977af3d790eb99e",
+  "roadCount": 462,
+  "roadGeometryUnchanged": true,
+  "boundsUnchanged": true,
+  "areasUnchanged": true,
+  "terrainUnchanged": true,
+  "geologyUnchanged": true,
+  "newNamedPoints": 10,
+  "newLandmarks": 11,
+  "roadTagProposals": 17,
+  "streetNameCountReported": 86,
+  "streetNameCountComputed": 92,
+  "syntaxChecksPassed": 32,
+  "startupPrefixFailure": "ReferenceError: Cannot access 'kawaiiState' before initialization",
+  "compatibilityTests": {
+    "passed": 23,
+    "failed": 7,
+    "interpretation": "Falhas de contagem/contrato e uma limitação do canvas simulado; não representam sete defeitos de execução."
+  },
+  "browserTested": false,
+  "githubWrites": 0,
+  "publicationPlan": {
+    "authorized": true,
+    "mode": "single_draft_pull_request",
+    "mergeAuthorized": false,
+    "archive": "references/gemini-2026-10-31/experimento-anonimizado.html.txt"
+  },
+  "githubWritesScope": "githubWrites registra apenas a rodada inicial de análise, anterior à autorização de publicação."
+}

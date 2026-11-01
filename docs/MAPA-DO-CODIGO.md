@@ -2,7 +2,7 @@
 
 | Sistema | Arquivos principais | Integração a consultar |
 | --- | --- | --- |
-| Ruas e geografia | `dist/map.json`, `source/belem-osm-2026.geojson`, `prepare_map.py` | `game.js`: `preprocess`, `drawRoads`, `nearestRoad` |
+| Ruas e geografia | `dist/map.json`, `dist/local-road-references.js`, `source/belem-osm-2026.geojson`, `prepare_map.py` | `game.js`: `preprocess`, `drawRoads`, `nearestRoad`; `road-details.js`: piso descrito na fonte; propostas locais permanecem inativas até validação |
 | Movimento do jogador e câmera | `dist/game.js` | `move`, `frame`, `clickWorld`, `setRoute`, `resize` |
 | Caminhos | `dist/pathfinding.js`, `dist/street-life.js` | `walkingPoint`, `encounterRoadPoint` |
 | Movimento dos moradores | `dist/resident-motion.js`, `dist/crowd-flow.js` | `residentsInStreets`, `secondaryInStreets`, `drawStreetLife` |
@@ -13,9 +13,13 @@
 | Mercado | `dist/market-morning.js`, `dist/market-scene.js`, `dist/fair-streets.js` | funções do Mercado em `game.js`, diálogo em `cozy-ui.js` |
 | Lúcia e Bia | `dist/lucia-garden.js`, `dist/bia-letters.js` | funções dos respectivos capítulos em `game.js` |
 | Natureza e terreno | `dist/grounded-flora.js`, `dist/terrain-relief.js`, `dist/cozy-atmosphere.js`, `dist/terrain.json`, `dist/geology.json` | desenho ambiental e atlas em `game.js` |
-| Interface | `dist/index.html`, `dist/cozy-ui.js`, `dist/style.css`, `dist/cozy.css` | manipuladores e `updateUI` em `game.js` |
+| Interface | `dist/index.html`, `dist/local-road-references.js`, `dist/cozy-ui.js`, `dist/style.css`, `dist/cozy.css` | manipuladores e `updateUI` em `game.js` |
 | Salvamento | `dist/game.js`, funções `restore` dos módulos | `save`, carregamento em `preprocess`, eventos de saída |
 | Export offline | `build-standalone.cjs`, `scripts/project.cjs` | saída em `build/`; baseline congelada separada |
 | Testes | `tests/*.test.cjs` | `npm test` roda todos localmente |
 
 `game.js` ainda concentra funções de várias áreas. Dividi-lo é trabalho gradual: extrair um sistema de cada vez, com comportamento preservado e teste pertinente. Não reorganizar tudo junto de uma reformulação visual.
+
+## Referências Gemini em revisão
+
+Guia: `GUIA-REFERENCIAS-LOCAIS.md`. Catálogo desativado e análise: `../drafts/referencias-locais-2026-10-31/`. HTML grande anonimizado: `../references/gemini-2026-10-31/experimento-anonimizado.html.txt`. Consultar o `INDICE.md` dessa pasta antes de ler a fonte: ele indica os intervalos por módulo. Nenhuma dessas referências está carregada no jogo.

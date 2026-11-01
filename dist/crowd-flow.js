@@ -15,18 +15,15 @@
  // slot, a purely decorative passer may be omitted for this frame.
  function openSlot(sample,people=[],junctions=[],clearance=23){
   const offsets=[0,14,-14,29,-29,45,-45,61,-61];
-  let atJunction=null;
   for(const offset of offsets){
    const p=sample(offset);
    if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))continue;
    if(people.some(other=>Math.hypot(p.x-other.x,p.y-other.y)<clearance))continue;
-   if(junctions.some(j=>Math.hypot(p.x-j.x,p.y-j.y)<11)){
-    if(!atJunction)atJunction=p;
-    continue;
-   }
+   if(junctions.some(j=>Math.hypot(p.x-j.x,p.y-j.y)<11))continue;
    return p;
   }
-  return atJunction;
+  // No safe sidewalk composition: omit the decorative passer this frame.
+  return null;
  }
  return{plan,openSlot};
 });

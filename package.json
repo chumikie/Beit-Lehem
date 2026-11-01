@@ -7,7 +7,15 @@
     "test": "node scripts/project.cjs test",
     "build": "node scripts/project.cjs build",
     "play": "node scripts/project.cjs play",
-    "verify:baseline": "node scripts/project.cjs verify-baseline"
+    "build:gemini": "node scripts/build-gemini-preview.cjs",
+    "play:gemini": "node scripts/project.cjs play:gemini",
+    "verify:baseline": "node scripts/project.cjs verify-baseline",
+    "build:development-preview": "node scripts/build-development-preview.cjs",
+    "play:development-preview": "node scripts/project.cjs play:development-preview",
+    "gemini:list": "node scripts/gemini-workbench.cjs list",
+    "gemini:extract": "node scripts/gemini-workbench.cjs extract",
+    "gemini:check": "node scripts/gemini-workbench.cjs check",
+    "build:public-preview": "node scripts/build-public-preview.cjs"
   },
   "engines": {
     "node": ">=18"

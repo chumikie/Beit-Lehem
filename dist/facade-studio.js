@@ -11,29 +11,35 @@
  const ARCHETYPES=Object.freeze({
   matriz:['arcos','vasos','molduras','portao','portas'],
   feira:['toldo','portas','armazem','portao','molduras'],
-  joao:['molduras','vasos','portas','portao','arcos']
+  joao:['molduras','vasos','portas','portao','arcos'],
+  clovis:['portao','vasos','molduras','arcos','portas'],
+  feliciano:['toldo','armazem','portas','molduras','vasos'],
+  vicente:['toldo','vasos','portas','arcos','portao']
  });
  const PALETTES=Object.freeze({
   matriz:{trim:'#b6a492',wall:'#eee5cf',plant:'#779b75',accent:'#a6bdb0'},
   feira:{trim:'#b48c70',wall:'#e8d8bc',plant:'#90a475',accent:'#c58769'},
-  joao:{trim:'#a69b8a',wall:'#e2e8d9',plant:'#74a18e',accent:'#829ca5'}
+  joao:{trim:'#a69b8a',wall:'#e2e8d9',plant:'#74a18e',accent:'#829ca5'},
+  clovis:{trim:'#8c9ba5',wall:'#f3ead8',plant:'#6b9c78',accent:'#b8c4cc'},
+  feliciano:{trim:'#b57a62',wall:'#f5e8d6',plant:'#88a372',accent:'#d47a63'},
+  vicente:{trim:'#a87b5e',wall:'#f2e2ca',plant:'#7da178',accent:'#e0b04b'}
  });
  function variant(home){
   if(!home?.centralBlock||!ARCHETYPES[home.centralBlock])return null;
   const seed=Math.abs(Math.trunc(Number(home.seed)||0));
   const group=ARCHETYPES[home.centralBlock];
-  return {block:home.centralBlock,kind:group[seed%group.length],shade:seed%4,detail:seed%3,roof:seed%3,returnWall:seed%4===1,shop:home.centralBlock==='feira'&&seed%3!==2,seed};
+  return {block:home.centralBlock,kind:group[seed%group.length],shade:seed%4,detail:seed%3,roof:seed%3,returnWall:seed%4===1,shop:['feira','feliciano','vicente'].includes(home.centralBlock)&&seed%3!==2,seed};
  }
  function statistics(houses){
-  const result={total:0,matriz:0,feira:0,joao:0,kinds:{}};
+  const result={total:0,kinds:{}};for(const id of Object.keys(ARCHETYPES))result[id]=0;
   for(const home of houses){const style=variant(home);if(!style)continue;result.total++;result[style.block]++;result.kinds[style.kind]=(result.kinds[style.kind]||0)+1;}
   return result;
  }
- const SKETCH_IDS=Object.freeze(['matriz','feira','joao']);
+ const SKETCH_IDS=Object.freeze(['matriz','feira','joao','clovis','feliciano','vicente']);
  function restoreSketches(raw){return Array.isArray(raw)?SKETCH_IDS.filter(id=>raw.includes(id)):[];}
  function recordSketch(state,id,nearby){
-  if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===3};
-  state.push(id);return{recorded:true,unlocked:state.length===3,progress:state.length};
+  if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:Array.isArray(state)&&restoreSketches(state).length>=SKETCH_IDS.length};
+  state.push(id);return{recorded:true,unlocked:restoreSketches(state).length>=SKETCH_IDS.length,progress:restoreSketches(state).length,total:SKETCH_IDS.length};
  }
  function draw(c,home,phase='manha',minute=8*60){
   const style=variant(home);if(!style)return false;
@@ -102,6 +108,55 @@
    c.fillStyle='#c8b498';c.fillRect(left+width*.51,fy+1,.7,Math.max(1,faceH-2.5));
    c.fillStyle='#d3ad7e';for(let i=0;i<3;i++)c.fillRect(left+3+i*1.5,fy+faceH-2.4,1,1);
    c.fillStyle='#f4e5cc';c.fillRect(left+2,fy+faceH-1.3,bayW,.65);
+   // A few small, anonymous storefront identities inspired by the Gemini
+   // commercial study: display shelves, a side sign or a striped valance.
+   // These details stay within the existing fictitious building footprint.
+   if(seed%4===0){
+    c.fillStyle=palette.accent;for(let j=0;j<3;j++)c.fillRect(left+3+j*2.5,fy+faceH-3.1,1.5,.9);
+   }else if(seed%4===1){
+    c.fillStyle='#e9dbbc';c.fillRect(left+width-3.9,fy-1.3,2.2,2.5);
+    c.fillStyle=palette.trim;c.fillRect(left+width-3.6,fy-.9,1.6,.45);
+   }else if(seed%4===2){
+    c.fillStyle='#fff2d4';for(let j=0;j<3;j++)c.fillRect(left+2.2+j*3,fy+1.2,1,1.2);
+   }
+  }
+  // The fair/commercial sectors gain depth in the glass and a shaded canopy
+  // without extra stalls, signs, buildings or a change to their road anchors.
+  if(style.shop&&faceH>=4){
+   c.fillStyle=night?'#ffe2a42e':'#ffffff48';
+   c.fillRect(left+2.7,front+2.1,Math.max(1,width*.16),Math.max(.8,faceH-3.5));
+   c.fillStyle='#5a524923';c.fillRect(left+1.5,front-.45,Math.max(1,width-3),.8);
+   if(seed%4===3){
+    c.fillStyle='#d5b391';
+    for(let q=0;q<3;q++)c.fillRect(left+width*.58+q*1.2,front+faceH-2.35,.75,.7);
+   }
+  }
+  // A discreet gate rhythm and a two-tone wall make residential fronts feel
+  // inhabited without claiming a specific address or putting props in the road.
+  if(style.block==='clovis'&&seed%3===0&&faceH>=4){
+   c.fillStyle='#839c97';c.fillRect(left+width*.53,front+2,width*.25,faceH-3.3);
+   c.strokeStyle='#f1e7d4';c.lineWidth=.45;
+   for(let q=1;q<4;q++){const px=left+width*.53+q*width*.05;c.beginPath();c.moveTo(px,front+2.4);c.lineTo(px,front+faceH-1.5);c.stroke();}
+  }
+  // A little threshold composes each storefront without claiming a surveyed
+  // sidewalk: all strokes remain INSIDE the existing illustrated house bounds.
+  c.fillStyle=style.shop?'#d9c2a0':'#d5c9b0';
+  c.fillRect(left+1.2,front+faceH-1.05,Math.max(1,width-2.4),.62);
+  if(style.shop){
+   // Soft valance, shelf silhouettes and a quiet side planter. No real sign.
+   if(seed%3===0){
+    c.fillStyle='#f5e9d7';
+    for(let i=2;i<width-2;i+=3.4)c.fillRect(left+i,front-1.35,1.3,.6);
+   }
+   if(seed%5===2){
+    c.fillStyle='#bc8b72';c.fillRect(left+width-3.7,front+faceH-3.5,2.4,2.4);
+    c.fillStyle=palette.plant;c.beginPath();c.arc(left+width-2.5,front+faceH-3.7,1.7,0,Math.PI*2);c.fill();
+   }
+  }else if(seed%7===3&&width>=13&&faceH>=4){
+   // A porch chair for a fictional home, inset from the roadway.
+   const cx=left+width-4.2,cy=front+faceH-1.8;
+   c.fillStyle='#987d66';c.fillRect(cx,cy-2.3,2.7,.55);
+   c.fillRect(cx+.3,cy-2,2.1,1.6);c.fillRect(cx+.3,cy-.4,.45,.75);c.fillRect(cx+2,cy-.4,.45,.75);
   }
   // Porch/potted plants stay INSIDE each illustrative building's tiny bounds.
   if(style.kind==='vasos'||style.kind==='arcos'&&seed%2===0){
@@ -117,6 +172,19 @@
   if(night){
    // Soft inset window light; there is intentionally no streetlight or false GIS pin.
    c.fillStyle='#ffd88620';c.fillRect(windowX-1,windowY-1,Math.min(6.6,width*.43),windowH+2);
+  }
+  // Authentic Belém/PB house micro-details: tile number plaque, meter box & rooftop water tank
+  if(seed%2===0){
+   c.fillStyle='#3b6e8c';c.fillRect(left+1.4,windowY-.3,2.1,1.3);
+   c.fillStyle='#ffffff';c.fillRect(left+1.7,windowY,1.5,.6);
+  }
+  if(seed%3===1){
+   c.fillStyle='#b8bec4';c.fillRect(left+width-2.8,windowY+.6,1.5,2.1);
+   c.strokeStyle='#6e767d';c.lineWidth=.4;c.strokeRect(left+width-2.8,windowY+.6,1.5,2.1);
+  }
+  if(seed%5===0){
+   c.fillStyle='#4a90c2';c.beginPath();c.ellipse(left+width*.72,top+height*.22,2.4,1.6,0,0,Math.PI*2);c.fill();
+   c.strokeStyle='#2f658d';c.lineWidth=.45;c.stroke();
   }
   c.restore();return true;
  }

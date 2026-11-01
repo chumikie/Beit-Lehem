@@ -5,11 +5,11 @@
  const KNOWN=['asphalt','paved','unpaved','paving_stones','sett'];
  const PALETTE={asphalt:'#f0e7d9',paved:'#f5ead2',unpaved:'#a58863',paving_stones:'#baa388',sett:'#a58c78'};
  function prepare(roads,graph){
-  const surfaceCounts=Object.fromEntries(KNOWN.map(k=>[k,0]));let inclineCount=0;
+  const surfaceCounts=Object.fromEntries(KNOWN.map(k=>[k,0]));const osmSurfaceCounts=Object.fromEntries(KNOWN.map(k=>[k,0]));let inclineCount=0,localSurfaceCount=0;
   const textured=[];
   for(const r of roads){
-   const type=KNOWN.includes(r.tags?.surface)?r.tags.surface:null;
-   if(type){surfaceCounts[type]++;textured.push({type,points:r.p,bounds:r.bounds,road:r});}
+   const type=KNOWN.includes(r.displayTags?.surface||r.tags?.surface)?(r.displayTags?.surface||r.tags.surface):null;
+   if(type){surfaceCounts[type]++;if(KNOWN.includes(r.tags?.surface))osmSurfaceCounts[r.tags.surface]++;if(r.localReference?.fields?.includes('surface'))localSurfaceCount++;textured.push({type,points:r.p,bounds:r.bounds,road:r,source:r.localReference?'referencia_local':'osm'});}
    if(typeof r.tags?.incline==='string'&&r.tags.incline.trim())inclineCount++;
   }
   const junctions=[],taken=[];
@@ -22,7 +22,7 @@
    if(taken.some(p=>Math.hypot(vertex.x-p.x,vertex.y-p.y)<13))continue;
    const j={x:vertex.x,y:vertex.y,arms:direction.size};junctions.push(j);taken.push(j);
   }
-  return{totalRoads:roads.length,knownSurface:textured.length,surfaceCounts,inclineCount,textured,junctions};
+  return{totalRoads:roads.length,knownSurface:textured.length,surfaceCounts,osmSurfaceCounts,localSurfaceCount,inclineCount,textured,junctions};
  }
  function draw(c,layer,view,zoom=1.85){
   if(!layer||zoom<1.15)return;
