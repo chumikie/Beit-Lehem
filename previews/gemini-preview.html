@@ -4721,7 +4721,7 @@ function fairAtmosphere(){return marketDay||isMarketMorning();}
 function syncFairUI(){const automatic=isMarketMorning(),note=$('fairDayNote');note.textContent='🧺 '+(marketMorning.claimed?'Manhã de Francisco completa ✓':'A manhã de Francisco · '+window.RoncadorMarketMorning.progress(marketMorning)+'/3')+' ↗';const status=$('fairStatus');status.textContent=automatic?'✿ Segunda de feira! Barracas ilustrativas aparecem nas ruas do entorno do mercado.':marketDay?'✿ Feira ilustrativa ativada por você, fora do calendário fictício.':'✿ Na manhã de segunda, a feira imaginada transforma o entorno do mercado.';}
 function save(){if(!loaded)return;try{localStorage.setItem(STORE,JSON.stringify({v:3,mapSource:data.source,collected:[...collected],player:{x:player.x,y:player.y},elapsed,target,friendship,chapter,observations:[...observations],photos,marketDay,cultureNotes,gardenStep,gardenHarvests,showScenery,festivalCelebrated,lightPhase,showWildlife,showGeology,living,fairQuest,marketMorning,luciaGarden,biaLetters,skyMode,rainCare,showGroundedFlora,showTerrain,momentsSeen,detailedFacades,sideNeighbors,facadeSketches,communitySeen,marketFruitSlots,marketWitnessed,belemContacts,kawaiiState,ruaNovaPaths,ruaNovaShared,ruaNovaDays,cityKnowledge,cityLinks,cityConsequences,cityReports,weeklyVisitsSeen,smallWalksSeen,smallWalkReports,friendshipTraditions,storyEndings,microStories,lastJournalDay,worldMoments,streetVignettes,seasonalMemories,everydayMemories,saoPedroTales,breadStories,morningEncounters,waterMemories,waterTalks,camucaStories}));}catch{storageWarning=true;}}
 function notify(text){clearTimeout(toastTimer);$('toast').textContent=text;$('toast').classList.add('visible');toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3500);}
-function note(freq=440,delay=0,length=.12){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let t=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.045,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+length);}catch{}}
+function note(freq=440,delay=0,length=.12,volume=.045){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let t=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+Math.min(.012,length*.35));g.gain.exponentialRampToValueAtTime(.0001,t+length);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+length);}catch{}}
 function pointSegment(x,y,s){let t=Math.max(0,Math.min(1,((x-s.ax)*s.dx+(y-s.ay)*s.dy)/s.len2));let px=s.ax+t*s.dx,py=s.ay+t*s.dy;return{d:Math.hypot(x-px,y-py),x:px,y:py,t};}
 function nearestRoad(x,y){let best={d:Infinity,s:null};for(const s of segments){const p=pointSegment(x,y,s);if(p.d<best.d)best={...p,s};}return best;}
 function inside(x,y,ring){let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
@@ -8650,11 +8650,33 @@ function start(){if(!loaded)return;active=true;$('welcome').hidden=true;canvas.f
 function reset(){if(!loaded)return;smallWalksSeen=[];smallWalkReports=[];for(const d of document.querySelectorAll('dialog[open]'))d.close();collected.clear();target=0;elapsed=0;waypoint=null;friendship=0;chapter=0;observations.clear();photos={};cultureNotes={};gardenStep=0;gardenHarvests=0;fairQuest=window.RoncadorCozyQuests.fresh();marketMorning=window.RoncadorMarketMorning.fresh();marketFruitSlots=Array(6).fill(null);marketWitnessed=false;marketReaction=null;marketScene?.close();luciaGarden=window.RoncadorLuciaGarden.fresh();biaLetters=window.RoncadorBiaLetters.fresh();sideNeighbors=window.RoncadorSecondaryNeighbors.fresh();ruaNovaPaths=[];ruaNovaShared=false;ruaNovaDays={};cityKnowledge={};cityLinks=[];cityConsequences=[];cityReports=[];weeklyVisitsSeen=[];friendshipTraditions=[];storyEndings=[];microStories=[];lastJournalDay=1;worldMoments=[];streetVignettes=[];everydayMemories=[];saoPedroTales=[];breadStories=[];morningEncounters=[];waterMemories=[];waterTalks=[];seasonalMemories=[];camucaStories=[];worldPause=null;belemContacts=window.RoncadorBelemContacts.fresh();facadeSketches=[];communitySeen=[];marketDay=false;living=window.RoncadorLivingWorld.fresh();showWildlife=true;festivalCelebrated=false;lightPhase='manha';skyMode='sol';rainCare=0;showGroundedFlora=true;momentsSeen=[];syncLightButton();syncSkyButton();player.x=data.start[0];player.y=data.start[1];camera.x=player.x;camera.y=player.y;particles=[];active=true;$('welcome').hidden=true;saved=null;renderMissions();updateUI();save();canvas.focus({preventScroll:true});notify('Um novo começo! Lia e os caminhos estão esperando por você.');}
 function anyDialog(){return !!document.querySelector('dialog[open]')||$('sidebar').classList.contains('open');}
 function showDialog(id){keys.clear();touches.clear();$(id).showModal();if(id==='mapDialog')requestAnimationFrame(drawBig);updateUI();}
+let ambientSoundSeconds=0;
 function move(dt,time){
  const dialog=anyDialog();
  if(active&&!dialog&&!document.hidden){
   elapsed+=dt;
   window.RoncadorLivingWorld.advance(living,dt*2.5);
+  if(sound){
+   ambientSoundSeconds+=dt;
+   if(ambientSoundSeconds>=9){
+    ambientSoundSeconds%=9;
+    const church=data.landmarks.find(p=>p.id==='igreja');
+    const noon=living.minute>=11*60+55&&living.minute<=12*60+10;
+    const dusk=living.minute>=17*60&&living.minute<=17*60+20;
+    if(church&&Math.hypot(player.x-church.p[0],player.y-church.p[1])<90&&(noon||dusk)){
+     note(523,0,.26,.013);note(659,.13,.32,.010);
+    }else if(living.minute>=6*60&&living.minute<18*60){
+     const nearGreen=data.landmarks.some(p=>['parque_sao_luis','pedra_cordeiro'].includes(p.id)&&Math.hypot(player.x-p.p[0],player.y-p.p[1])<90);
+     const mato=data.areas.find(a=>a.tags?.leisure==='park'&&a.tags?.name==='Mato')?.p?.[0];
+     const byMato=mato?.length>=3&&(inside(player.x,player.y,mato)||mato.some((p,i)=>{
+      const q=mato[(i+1)%mato.length],dx=q[0]-p[0],dy=q[1]-p[1];
+      const t=Math.max(0,Math.min(1,((player.x-p[0])*dx+(player.y-p[1])*dy)/(dx*dx+dy*dy||1)));
+      return Math.hypot(player.x-p[0]-t*dx,player.y-p[1]-t*dy)<90;
+     }));
+     if(nearGreen||byMato){note(1180,0,.07,.007);note(1480,.11,.08,.006);}
+    }
+   }
+  }else ambientSoundSeconds=0;
   const watering=window.RoncadorAtmosphere.waterGarden(gardenStep,dt*2.5,skyMode,rainCare);
   rainCare=watering.accrued;
   if(watering.watered){gardenStep=3;notify('☂ O chuvisco cuidou da rega. Seu canteiro está pronto para colher!');note(659,0,.14);save();}
@@ -8715,8 +8737,11 @@ function move(dt,time){
      const skin=window.RoncadorKawaiiMoto.currentSkin(kawaiiState);
      spawnEmojiBurst(player.x-player.dir*9,player.y+2,skin.trail,1);
      if(sound)note(surf==='asphalt'?135:115+(Math.floor(time*10)%3)*12,0,.04);
-    }else if(sound&&keys.has('shift')){
-     note(surf==='asphalt'?110:88+hash(Math.floor(time*3))*22,0,.03);
+    }else if(sound){
+     if(surf==='sett'||surf==='paving_stones'){
+      note(148,0,.022,.008);note(162,.035,.022,.006);
+     }else if(['unpaved','dirt','ground'].includes(surf))note(96,0,.028,.009);
+     else note(124,0,.02,.007);
     }
    }
   }
