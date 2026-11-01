@@ -3494,7 +3494,7 @@ function observeRuaNovaPath(){
  return false;
 }
 function revisitedLandscapeLine(road,observedCount){
- const name=road?.d<35&&typeof road.s?.road?.tags?.name==='string'?road.s.road.tags.name.trim():'';
+ const name=road?.d<35&&typeof road.s?.road?.tags?.name==='string'?road.s.road.tags.name:'';
  const where=name?'Você observa '+name+' de novo.':'Você observa os caminhos de Belém de novo.';
  return where+(observedCount>=3?' As três paisagens já estão no diário; siga passeando no seu ritmo.':' Esta paisagem já está no diário; há outros caminhos para descobrir.');
 }
