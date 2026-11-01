@@ -14,6 +14,8 @@ test('os limites de conversa correspondem ao tipo de morador',()=>{
  assert.equal(canTalk({x:43,y:0}),false,'morador principal fora do limite');
  assert.equal(canTalk({x:43.5,y:0,secondary:true}),true,'Ciça/Nara dentro dos 44 m');
  assert.equal(canTalk({x:44,y:0,secondary:true}),false,'vizinho secundário fora do limite');
+ assert.equal(canTalk({x:53.5,y:0,ambient:true}),true,'passante com cumprimento curto dentro de 54 m');
+ assert.equal(canTalk({x:54,y:0,ambient:true}),false,'passante fora do limite');
  assert.equal(canTalk(null),false);
 });
 

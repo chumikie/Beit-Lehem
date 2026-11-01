@@ -67,7 +67,7 @@ let waterTalks=[];
 let camucaStories=[];
 let ambientHitTargets=[];
 let pathfinder=null,residentMotion=null,streetGreetings=null,guide={x:0,y:0},nearGuide=false,friendship=0,chapter=0,observations=new Set(),photos={};
-let nearCulture=null,cultureActiveId=null,cultureNotes={},gardenStep=0,gardenHarvests=0,scenicScenes=[],showScenery=true,festivalCelebrated=false,lightPhase='manha',showWildlife=true,wildlife=[],showGeology=false,geologyPoints=[],streetPaths=new Map(),nearResident=null,fairStalls=[];
+let nearCulture=null,cultureActiveId=null,cultureNotes={},gardenStep=0,gardenHarvests=0,scenicScenes=[],showScenery=true,festivalCelebrated=false,lightPhase='manha',showWildlife=true,wildlife=[],showGeology=false,geologyPoints=[],streetPaths=new Map(),nearResident=null,nearVisitor=null,fairStalls=[];
 let living=window.RoncadorLivingWorld.fresh();
 let fairQuest=window.RoncadorCozyQuests.fresh();
 let marketMorning=window.RoncadorMarketMorning.fresh();
@@ -242,8 +242,8 @@ function applyUserPublicPlaceCorrections(){
    (projection.originLat-place.geo[0])*projection.metersPerDegreeLat]:place.p;
   landmark.p=corrected.slice();
   landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
-  for(const point of (data.localPlaces||[])){
-   if(point.displayName===landmark.name&&
+  for(const point of data.points){
+   if(point.tags?.name===landmark.name&&
     Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
     point.p=corrected.slice();
    }
@@ -576,7 +576,7 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  if(street){c.strokeStyle='#a69b826b';c.lineWidth=pavementWidth+.7;c.stroke();}
  continue;
  }
- c.strokeStyle=materials[data.roadAppearance?.[r.id]?.surface||r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
+ c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
  if(z>=1.35&&!trail){
   // Residential streets have no repeated centre dashes; the softly shaded
   // curb edges carry the depth cue, without pretending to be road signage.
@@ -3494,7 +3494,7 @@ function observeRuaNovaPath(){
  return false;
 }
 function revisitedLandscapeLine(road,observedCount){
- const name=road?.d<35&&typeof road.s?.road?.tags?.name==='string'?road.s.road.tags.name:'';
+ const name=road?.d<35&&typeof road.s?.road?.tags?.name==='string'?road.s.road.tags.name.trim():'';
  const where=name?'Você observa '+name+' de novo.':'Você observa os caminhos de Belém de novo.';
  return where+(observedCount>=3?' As três paisagens já estão no diário; siga passeando no seu ritmo.':' Esta paisagem já está no diário; há outros caminhos para descobrir.');
 }
@@ -3521,12 +3521,34 @@ function cultureInteractionHint(culture,guide,resident,secondary,mission){
  return culture&&!guide&&!resident&&!secondary&&mission<0
   ?'Visitar '+culture.name+' (E). Para observar os arredores, use F ou o botão Observar.':'';
 }
+function closestReachableSpeaker(primary=residentsInStreets(),secondary=secondaryInStreets(primary)){
+ // A single contract for the visible button and the current E/touch action.
+ return primary.concat(secondary).reduce((best,p)=>{
+  const d=Math.hypot(player.x-p.x,player.y-p.y);
+  return speakerWithinReach(p)&&(!best||d<best.d)?{person:p,d}:best;
+ },null);
+}
+function closestReachableVisitor(){
+ return ambientHitTargets.reduce((best,p)=>{
+  const d=Math.hypot(player.x-p.x,player.y-p.y);
+  return speakerWithinReach({...p,ambient:true})&&(!best||d<best.d)?{person:p,d}:best;
+ },null);
+}
+function greetAmbientVisitor(visitor){
+ window.RoncadorCrowdFlow.greet(visitor.id,elapsed);
+ spawnEmojiBurst(visitor.x,visitor.y-18,['🌷','💛','✨'],4);
+ note(659,0,.10);
+ notify(window.RoncadorCrowdFlow.say(visitor,living)||'Oi, vizinhança! ♡');
+}
 function interactAction(){
  if(!active||anyDialog())return;
- if(nearGuide){talkGuide();return;}
- if(nearResident?.meeting){talkResident(nearResident.id);return;}
- if(nearResident){talkResident(nearResident.id);return;}
- if(nearSecondary){talkSecondary(nearSecondary.id);return;}
+ // Recheck at the instant of E/touch: walking at 67–105 units/s can cross
+ // 10–16 units between the UI's 150 ms snapshots.
+ const speaker=closestReachableSpeaker(),guideDistance=Math.hypot(player.x-guide.x,player.y-guide.y);
+ if(guideDistance<32&&(!speaker||guideDistance<=speaker.d)){talkGuide();return;}
+ if(speaker){if(speaker.person.secondary)talkSecondary(speaker.person.id);else talkResident(speaker.person.id);return;}
+ const visitor=closestReachableVisitor();
+ if(visitor){greetAmbientVisitor(visitor.person);return;}
  if(near>=0){collect();return;}
  if(nearCulture){showCulture(nearCulture.id);return;}
  collect();
@@ -3602,21 +3624,20 @@ function updateUI(){const count=collected.size;$('progressLabel').innerHTML=coun
  const residentSnapshot=residentsInStreets(),secondarySnapshot=secondaryInStreets(residentSnapshot);
  // Select the nearest available speaker across both casts. Otherwise a
  // primary resident can hide a closer neighbour's conversation button.
- const closestSpeaker=residentSnapshot.concat(secondarySnapshot).reduce((best,p)=>{
-  const d=Math.hypot(player.x-p.x,player.y-p.y);
-  return speakerWithinReach(p)&&(!best||d<best.d)?{person:p,d}:best;
- },null);
+ const closestSpeaker=closestReachableSpeaker(residentSnapshot,secondarySnapshot);
  nearResident=closestSpeaker&&!closestSpeaker.person.secondary?closestSpeaker.person:null;
  nearSecondary=closestSpeaker?.person.secondary?closestSpeaker.person:null;
+ nearVisitor=closestReachableVisitor()?.person||null;
  if(closestSpeaker&&closestSpeaker.d<guideDistance)nearGuide=false;
- $('interact').hidden=!active||(near<0&&!nearGuide&&!nearCulture&&!nearResident&&!nearSecondary)||anyDialog();
+ $('interact').hidden=!active||(near<0&&!nearGuide&&!nearCulture&&!nearResident&&!nearSecondary&&!nearVisitor)||anyDialog();
  if(nearGuide)$('interact').innerHTML='♥ Conversar com Lia <kbd>E</kbd>';
  else if(nearResident?.meeting)$('interact').innerHTML='♡ Participar da conversa <kbd>E</kbd>';
  else if(nearResident)$('interact').innerHTML='♥ Falar com '+nearResident.def.name+' <kbd>E</kbd>';
  else if(nearSecondary)$('interact').innerHTML='✿ Conversar com '+nearSecondary.def.name+' <kbd>E</kbd>';
+ else if(nearVisitor)$('interact').innerHTML='✿ Cumprimentar '+(nearVisitor.name||'vizinho')+' <kbd>E</kbd>';
  else if(near>=0)$('interact').innerHTML='✦ '+missions[near].title+' <kbd>E</kbd>';
  else if(nearCulture)$('interact').innerHTML='✿ Visitar '+nearCulture.name+' <kbd>E</kbd>';
- const visitHint=cultureInteractionHint(nearCulture,nearGuide,nearResident,nearSecondary,near);
+ const visitHint=cultureInteractionHint(nearCulture,nearGuide,nearResident,nearSecondary||nearVisitor,near);
  $('interact').title=visitHint;
  $('interact').setAttribute('aria-label',visitHint||$('interact').textContent.trim());
  $('observe').title=nearCulture?'Observar os arredores de '+nearCulture.name+' (F)':'Observar a paisagem (F)';
@@ -3626,7 +3647,7 @@ function collect(){if(!active||anyDialog())return;updateUI();if(near<0){notify('
 function speakerWithinReach(person){
  if(!person)return false;
  const distance=Math.hypot(player.x-person.x,player.y-person.y);
- if(distance>=(person.secondary?44:43))return false;
+ if(distance>=(person.ambient?54:person.secondary?44:43))return false;
  // Nearby people on disconnected street components must not converse across a block.
  const from=pathfinder?.nearest([player.x,player.y]),to=pathfinder?.nearest([person.x,person.y]);
  if(from?.component!=null&&to?.component!=null&&from.component!==to.component)return false;
@@ -4677,12 +4698,8 @@ function clickWorld(e){
  const visitor=ambientHitTargets.filter(p=>Math.abs(x-p.x)<17&&y>=p.y-40&&y<=p.y+12)
   .sort((a,b)=>Math.hypot(x-a.x,y-(a.y-18))-Math.hypot(x-b.x,y-(b.y-18)))[0];
  if(visitor){
-  if(Math.hypot(player.x-visitor.x,player.y-visitor.y)<54){
-   window.RoncadorCrowdFlow.greet(visitor.id,elapsed);
-   spawnEmojiBurst(visitor.x,visitor.y-18,['🌷','💛','✨'],4);
-   note(659,0,.10);
-   notify(window.RoncadorCrowdFlow.say(visitor,living)||'Oi, vizinhança! ♡');
-  }else setRoute(visitor.x,visitor.y,26);
+  if(speakerWithinReach({...visitor,ambient:true}))greetAmbientVisitor(visitor);
+  else setRoute(visitor.x,visitor.y,26);
   return;
  }
  if(near>=0&&Math.hypot(x-missions[near].p[0],y-missions[near].p[1])<28){collect();return;}

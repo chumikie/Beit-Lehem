@@ -29,10 +29,10 @@ test('missão, guia ou conversa têm prioridade e não recebem dica de visita',(
 });
 
 test('ajuda acessível reutiliza os botões existentes sem alterar ação ou save',()=>{
- assert.match(source,/const visitHint=cultureInteractionHint\(nearCulture,nearGuide,nearResident,nearSecondary,near\)/);
+ assert.match(source,/const visitHint=cultureInteractionHint\(nearCulture,nearGuide,nearResident,nearSecondary\|\|nearVisitor,near\)/);
  assert.match(source,/\$\('interact'\)\.setAttribute\('aria-label',visitHint\|\|\$\('interact'\)\.textContent\.trim\(\)\)/);
  assert.match(source,/\$\('observe'\)\.title=nearCulture\?'Observar os arredores de '/);
- assert.match(source,/if\(nearResident\)\{talkResident\(nearResident\.id\);return;\}/);
+ assert.match(source,/if\(speaker\)\{if\(speaker\.person\.secondary\)talkSecondary\(speaker\.person\.id\);else talkResident\(speaker\.person\.id\);return;\}/);
  assert.match(source,/if\(near>=0\)\{collect\(\);return;\}/);
  assert.match(source,/if\(nearCulture\)\{showCulture\(nearCulture\.id\);return;\}/);
 });
