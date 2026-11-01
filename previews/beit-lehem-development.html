@@ -5919,6 +5919,7 @@ function chooseConversationLayer(streetEvent,communityEvent,people,playerPositio
  };
  return distanceToEvent(streetEvent)<=distanceToEvent(communityEvent)?'street':'community';
 }
+let streetConversation=null;
 function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // Additional fictional passers-by use existing mapped road paths, not invented streets.
  const walkers=window.RoncadorCrowdFlow.plan(living,fairAtmosphere(),elapsed);
@@ -5968,6 +5969,7 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // Labels are a proximity aid, not a second layer of billboards over the town.
  const nameplates=layoutResidentNameplates(people.filter(person=>person.visibility>.5),player,zoom,matchMedia('(max-width:800px)').matches);
  for(const person of people){
+  if(streetConversation?.id===person.id&&performance.now()<streetConversation.until)person.streetSpeech=streetConversation.text;
   if(marketReaction?.id===person.id&&elapsed<marketReaction.until&&!person.social&&!person.meeting&&!person.travel){
    const age=elapsed-(marketReaction.until-5.5);
    if(age<2)person.social={pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,age/.3,(2-age)/.4)),react:true};
@@ -5998,6 +6000,18 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
    c.fillStyle='#a77868';c.font='8px system-ui';c.textAlign='center';c.fillText(label,person.x,person.y-45);c.restore();
   }};
   if(speechOverlays)speechOverlays.push(drawGreeting);else drawGreeting();
+  if(person.streetSpeech&&zoom>=1.25){
+   const drawTalk=()=>{
+    const remaining=Math.max(0,(streetConversation.until-performance.now())/6000);
+    if(!remaining)return;
+    const phrase=person.streetSpeech.length>80?person.streetSpeech.slice(0,77)+'…':person.streetSpeech;
+    c.save();c.globalAlpha*=Math.min(1,remaining*4);c.font='8px system-ui';
+    const width=Math.min(230,Math.max(60,c.measureText(phrase).width+16));
+    roundRect(c,person.x-width/2,person.y-76,width,22,7,'#fff8e9','#bba98b');
+    c.fillStyle='#645848';c.textAlign='center';c.textBaseline='middle';c.fillText(phrase,person.x,person.y-65,width-12);c.restore();
+   };
+   if(speechOverlays)speechOverlays.push(drawTalk);else drawTalk();
+  }
   if(zoom>=1.2&&person.id==='bia'&&person.activity&&(person.activity.includes('lendo')||person.activity.includes('estudando')||person.encounter?.id==='caderno-na-feira')){
    // A page-turning pocket notebook follows Bia's fictional routine along the
    // mapped streets; no reading spot or bench is added at invented coordinates.
@@ -7890,7 +7904,11 @@ function meetResident(id){
  const wasUnlocked=window.RoncadorNeighborhoodQuest.unlocked(living);
  const result=window.RoncadorLivingWorld.talk(living,id),def=window.RoncadorLivingWorld.RESIDENTS.find(p=>p.id===id);
  if(id==='damiao')recordFairQuest('damiao');
- $('lifeConversation').textContent=def.name+': “'+result.text+'”'+(result.newMemory?' ♥ Uma lembrança entrou no diário.':'');
+ const talkLine=def.name+': “'+result.text+'”';
+ $('lifeConversation').textContent=talkLine;
+ if(result.newMemory)$('lifeConversation').textContent+=' ♥ Uma lembrança entrou no diário.';
+ const streetPerson=residentsInStreets().find(person=>person.id===id);
+ if(streetPerson){streetPerson.streetSpeech=talkLine;streetConversation={id,text:talkLine,until:performance.now()+6000};}
  const weekStory=result.newMemory?window.RoncadorLivingWorld.lastWeekRoutine(living,id):'';
  if(weekStory){
   $('lifeConversation').textContent+=' ☀ '+weekStory;
@@ -7924,7 +7942,7 @@ function meetResident(id){
   $('lifeConversation').textContent+=' ♡ '+cityConsequence.text;
   if(cityConsequence.key&&!cityConsequences.includes(cityConsequence.key)){
    cityConsequences.push(cityConsequence.key);connectionChanged=true;
-   living.notes.unshift({day:living.day,text:cityConsequence.text.slice(0,160)});living.notes=living.notes.slice(0,12);
+   living.notes.unshift({day:living.day,text:cityConsequence.text.slice(0,160)});living.notes=living.notes.slice(0,24);
   }
  }
  const reported=cityReportCandidate(window.RoncadorStreetCommunity.EVENTS,living.day,id,communitySeen,cityReports);
@@ -7932,7 +7950,7 @@ function meetResident(id){
   const reportText='Você ouviu de '+def.name+' sobre '+reported.event.title+' no dia '+reported.day+'. Relato de uma rotina fictícia; você não presenciou esse encontro.';
   cityReports.unshift({id:reported.event.id,day:reported.day,from:id,source:'ouvido'});cityReports=cityReports.slice(0,20);
   $('lifeConversation').textContent+=' ✉️ '+def.name+' conta uma novidade de outro dia: “'+reported.event.summary+'” (Você soube por um relato, não presenciou.)';
-  living.notes.unshift({day:living.day,text:reportText.slice(0,160)});living.notes=living.notes.slice(0,12);
+  living.notes.unshift({day:living.day,text:reportText.slice(0,160)});living.notes=living.notes.slice(0,24);
   connectionChanged=true;
  }
  if(id==='lucia')$('lifeConversation').textContent+=' '+rememberedLandscapeLine(observations);
@@ -7985,6 +8003,10 @@ function meetResident(id){
   $('lifeConversation').textContent+=' 🏘️ '+EVERYDAY_STORIES[dailyStoryId].text;
   connectionChanged=true;
  }
+ // Keep the first spoken line distinct from optional memories and follow-ups.
+ const conversation=$('lifeConversation').textContent;
+ const tail=conversation.slice(talkLine.length).trim();
+ $('lifeConversation').textContent=talkLine+(tail?'\n\n✦ '+tail.replace(/\s+(?=[♥☀♡✿✉🌳🌷🎶🥖💧🏘])/gu,'\n\n✦ '):'');
  if(result.newMemory||connectionChanged){save();if(result.newMemory)note(659,0,.13);}
  if(!wasUnlocked&&window.RoncadorNeighborhoodQuest.unlocked(living))notify('♡ Nova lembrança! Uma roda de conversas já está no seu álbum.');
  return result;
