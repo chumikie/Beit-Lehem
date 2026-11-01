@@ -49,7 +49,7 @@
   const ground=front+faceH-1.1;
   // The foreground is clipped to the existing illustrative house envelope.
   // It is a painted setback cue, never a parcel, building or collision shape.
-  c.save();c.beginPath();c.rect(left+.8,front+1,width-1.6,Math.max(1,faceH-1.5));c.clip();
+  c.save();if(typeof c.rect==='function'&&typeof c.clip==='function'){c.beginPath();c.rect(left+.8,front+1,width-1.6,Math.max(1,faceH-1.5));c.clip();}
   const commercial=style.block==='feira'||style.block==='feliciano'||
     (style.block==='vicente'&&seed%4===0);
   if(commercial){
