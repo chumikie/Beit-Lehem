@@ -70,3 +70,18 @@ Uma busca adicional no histórico de colaboração recuperou os seguintes dados,
 - A referência doméstica ficcional continua sem número residencial explícito nas interfaces inspecionadas; não incluir endereço privado nos documentos de geografia.
 
 **A verificar visualmente:** proporção da Pedra, acesso e vegetação; estilo de parque de memória; mapa ampliado e zoom. Não declarar passeio até a Pedra como concluído até haver trilha válida.
+
+
+## Retificação — sinal Y dos pinos Pedra do Cordeiro e Parque São Luís (01/11/2026)
+
+A revisão da projeção no código ativo confirmou que as coordenadas anotadas no bloco “Validação de pinos públicos enviados pelo autor” acima estão com o **sinal de Y invertido**. O build usa `Y = (originLat - latitude) × metersPerDegreeLat`, e `gpsFor()` aplica a inversa `latitude = originLat - Y / metersPerDegreeLat`.
+
+Com a mesma origem e escala já presentes no mapa:
+- Pedra do Cordeiro: `[-1134.22, +192.80]`, não `[-1134.22, -192.80]`.
+- Parque São Luís: `[+1458.78, +1798.90]`, não `[+1458.78, -1798.90]`.
+
+A comparação com as 462 linhas viárias da geometria preservada resulta em:
+- Pedra: cerca de **650,5 m** até `way/542266676` na coordenada com Y positivo; a alternativa espelhada dá cerca de 802,4 m.
+- Parque: cerca de **339,4 m** até `way/710704449` na coordenada com Y positivo; a alternativa espelhada cai a cerca de 0,53 m de `way/264042894`.
+
+Assim, a afirmação anterior de que o Parque estaria a ~0,5 m de uma via é efeito do sinal invertido. **Não inverter a projeção, não mover as coordenadas dos pinos e não inferir entrada/acesso a partir da menor distância em linha reta.** A Pedra continua sem trilha pedonal confirmada e o Parque continua sem entrada pública verificada. Os valores antigos são mantidos acima apenas para rastreabilidade; esta retificação é a referência correta para a branch atual.

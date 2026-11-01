@@ -508,10 +508,11 @@ function drawRuralShrub(c,x,y,r,seed){
  }
  c.restore();
 }
+function streetFacingAngle(b){return (Number.isFinite(b.angle)?b.angle:0)+(b.side>0?Math.PI:0);}
 function house(c,b){
- // The lot and collision remain road-aligned; the cozy 3/4 illustration stays
- // upright on screen so doors and roofs never lie sideways at intersections.
- c.save();c.translate(b.x,b.y);
+ // Roof and frontage follow the road tangent; the frontage faces the road side.
+ // This changes only the Canvas transform, never the house's generated coordinates.
+ c.save();c.translate(b.x,b.y);c.rotate(streetFacingAngle(b));
  const x=-b.w/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
  // A distant neighborhood needs a roof silhouette, not hundreds of tiny
@@ -520,8 +521,9 @@ function house(c,b){
  const wallHeight=7+(b.seed%4),frontY=b.h*.13;
  // Keep the far roof colors opaque enough to remain recognizable as tiles.
  if(zoom<1.05)c.globalAlpha*=.82+.18*Math.max(0,(zoom-.65)/.4);
- // World-space ground shadow follows the screen's light direction, not lot rotation.
- c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();
+ // Keep the soft ground shadow screen-aligned while the building turns to the street.
+ c.save();c.rotate(-streetFacingAngle(b));
+ c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();c.restore();
  // Side boundary: low plaster wall or hedge softens the gaps between neighboring
  // illustrated homes. It never becomes a collision or mapped construction.
  if(!far){
@@ -578,25 +580,28 @@ function house(c,b){
  c.restore();
  c.restore();
  if(detailedFacades){
+  // The facade must face the source street, not the screen's fixed down direction.
+  // This transform is render-only: house coordinates, route graph and saves do not move.
+  c.save();c.translate(b.x,b.y);c.rotate(streetFacingAngle(b));c.translate(-b.x,-b.y);
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);
   window.RoncadorFacadeStudio.draw(c,b,lightPhase,living.minute,zoom);
+  c.restore();
  }
 }
 function houseVisualBounds(b){
- // Culling covers both the road-aligned collision lot and the screen-upright
- // illustration. Their orientations differ without changing the geography.
+ // Culling encloses the road-rotated roof and frontage without changing geography.
  const angle=b.angle||0,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
  const halfX=Math.max((b.w*cos+b.h*sin)/2,b.w/2)+9;
  const halfY=Math.max((b.w*sin+b.h*cos)/2,b.h/2)+9;
  return {left:b.x-halfX,right:b.x+halfX,top:b.y-halfY,bottom:b.y+halfY};
 }
 function houseGroundDepth(b){
- // A rotated lot enlarges culling bounds, but the house itself is drawn
- // screen-upright. Depth must follow the drawn frontage's contact with soil.
- return b.y+b.h*.13+7+(b.seed%4);
+ // The front contact edge rotates with the street and determines painter's order.
+ const frontDepth=b.h*.13+7+(b.seed%4);
+ return b.y+Math.sin(streetFacingAngle(b))*frontDepth;
 }
 function streetLabelBlocked(l,width,height,visibleHouses,people){
- // Test the actual oriented text rectangle against upright facade/actor boxes.
+ // Test the oriented text rectangle against rotated facade bounds and actors.
  // The former axis-aligned envelope rejected safe names on diagonal streets.
  const cos=Math.cos(l.angle),sin=Math.sin(l.angle),hw=width/2+1,hh=height/2+1;
  const overlaps=(cx,cy,rx,ry)=>{
@@ -609,8 +614,9 @@ function streetLabelBlocked(l,width,height,visibleHouses,people){
   return true;
  };
  if(visibleHouses.some(b=>{
-  const roofTop=b.y-b.h*.5-1,frontBottom=b.y+b.h*.13+11;
-  return overlaps(b.x,(roofTop+frontBottom)/2,b.w/2+1,(frontBottom-roofTop)/2);
+  const bounds=houseVisualBounds(b);
+  return overlaps((bounds.left+bounds.right)/2,(bounds.top+bounds.bottom)/2,
+   (bounds.right-bounds.left)/2,(bounds.bottom-bounds.top)/2);
  }))return true;
  return people.some(p=>overlaps(p.x,p.y-8,8,12));
 }

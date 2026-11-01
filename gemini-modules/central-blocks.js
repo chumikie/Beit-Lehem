@@ -10,38 +10,83 @@
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
   const BLOCKS = [
-    {id:'matriz',title:'Caminhos da Matriz',kind:'igreja',radius:128,detail:'Arcos, torre e contraste de pilastras vêm da fotografia da igreja em 2007; as casas vizinhas são inventadas.',source:'Foto histórica da igreja · 2007',reliability:'foto histórica do marco, não das casas'},
-    {id:'feira',title:'Entorno da Feira',kind:'mercado',radius:122,detail:'Toldos e cestos retomam uma fotografia da feira de 2007; tipos de bancas e portas atuais não foram cadastrados.',source:'Foto histórica da feira · 2007',reliability:'foto histórica da atividade, não das fachadas'},
-    {id:'joao',title:'Rua João Pessoa',kind:'street',radius:125,detail:'A orientação do trecho vem da via nomeada no OSM. Portas, telhas, grades, reboco e paleta são propostas artísticas.',source:'Traçado viário OpenStreetMap',reliability:'geometria viária apenas'},
-    {id:'clovis',title:'Rua Clóvis Bezerra (Casa sem numeração particular & Escola Anita)',kind:'homeVaranda',radius:340,detail:'Corredor residencial completo da Rua Clóvis Bezerra e travessas (Antônio Borges de Lima, Antônio Alfredo Guedes e Nunes Guedes), com calçadas de paralelepípedo, cadeiras ao entardecer, porta de garagem prateada (sem número residencial), igreja encostada ao sem número residencial e EMEF Anita Barbosa.',source:'Traçado OSM + Memória Afetiva de Belém/PB',reliability:'via real OSM + detalhes afetivos'},
-    {id:'feliciano',title:'Eixo Rua Feliciano Pedrosa (Sonho Doce)',kind:'bakery',radius:125,detail:'Avenida principal asfaltada cortando o Centro, com marquises comerciais, vitrines da Confeitaria Sonho Doce (nº 1401) e movimento urbano.',source:'Traçado viário OpenStreetMap',reliability:'via principal OSM + referências comerciais'},
-    {id:'vicente',title:'Rua Vicente Cado (Bar da Prosa & Centro)',kind:'bar',radius:130,detail:'Trecho boêmio e histórico ligando a Igreja da Conceição ao Bar da Prosa (nº 354), com mesinhas amarelas na calçada, espetinhos e subida para o Bairro da Luz.',source:'Traçado viário OpenStreetMap',reliability:'via real OSM + ponto cultural'}
+    {id:'matriz',title:'Caminhos da Matriz',kind:'igreja',reference:{type:'landmark',id:'igreja'},radius:128,detail:'O ponto OSM localiza a referência da igreja. A foto histórica de 2007 orienta apenas o cartão arquitetônico do templo; o casario vizinho é interpretação.',source:'Ponto OSM + fotografia histórica da igreja · 2007',reliability:'marco documentado; fachadas vizinhas fictícias'},
+    {id:'feira',title:'Entorno da Feira',kind:'mercado',reference:{type:'landmark',id:'mercado'},radius:122,detail:'A feira livre é patrimônio cultural imaterial municipal (Lei 475/2019), tradicionalmente às segundas. A fotografia de 2007 inspira o conjunto; bancas e lotes atuais não estão cadastrados.',source:'Ponto OSM + Lei 475/2019 + fotografia histórica · 2007',reliability:'atividade documentada; bancas atuais ilustrativas'},
+    {id:'joao',title:'Rua João Pessoa',kind:'street',reference:{type:'road',names:['Rua João Pessoa'],corridorHalfWidth:38},detail:'A área de estudo acompanha literalmente a via OSM. O extrato não descreve fachadas ou lotes individuais; portas, telhas, grades e paleta são propostas visuais.',source:'Geometria e nome OSM',reliability:'eixo viário confirmado; arquitetura interpretativa'},
+    {id:'clovis',title:'Rua Clovis Bezerra · corredor residencial',kind:'homeVaranda',reference:{type:'road',names:['Rua Clovis Bezerra','Rua Antônio Borges de Lima','Rua Antônio Alfredo Guedes'],corridorHalfWidth:46},detail:'O corredor visual acompanha os três nomes OSM exatamente como registrados. Cadeiras, portões e garagem prateada vêm da memória local e são cenas ficcionais; o extrato não cadastra lotes, edifícios ou calçadas. “Rua Nunes” não é fundida a “Nunes Guedes”.',source:'Geometria OSM + memória afetiva do autor',reliability:'vias confirmadas; detalhes residenciais interpretativos'},
+    {id:'feliciano',title:'Rua Feliciano Pedrosa · eixo comercial',kind:'bakery',reference:{type:'road',names:['Rua Feliciano Pedrosa'],corridorHalfWidth:48},detail:'Sete trechos OSM somam cerca de 3,24 km e trazem highway=primary e surface=asphalt. Marquises, vitrines e toldos são tipologias artísticas; endereços/listagens não definem lotes ou entradas. Sonho Doce é nome ficcional sem posição comercial confirmada.',source:'Geometria OSM (7 trechos; asphalt) + estudo comercial',reliability:'eixo e superfície documentados; fachadas e lojas interpretativas'},
+    {id:'vicente',title:'Rua Vicente Cado · referência de bairro',kind:'bar',reference:{type:'road',names:['Rua Vicente Cado'],corridorHalfWidth:42},detail:'A tipologia segue a via OSM pavimentada. Bar da Prosa é uma referência ficcional inspirada na memória do autor; mesas amarelas, espetinhos e luzes não comprovam um lote ou uma fachada real.',source:'Geometria OSM + memória afetiva do autor',reliability:'via confirmada; estabelecimento e acabamento ficcionais'}
   ];
-  function streetAnchor(data) {
-    const roads=data.roads.filter(r=>r.tags?.name==='Rua João Pessoa');
-    const points=roads.flatMap(r=>r.p).filter(p=>Math.hypot(p[0]-data.start[0],p[1]-data.start[1])<370);
-    const market=data.landmarks.find(l=>l.id==='mercado')?.p||data.start;
-    const church=data.landmarks.find(l=>l.id==='igreja')?.p||data.start;
-    if(!points.length)return [...data.start];
-    return [...points].sort((a,b)=>score(b)-score(a))[0].slice();
-    function score(p){return Math.min(Math.hypot(p[0]-market[0],p[1]-market[1]),Math.hypot(p[0]-church[0],p[1]-church[1]))-Math.hypot(p[0]-data.start[0],p[1]-data.start[1])*.08;}
+
+  function lineLength(road){
+    let total=0;
+    for(let i=1;i<road.p.length;i++)total+=Math.hypot(road.p[i][0]-road.p[i-1][0],road.p[i][1]-road.p[i-1][1]);
+    return total;
   }
-  function prepare(data,houses) {
-    const anchors={matriz:data.landmarks.find(l=>l.id==='igreja')?.p,feira:data.landmarks.find(l=>l.id==='mercado')?.p,joao:streetAnchor(data),clovis:[180,430],feliciano:data.landmarks.find(l=>l.id==='sonho_doce')?.p||[140.85,-45.07],vicente:data.landmarks.find(l=>l.id==='bar_prosa')?.p||[29.35,-249.25]};
-    const blocks=BLOCKS.map(b=>({...b,at:anchors[b.id]?[...anchors[b.id]]:null,count:0}));
+  function pointAtHalfLength(road,total){
+    let remaining=total/2;
+    for(let i=1;i<road.p.length;i++){
+      const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);
+      if(length<=0)continue;
+      if(remaining<=length)return[a[0]+dx*(remaining/length),a[1]+dy*(remaining/length)];
+      remaining-=length;
+    }
+    return road.p.at(-1).slice();
+  }
+  function midpointOnNamedRoad(data,names){
+    const roads=data.roads.filter(road=>names.includes(road.tags?.name)&&Array.isArray(road.p)&&road.p.length>=2)
+      .map(road=>({road,length:lineLength(road)}))
+      .filter(item=>item.length>0)
+      .sort((a,b)=>b.length-a.length||String(a.road.id).localeCompare(String(b.road.id)));
+    if(!roads.length)return null;
+    const best=roads[0];
+    return{p:pointAtHalfLength(best.road,best.length),roadName:best.road.tags.name,roadId:best.road.id,length:best.length};
+  }
+  function distanceToRoadLines(x,y,roads){
+    let nearest=Infinity;
+    for(const road of roads||[])for(let i=1;i<road.p.length;i++){
+      const a=road.p[i-1],b=road.p[i],dx=b[0]-a[0],dy=b[1]-a[1],length2=dx*dx+dy*dy;
+      if(length2<=0)continue;
+      const t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/length2));
+      nearest=Math.min(nearest,Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy));
+    }
+    return nearest;
+  }
+  function distanceToNamedRoad(x,y,data,names){
+    return distanceToRoadLines(x,y,data.roads.filter(road=>names.includes(road.tags?.name)));
+  }
+  function streetAnchor(data){
+    return midpointOnNamedRoad(data,['Rua João Pessoa'])?.p||data.start.slice();
+  }
+  function prepare(data,houses){
+    const prepared=BLOCKS.map(definition=>{
+      const reference=definition.reference;
+      if(reference.type==='road'){
+        const roads=data.roads.filter(road=>reference.names.includes(road.tags?.name));
+        const midpoint=midpointOnNamedRoad(data,reference.names);
+        return{block:{...definition,at:midpoint?.p.slice()||null,count:0},roads};
+      }
+      const landmark=data.landmarks.find(item=>item.id===reference.id);
+      return{block:{...definition,at:landmark?.p?.slice()||null,count:0},roads:null};
+    });
     for(const house of houses){
       let best=null;
-      for(const block of blocks){
+      for(const item of prepared){
+        const block=item.block;
         if(!block.at)continue;
-        const distance=Math.hypot(house.x-block.at[0],house.y-block.at[1]);
-        if(distance>block.radius)continue;
-        const normalized=distance/block.radius;
+        const roadBased=block.reference.type==='road';
+        const limit=roadBased?block.reference.corridorHalfWidth:block.radius;
+        const distance=roadBased
+          ?distanceToRoadLines(house.x,house.y,item.roads)
+          :Math.hypot(house.x-block.at[0],house.y-block.at[1]);
+        if(distance>limit)continue;
+        const normalized=distance/limit;
         if(!best||normalized<best.distance)best={block,distance:normalized};
       }
       house.centralBlock=best?.block.id||null;
       if(best)best.block.count++;
     }
-    return blocks;
+    return prepared.map(item=>item.block);
   }
   const colors={
     matriz:['#f4e8d5','#e0dec8','#f4dfce','#dae3d5'],
@@ -54,8 +99,8 @@
   function draw(c,home,phase='manha') {
     if(!home.centralBlock)return;
     const block=home.centralBlock,seed=home.seed||0,wall=colors[block][seed%4];
-    // Architectural details follow the upright illustrated facade, not the
-    // rotated lot used for collision and routing.
+    // The caller applies the same street-facing transform to roof and facade.
+    // Details remain interpretive and stay within the existing illustrative footprint.
     c.save();c.translate(home.x,home.y);
     const left=-home.w/2,top=-home.h/2,base=top+home.h*.63;
     // The visible strip faces its generative street, but it is not a real facade.
@@ -140,6 +185,6 @@
     }
     c.restore();
   }
-  return {BLOCKS,streetAnchor,prepare,draw};
+  return {BLOCKS,streetAnchor,midpointOnNamedRoad,distanceToNamedRoad,prepare,draw};
 });
 
