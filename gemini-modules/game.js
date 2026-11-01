@@ -1027,7 +1027,10 @@ function secondaryInStreets(primary=residentsInStreets()){
   }
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
-  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused,moment},elapsed,living.day);
+  // A scheduled rest must hold the feet as well as the walking animation.
+  // Travel, visits and community scenes retain their original priority.
+  const scheduledRest=!duty.walking&&!duty.travel&&!duty.meeting&&!duty.community&&!smallWalk;
+  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused||scheduledRest,moment},elapsed,living.day);
   // A congested corner fades a walker rather than dropping the resident
   // abruptly for one frame. Its scheduled route and coordinates are intact.
   person.crowded=!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19);

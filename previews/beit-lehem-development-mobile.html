@@ -3289,6 +3289,8 @@ Não substituir dist/, baseline/ ou saves por este arquivo.
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
  // Fictional weekly variations; never claims residents' real schedules.
  const WEEKLY_ROUTINES={
+  cica:{morning:['separa fitas para o passeio','confere as cores no caderno','dobra tecidos com calma'],afternoon:['observa as cores da feira','organiza as fitas que levou','descansa e escolhe uma combinação de tons']},
+  nara:{morning:['esboça uma janela no caderno','observa a luz sobre as fachadas','compara desenhos de portas'],afternoon:['repassa os traços que guardou','descansa e observa as sombras','imagina novas formas para o caderno']},
   rosa:{morning:['observa o movimento e anota uma história','organiza seu caderninho de conversas','cumprimenta quem passa sem pressa'],afternoon:['faz uma pausa e relembra uma visita','procura uma frase bonita para guardar','descansa e troca notícias com conhecidos']},
   zeca:{morning:['confere as folhas de um vaso ilustrativo','observa a sombra sobre as plantas','separa ideias para cuidar de uma muda'],afternoon:['descansa e conta histórias de jardins','repara nas plantas ao longo do caminho','conversa sobre os cuidados do quintal']},
   mila:{morning:['experimenta cores no caderno','desenha formas de portas e janelas','separa ideias de fitas e tecidos'],afternoon:['observa padrões nas fachadas','compara cores de pequenos desenhos','imagina uma estampa para as amigas']}
@@ -5605,7 +5607,10 @@ function secondaryInStreets(primary=residentsInStreets()){
   }
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
-  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused,moment},elapsed,living.day);
+  // A scheduled rest must hold the feet as well as the walking animation.
+  // Travel, visits and community scenes retain their original priority.
+  const scheduledRest=!duty.walking&&!duty.travel&&!duty.meeting&&!duty.community&&!smallWalk;
+  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused||scheduledRest,moment},elapsed,living.day);
   // A congested corner fades a walker rather than dropping the resident
   // abruptly for one frame. Its scheduled route and coordinates are intact.
   person.crowded=!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19);

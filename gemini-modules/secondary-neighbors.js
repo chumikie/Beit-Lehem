@@ -93,6 +93,8 @@
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
  // Fictional weekly variations; never claims residents' real schedules.
  const WEEKLY_ROUTINES={
+  cica:{morning:['separa fitas para o passeio','confere as cores no caderno','dobra tecidos com calma'],afternoon:['observa as cores da feira','organiza as fitas que levou','descansa e escolhe uma combinação de tons']},
+  nara:{morning:['esboça uma janela no caderno','observa a luz sobre as fachadas','compara desenhos de portas'],afternoon:['repassa os traços que guardou','descansa e observa as sombras','imagina novas formas para o caderno']},
   rosa:{morning:['observa o movimento e anota uma história','organiza seu caderninho de conversas','cumprimenta quem passa sem pressa'],afternoon:['faz uma pausa e relembra uma visita','procura uma frase bonita para guardar','descansa e troca notícias com conhecidos']},
   zeca:{morning:['confere as folhas de um vaso ilustrativo','observa a sombra sobre as plantas','separa ideias para cuidar de uma muda'],afternoon:['descansa e conta histórias de jardins','repara nas plantas ao longo do caminho','conversa sobre os cuidados do quintal']},
   mila:{morning:['experimenta cores no caderno','desenha formas de portas e janelas','separa ideias de fitas e tecidos'],afternoon:['observa padrões nas fachadas','compara cores de pequenos desenhos','imagina uma estampa para as amigas']}
