@@ -3114,15 +3114,16 @@ function observeWorldMoment(){
  const id=worldMomentAt(data,player);if(!id)return false;
  const moment=WORLD_MOMENTS[id];
  if(kawaiiState?.riding){notify('Desça da motinha para observar com calma.');return true;}
+ const dailyContext=id==='mato'?'':cultureDailyActivity(id,living,window.RoncadorLivingWorld,window.RoncadorSecondaryNeighbors)||'';
  beginWorldPause(id);
  if(worldMoments.some(record=>record.id===id)){
   if(recordStreetVignette(id))return true;
   if(recordSeasonalMoment(id))return true;
-  notify(moment.icon+' Você revisita '+moment.title.toLowerCase()+'. Respire e aprecie a paisagem.');return true;
+  notify(moment.icon+' Você revisita '+moment.title.toLowerCase()+'. Respire e aprecie a paisagem.'+(dailyContext?' '+dailyContext:''));return true;
  }
  worldMoments.push({id,day:living.day});
  living.notes.unshift({day:living.day,text:'Pausa contemplativa: '+moment.story.slice(0,138)});living.notes=living.notes.slice(0,24);
- save();note(523,0,.13);notify(moment.icon+' '+moment.title+' · um instante para respirar. Lembrança guardada sem recompensa.');return true;
+ save();note(523,0,.13);notify(moment.icon+' '+moment.title+' · um instante para respirar. Lembrança guardada sem recompensa.'+(dailyContext?' '+dailyContext:''));return true;
 }
 function camucaHas(stage){return camucaStories.some(r=>r.stage===stage);}
 function restoreCamucaStories(raw,day){
