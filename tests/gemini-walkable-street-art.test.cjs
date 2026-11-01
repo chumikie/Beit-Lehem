@@ -20,12 +20,12 @@ test('calçada clara e meio-fio são apenas traços Canvas nas vias urbanas',()=
  assert.match(roads,/path\(c,r\.p\)/);
 });
 
-test('placas próximas ficam ao lado do asfalto; mapa distante conserva nomes de rua',()=>{
+test('nomes das ruas permanecem sem placas opacas que ocultam casas e pessoas',()=>{
  const streets=section('// Low-key real street labels.', 'if(waypoint)');
- assert.match(streets,/if\(zoom>=1\.8\)/);
- assert.match(streets,/ctx\.translate\(0,9\)/);
- assert.match(streets,/roundRect\(ctx,-width\/2,-6\.5,width,13,3,'#fbf4e2d8','#536c50'\)/);
+ assert.doesNotMatch(streets,/roundRect\(ctx/);
+ assert.match(streets,/Math\.min\(6,Math\.max\(3\.4,9\/zoom\)\)/);
  assert.match(streets,/ctx\.strokeText\(l\.name,0,0\)/);
+ assert.match(streets,/ctx\.fillText\(l\.name,0,0\)/);
 });
 
 test('marco de madeira mantém o mesmo ponto de missão e o minimapa original',()=>{

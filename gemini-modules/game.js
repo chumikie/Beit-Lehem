@@ -409,7 +409,11 @@ function house(c,b){
  c.save();c.translate(b.x,b.y);
  const x=-b.w/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
+ // A distant neighborhood needs a roof silhouette, not hundreds of tiny
+ // doors/windows. Fade the frontage in progressively as the camera approaches.
+ const frontageDetail=Math.max(0,Math.min(1,(zoom-.85)/.4));
  const wallHeight=7+(b.seed%4),frontY=b.h*.13;
+ if(zoom<1.05)c.globalAlpha*=.72+.28*Math.max(0,(zoom-.65)/.4);
  // World-space ground shadow follows the screen's light direction, not lot rotation.
  c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();
  // Side boundary: low plaster wall or hedge softens the gaps between neighboring
@@ -436,6 +440,8 @@ function house(c,b){
   }
   c.strokeStyle='#fff3d18f';c.lineWidth=.85;c.beginPath();c.moveTo(x,roofY+1);c.lineTo(x+b.w,roofY+1);c.stroke();
  }
+ if(frontageDetail===0){c.restore();return;}
+ c.save();c.globalAlpha*=frontageDetail;
  // A 7–10 unit street-facing wall gives the homes a readable 3/4 volume.
  const walls=['#f2e6cb','#e9dfc7','#e7d8bd','#f3e7d3'];
  roundRect(c,x,frontY,b.w,wallHeight,1,walls[b.seed%walls.length],'#ad9e85');
@@ -463,6 +469,7 @@ function house(c,b){
   c.fillStyle='#67977b';c.beginPath();c.ellipse(x+b.w+2.5,frontY+wallHeight-3,2.8,2.2,-.3,0,Math.PI*2);c.fill();
   if(b.seed%11===0){c.fillStyle='#bc9274';c.fillRect(x-4,frontY+wallHeight-2,2.6,2.5);c.fillStyle='#84a17f';c.beginPath();c.arc(x-2.7,frontY+wallHeight-3,2.2,0,Math.PI*2);c.fill();}
  }
+ c.restore();
  c.restore();
  if(detailedFacades){
   window.RoncadorCentralBlocks.draw(c,b,lightPhase);
@@ -1910,14 +1917,11 @@ function render(time){
  drawGeology(ctx,{left,right,top,bottom});
  // Low-key real street labels.
  ctx.textAlign='center';ctx.textBaseline='middle';for(const l of labels){if(l.x<left||l.x>right||l.y<top||l.y>bottom)continue;ctx.save();ctx.translate(l.x,l.y);let angle=l.angle;if(angle>Math.PI/2)angle-=Math.PI;if(angle<-Math.PI/2)angle+=Math.PI;ctx.rotate(angle);
-  if(zoom>=1.8){
-   ctx.translate(0,9);ctx.font='600 6.3px system-ui';
-   const width=ctx.measureText(l.name).width+9;
-   roundRect(ctx,-width/2,-6.5,width,13,3,'#fbf4e2d8','#536c50');
-   ctx.fillStyle='#435d46';ctx.fillText(l.name,0,.3);
-  }else{
-   ctx.font=`500 ${Math.max(5,9/zoom)}px system-ui`;ctx.lineWidth=2/zoom;ctx.strokeStyle='#e5ddbd';ctx.strokeText(l.name,0,0);ctx.fillStyle='#7e8261';ctx.fillText(l.name,0,0);
-  }
+  // Quiet cartographic lettering avoids opaque, rotated nameplates covering
+  // the newly upright facades or nearby walkers at high zoom.
+  ctx.font=`500 ${Math.min(6,Math.max(3.4,9/zoom))}px system-ui`;
+  ctx.lineWidth=1.6/zoom;ctx.strokeStyle='#eee5ca';ctx.globalAlpha=.75;
+  ctx.strokeText(l.name,0,0);ctx.fillStyle='#6d755a';ctx.fillText(l.name,0,0);
   ctx.restore();}
  if(waypoint){const route=[{x:player.x,y:player.y},...waypoint.points.slice(waypoint.index)];ctx.strokeStyle='#f8f1cbbe';ctx.lineWidth=5/zoom;path(ctx,route.map(p=>[p.x,p.y]));ctx.stroke();ctx.strokeStyle='#487a5bc8';ctx.lineWidth=2.5/zoom;ctx.setLineDash([6/zoom,4/zoom]);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#426d4b';ctx.lineWidth=2/zoom;ctx.beginPath();ctx.arc(waypoint.x,waypoint.y,5,0,Math.PI*2);ctx.stroke();}
  // One depth queue: the base of each object determines what may cover it.
