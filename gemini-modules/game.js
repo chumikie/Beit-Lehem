@@ -3,6 +3,34 @@
 (()=>{
 const $=id=>document.getElementById(id),canvas=$('world'),ctx=canvas.getContext('2d'),mini=$('minimap'),mc=mini.getContext('2d'),big=$('bigmap'),bc=big.getContext('2d');
 const STORE='roncador-expedition-v2-referencias-gemini',keys=new Set(),touches=new Map(),reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function setupMobileWalkingHud(){
+ const panel=mini.closest('.mini-wrap');if(!panel)return;
+ const toggle=document.createElement('button');toggle.type='button';toggle.className='mini-toggle';
+ toggle.setAttribute('aria-controls','minimap');
+ const update=()=>{
+  const expanded=!panel.classList.contains('is-collapsed');
+  toggle.setAttribute('aria-expanded',String(expanded));
+  toggle.setAttribute('aria-label',expanded?'Recolher minimapa':'Mostrar minimapa');
+  toggle.textContent=expanded?'−':'⌖';
+ };
+ toggle.onclick=()=>{panel.classList.toggle('is-collapsed');update();};
+ panel.append(toggle);update();
+ const style=document.createElement('style');style.textContent=`
+  .mini-toggle{display:none}
+  @media(max-width:800px){
+   .mini-wrap{transition:width .2s ease,padding .2s ease}
+   .mini-toggle{display:grid;place-items:center;position:absolute;right:5px;top:4px;width:32px;height:32px;border:1px solid #c9d4b9;border-radius:10px;background:#fffaf0;color:#476b53;font:700 20px system-ui;cursor:pointer;z-index:2}
+   .mini-title{padding-right:30px;min-height:27px;align-items:center}
+   .mini-title>span{display:none}
+   .mini-wrap.is-collapsed{width:52px;height:47px;padding:6px}
+   .mini-wrap.is-collapsed .mini-toggle{position:relative;top:auto;right:auto;width:38px;height:34px}
+   .mini-wrap.is-collapsed .mini-title,.mini-wrap.is-collapsed #minimap,.mini-wrap.is-collapsed .mini-footer{display:none}
+   .street-pulse.is-walking{padding:7px 10px;gap:2px}
+   .street-pulse.is-walking #streetResidentsHint,.street-pulse.is-walking #streetMomentHint{display:none}
+  }`;
+ document.head.append(style);
+}
+setupMobileWalkingHud();
 let data,roads=[],segments=[],houses=[],labels=[],areas=[],missions=[],player={x:0,y:0,dir:1,moving:false},camera={x:0,y:0},zoom=matchMedia('(max-width:800px)').matches?2.35:2.85,w=0,h=0,dpr=1,active=false,paused=false,collected=new Set(),target=0,elapsed=0,last=0,waypoint=null,near=-1,sound=false,audio=null,particles=[],toastTimer,fullMap=false,saveClock=0,uiClock=0,step=0,loaded=false,mapTransform=null,dragStart=null,marketDay=false;
 // Source-attributed polygons are inlined during the Gemini preview build.
 // This visual overlay never modifies the road graph or saved map source.
@@ -3336,6 +3364,16 @@ function lifeSummary(){
  $('sideProgress').textContent=sideNeighbors.seen.length+'/3 conhecidos';
  $('streetResidentsCount').textContent=number+' vizinhos pelas ruas';
  $('streetResidentsHint').textContent=community?community.icon+' '+community.title:encounter?encounter.icon+' '+encounter.title:number?out.concat(other).map(p=>p.def.name.replace('Seu ','').replace('Dona ','')).join(' · '):'Noite de descanso e boas lembranças';
+ const nearby=nearResident||nearSecondary;
+ const liveScene=community?.phase==='visit'?community:encounter?.phase==='visit'?encounter:null;
+ if(nearby){
+  $('streetResidentsCount').textContent='♡ '+nearby.def.name+' por perto';
+  $('streetResidentsHint').textContent='Um encontro na rua · veja as rotinas ↗';
+ }else if(liveScene){
+  $('streetResidentsCount').textContent='✿ Encontro acontecendo';
+  $('streetResidentsHint').textContent=liveScene.icon+' '+liveScene.title;
+ }
+ $('streetPulse').classList.toggle('is-walking',player.moving&&!nearby&&!liveScene);
  $('streetPulse').setAttribute('aria-label',number+' pessoas pela cidade. Abrir o caderno de rotinas fictícias.');
  for(const [id,tag] of [['damiao','castDamiao'],['lucia','castLucia'],['bia','castBia']]){
   const present=out.some(p=>p.id===id);
