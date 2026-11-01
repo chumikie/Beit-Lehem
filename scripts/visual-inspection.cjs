@@ -189,6 +189,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     };
   });
   assert.ok(mapDialog.opened, name + ': mapa da expedição precisa abrir');
+  let routeSelection = { selected: false, message: null };
   if (mapDialog.opened) {
     await page.screenshot({
       path: path.join(outputDir, name + '-map.png'),
@@ -197,7 +198,37 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     });
     assert.ok(mapDialog.canvas?.width > 240, name + ': mapa ampliado precisa ter largura útil');
     assert.ok(mapDialog.canvas?.height > 180, name + ': mapa ampliado precisa ter altura útil');
-    await page.locator('[data-close="mapDialog"]').click();
+
+    const mapCanvas = page.locator('#bigmap');
+    const mapBox = await mapCanvas.boundingBox();
+    assert.ok(mapBox, name + ': mapa ampliado precisa aceitar interação');
+    for (const target of [[0.64, 0.55], [0.42, 0.65], [0.72, 0.38]]) {
+      await mapCanvas.click({
+        position: { x: mapBox.width * target[0], y: mapBox.height * target[1] }
+      });
+      await page.waitForTimeout(260);
+      const routeState = await page.evaluate(() => ({
+        dialogOpen: !!document.querySelector('#mapDialog')?.open,
+        message: document.querySelector('#toast')?.textContent?.trim() || '',
+        distance: document.querySelector('#distance')?.textContent?.trim() || ''
+      }));
+      if (routeState.message.includes('Caminho marcado pelas ruas')) {
+        routeSelection = {
+          selected: true,
+          message: routeState.message,
+          distance: routeState.distance,
+          target
+        };
+        break;
+      }
+      if (!routeState.dialogOpen) {
+        if (await mapButton.isVisible().catch(() => false)) await mapButton.click();
+        else await page.keyboard.press('m');
+        await page.waitForTimeout(180);
+      }
+    }
+    assert.ok(routeSelection.selected,
+      name + ': selecionar um trecho do mapa deve marcar uma rota pelas ruas');
   }
 
   let movement = { controlVisible: false, localStorageKeys: [], saveVersion: null, saveMapSource: null };
@@ -251,7 +282,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     viewport, mobile, initial, gameplay, finalLayout,
     streetLabel: label,
     streetLabelIsCanonical: streetLabelValid,
-    mapDialog, movement
+    mapDialog, routeSelection, movement
   };
   report.viewports[name] = result;
 
