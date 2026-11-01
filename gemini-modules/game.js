@@ -1948,11 +1948,12 @@ function streetPetCrowdVisible(at,placed,zoom,screenWidth){
 function streetPetNameplateVisible(pet,zoom,compact=false){
  return !!pet.name&&(compact?!!pet.bolt&&zoom>2:pet.bolt?zoom>1.2:zoom>2.1);
 }
-function streetPetNameplateSlot(at,width,occupied,limit=Infinity){
+function streetPetNameplateSlot(at,width,occupied,limit=Infinity,compact=false){
  if(occupied.length>=limit)return null;
- // Try a few compact vertical lanes around a pet; hide the label if every
- // slot is already occupied rather than drawing overlapping name cards.
- for(const y of [-28,-42,-56]){
+ // Use higher existing label lanes on phones to clear the touch controls.
+ // Hide the label if every lane is occupied rather than covering another card.
+ const lanes=compact?[-40,-54,-68]:[-28,-42,-56];
+ for(const y of lanes){
   const rect={left:at.x-width/2-3,right:at.x+width/2+3,top:at.y+y-2,bottom:at.y+y+12};
   const overlaps=occupied.some(other=>rect.left<other.right&&rect.right>other.left&&
    rect.top<other.bottom&&rect.bottom>other.top);
@@ -2105,7 +2106,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   if(!streetPetCrowdVisible(visualCenter,drawnPetCenters,zoom,w))continue;
   const labelWidth=pet.name?Math.max(24,pet.name.length*4.6+8):0;
   const labelY=streetPetNameplateVisible(pet,zoom,compactViewport)
-   ? streetPetNameplateSlot(visualCenter,labelWidth,occupiedNameplates,compactViewport?1:3)
+   ? streetPetNameplateSlot(visualCenter,labelWidth,occupiedNameplates,compactViewport?1:3,compactViewport)
    : null;
   const drawPet=()=>{
   // Character-specific rhythm, without changing street positions or save data.

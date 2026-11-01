@@ -121,7 +121,7 @@ Próximo passo: avaliar os sprites ainda próximos no corredor central em zoom a
 
 - A correção principal atua em `streetPetCrowdVisible`, filtro de desenho já existente: o intervalo mínimo passa a 88 px em telas compactas e 56 px em desktop, sempre convertido pelo zoom. O filtro apenas evita desenhar silhuetas que se encostam; não cria animais, não altera rotas nem desloca pontos.
 
-- A legibilidade das placas reaproveita `streetPetNameplateVisible` e `streetPetNameplateSlot`, sem um seletor adicional. O slot existente mantém no máximo três placas no desktop e uma em telas compactas; a ordem original dos candidatos preserva a prioridade de Bolt.
+- A legibilidade das placas reaproveita `streetPetNameplateVisible` e `streetPetNameplateSlot`, sem um seletor adicional. O slot existente mantém no máximo três placas no desktop e uma em telas compactas; a ordem original dos candidatos preserva a prioridade de Bolt. No mobile, ele usa as faixas superiores já existentes da mesma função para afastar a placa do direcional tátil.
 
 - O cartão “Cidade viva” continua sendo o componente existente. No mobile, sua tipografia e largura são ajustadas, a descrição continua disponível quando o jogador está parado e a ocultação durante a caminhada permanece sob a regra original. Somente os avatares decorativos redundantes são ocultados nesse enquadramento.
 

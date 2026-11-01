@@ -132,8 +132,9 @@ test('C15.6: o limite das placas reaproveita o slot de colisão existente',()=>{
   'a quarta placa não deve disputar o mesmo enquadramento desktop');
  assert.equal(occupied.length,3);
  const compact=[];
- assert.notEqual(helpers.streetPetNameplateSlot(wide[0],40,compact,1),null);
- assert.equal(helpers.streetPetNameplateSlot(wide[1],40,compact,1),null,
+ assert.equal(helpers.streetPetNameplateSlot(wide[0],40,compact,1,true),-40,
+  'a placa móvel usa a faixa mais alta para não ficar sob o direcional');
+ assert.equal(helpers.streetPetNameplateSlot(wide[1],40,compact,1,true),null,
   'o slot compacto conserva apenas a identificação prioritária já existente');
 });
 test('C15.7: o cartão de destino existente não corta o título em telas de 320 px',()=>{
