@@ -62,7 +62,7 @@ async function collectLayout(page, label) {
   return page.evaluate(({ label }) => {
     const selectors = [
       '#world', '.topbar', '.layout', '.game', '#sidebar', '#welcome',
-      '#touchPad', '#mobileRoute', '.mini-wrap', '#destination',
+      '#touchPad', '#mobileRoute', '.mini-wrap', '#destination', '#location',
       '#mapButton', '#start', '#mapDialog', '#bigmap'
     ];
     const rects = Object.fromEntries(selectors.map(selector => {
@@ -99,6 +99,10 @@ async function collectLayout(page, label) {
     return {
       label, rects, overflow, canvasInk,
       locationLabel: document.querySelector('#location')?.textContent?.trim() || null,
+      locationLabelClipped: (() => {
+        const element = document.querySelector('#location');
+        return !!element && element.scrollWidth > element.clientWidth + 1;
+      })(),
       welcomeVisible: (() => {
         const element = document.querySelector('#welcome');
         const style = element && getComputedStyle(element);
@@ -254,6 +258,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   assert.ok(gameplay.rects['#world']?.visible, name + ': canvas do jogo precisa estar visível');
   assert.ok(gameplay.canvasInk > 0, name + ': canvas precisa conter desenho');
   assert.ok(streetLabelValid, name + ': rótulo de rua não corresponde a nome OSM');
+  assert.equal(gameplay.locationLabelClipped, false, name + ': o nome completo da rua não pode ficar truncado');
   if (mobile) {
     assert.ok(movement.controlVisible, 'controles táteis precisam estar visíveis no celular');
   }
