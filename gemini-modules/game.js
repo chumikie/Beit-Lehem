@@ -1864,18 +1864,32 @@ function streetPetVisualOffset(at,people){
  return {x:best?nearest.dx/length*amount:amount,y:best?nearest.dy/length*amount:0};
 }
 function streetPetGroupOffset(pet,at,companions,people){
- // Keep all thirteen mapped walks unchanged; only separate tightly packed sprites.
- // A smooth fade avoids sudden sideways jumps at the edge of a meeting.
+ // Only sprite drawing is offset; route coordinates and saved positions never change.
+ // A wider bounded spiral separates animals who stop together on a narrow street.
  const nearest=companions.reduce((best,other)=>{
   if(other.id===pet.id||!other.at)return best;
   return Math.min(best,Math.hypot(other.at.x-at.x,other.at.y-at.y));
  },Infinity);
- const strength=Math.max(0,Math.min(1,(14-nearest)/9))*4;
+ const strength=Math.max(0,Math.min(1,(20-nearest)/13))*9;
  const angle=pet.variant*2.399963229728653;
  const person=streetPetVisualOffset(at,people);
  const x=person.x+Math.cos(angle)*strength,y=person.y+Math.sin(angle)*strength;
  const distance=Math.hypot(x,y);
- return distance>4?{x:x*4/distance,y:y*4/distance}:{x,y};
+ return distance>9?{x:x*9/distance,y:y*9/distance}:{x,y};
+}
+function streetPetNameplateVisible(pet,zoom){
+ return !!pet.name&&(pet.bolt?zoom>1.2:zoom>2.1);
+}
+function streetPetNameplateSlot(at,width,occupied){
+ // Try a few compact vertical lanes around a pet; hide the label if every
+ // slot is already occupied rather than drawing overlapping name cards.
+ for(const y of [-28,-42,-56]){
+  const rect={left:at.x-width/2-3,right:at.x+width/2+3,top:at.y+y-2,bottom:at.y+y+12};
+  const overlaps=occupied.some(other=>rect.left<other.right&&rect.right>other.left&&
+   rect.top<other.bottom&&rect.bottom>other.top);
+  if(!overlaps){occupied.push(rect);return y;}
+ }
+ return null;
 }
 function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
  // Compact side-on silhouettes; paws touch the same ground line for every coat.
@@ -2009,19 +2023,24 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   {id:'princesa',name:'Princesa',hub:'inicio',variant:18,cat:false,coat:'princesa'}];
  const daylight=living.minute>=7*60&&living.minute<20*60;
  const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
-  for(const [index,pet] of candidates.entries()){
+ const occupiedNameplates=[];
+ for(const [index,pet] of candidates.entries()){
   if(!daylight&&pet.variant!==7)continue;
   const at=companions[index].at;if(!at)continue;
   const greenRest=pet.bolt&&boltRestingByGreen(at),behavior=streetPetBehavior(pet,at,living.minute,skyMode,player,people);
   const gesture=streetPetGesture(pet,at,companions,living.minute,skyMode,player);
   if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
+  const spriteOffset=streetPetGroupOffset(pet,at,companions,people);
+  const labelWidth=pet.name?Math.max(24,pet.name.length*4.6+8):0;
+  const labelY=streetPetNameplateVisible(pet,zoom)
+   ? streetPetNameplateSlot({x:at.x+spriteOffset.x,y:at.y+spriteOffset.y},labelWidth,occupiedNameplates)
+   : null;
   const drawPet=()=>{
   // Character-specific rhythm, without changing street positions or save data.
   const energy=gesture==='greet'?2.1:gesture==='play'?1.5:pet.coat==='jekki'?1.9:pet.coat==='bethowen'?1.25:pet.coat==='mimi'?1.35:pet.coat==='artemis'?1.15:
    pet.coat==='goku'?.65:pet.coat==='princesa'?.85:pet.coat==='bob'?.4:pet.coat==='hani'?.35:pet.coat==='catito'?.45:1;
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)*energy+pet.variant)*behavior.bounce*energy;
-   const offset=streetPetGroupOffset(pet,at,companions,people);
-   c.save();c.translate(at.x+offset.x,at.y+offset.y);
+   c.save();c.translate(at.x+spriteOffset.x,at.y+spriteOffset.y);
   c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
   // Ground contact stays fixed while the animal's body bobs or reacts.
   c.translate(0,bounce);
@@ -2037,8 +2056,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
    // Bolt quietly watches the plants during a natural stop on his street route.
    c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
   }
-  if(pet.name&&(zoom>1.2||pet.bolt)){
-   const labelWidth=Math.max(24,pet.name.length*4.6+8),labelY=zoom<1.15?-26:-28;
+  if(pet.name&&labelY!==null){
    roundRect(c,-labelWidth/2,labelY,labelWidth,10,4,'#fff9ebee','#b89f7d');
    c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,labelY+5);
   }
