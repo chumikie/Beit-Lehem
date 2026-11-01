@@ -1,62 +1,70 @@
-# Beit Lehem — encontre a versão certa
+# Beit Lehem — versões e estrutura
 
-**Este é o índice de versões do jogo.** A PR #1 foi integrada à `main` em `0c2db37`. O repositório está público; o GitHub Pages usa uma branch separada e não acompanha automaticamente o HTML mais recente da `main`.
+**A versão atual de Beit Lehem é a referência ativa para jogar, comparar e desenvolver.** A V2.27 é apenas um snapshot histórico imutável; não é a referência principal nem um padrão técnico obrigatório.
 
-| Você quer… | Abra este arquivo | O que é |
+O repositório GitHub é público por decisão do autor. Isso não significa que GitHub Pages esteja atualizado ou que toda build local esteja publicada.
+
+## Qual arquivo abrir
+
+| Objetivo | Arquivo | Papel |
 | --- | --- | --- |
-| **Consultar a referência estável** | [V2.27 estável](../baseline/Belem-Viva-V2-27.html) | Cópia congelada para comparação. Não é a prévia principal. |
-| **Jogar a base Gemini atual** | [Beit Lehem — desenvolvimento](../previews/beit-lehem-development.html) | **Único HTML principal gerado**; ainda experimental. |
-| **Usar o link antigo de celular** | [Beit Lehem — desenvolvimento celular](../previews/beit-lehem-development-mobile.html) | Cópia idêntica do principal; CSS responsivo, refinamento móvel pendente. |
-| **Usar o link antigo Gemini** | [Gemini Preview](../previews/gemini-preview.html) | Cópia idêntica mantida por compatibilidade, não uma segunda base. |
+| Jogar/inspecionar o jogo atual | [Prévia principal](../previews/beit-lehem-development.html) | HTML gerado a partir dos módulos atuais |
+| Usar o link de compatibilidade móvel | [Prévia mobile](../previews/beit-lehem-development-mobile.html) | Cópia atualmente idêntica ao principal |
+| Usar link Gemini anterior | [Alias Gemini](../previews/gemini-preview.html) | Cópia idêntica mantida para compatibilidade |
+| Consultar o marco histórico | [V2.27 congelada](../baseline/Belem-Viva-V2-27.html) | Arquivo histórico/rollback; não editar |
 
-## Como baixar e abrir
+Para abrir localmente: baixe o HTML principal e abra no navegador. O progresso permanece no armazenamento local do navegador e a origem/chave de save pode diferir da V2.27.
 
-1. Clique no arquivo desejado na tabela acima, dentro do GitHub.
-2. Use o botão **Download raw file** (ícone de baixar) e salve o arquivo com extensão `.html`.
-3. Abra o HTML baixado no navegador. Não é preciso hospedagem nem GitHub Pages.
-4. Se o arquivo já estava no seu computador, baixe novamente após novos commits; o download anterior **não se atualiza sozinho**.
+## Onde editar
 
-**Não abra `dist/index.html` isoladamente:** é uma entrada modular, não o jogo portátil completo.
+- **`gemini-modules/`** — fonte editável dos sistemas atuais. `game.js` ainda é um monólito e será separado aos poucos.
+- **`scripts/build-gemini-preview.cjs`** — montagem da prévia atual.
+- **`scripts/build-development-preview.cjs`** — gera o principal e as duas cópias de compatibilidade.
+- **`previews/`** — artefatos gerados; não editar diretamente.
+- **`references/gemini-2026-10-31/`** — material original arquivado para consulta de sistemas que ainda não foram extraídos.
+- **`source/`, `import_belem_osm.py`, `prepare_map.py`** — fluxo geográfico da preparação antiga; sua integração com o mapa embutido atual ainda precisa ser consolidada.
+- **`tests/`** — testes por sistema e regressões.
+- **`baseline/`** — arquivo histórico V2.27 e integridade do snapshot.
+- **`dist/`** — módulos/artefatos da linha antiga; não usar como fonte normativa do jogo atual.
+- **`docs/`** — decisões, próximos passos, mapa do código e instruções.
 
-## Onde mexer sem deixar o repositório pesado
-
-- **`references/gemini-2026-10-31/experimento-anonimizado.html.txt`** — fonte principal atual, ainda monolítica; extrair em módulos pequenos progressivamente.
-- **`dist/`** — módulos V2.27 preservados para portar correções; não geram a prévia principal agora.
-- **`tests/`** — testes pequenos por sistema.
-- **`scripts/` e `build-standalone.cjs`** — geração de HTMLs autônomos e validações.
-- **`docs/`** — decisões, guia de referência, mapa do código e próximos passos.
-- **`references/gemini-2026-10-31/` e `drafts/`** — material histórico de análise, sem carregar diretamente no jogo.
-- **`previews/`** — um HTML principal e dois aliases idênticos; não são três linhas de desenvolvimento.
-- **`gemini-preview.html` na raiz e `publicacao/index.html`** — artefatos anteriores; não são a base para novos builds nem para publicação automática.
-- **`gh-pages/index.html`** — versão pública independente, atualizada somente após aprovação e verificação do HTML sanitizado.
-- **`baseline/`** — V2.27 congelada, nunca reescrita.
-
-O histórico Git guarda os commits anteriores; **não precisamos criar V2.30.html, V2.31.html etc. a cada ajuste**. Para continuar leve:
-
-1. Editar **módulos específicos** em `gemini-modules/`; `dist/` continua sendo a referência V2.27.
-2. Rodar os testes relevantes primeiro.
-3. Gerar o HTML principal com `npm run build:game` e manter os dois links legados como cópias; não criar um HTML novo por commit.
-4. Registrar um resumo curto com os pontos alterados. Não adicionar caches, dependências, imagens de terceiros sem licença ou ZIPs repetidos.
-5. Não apagar ou renomear os arquivos atuais sem verificar todos os caminhos de build, links e compatibilidade.
+## Comandos
 
 Com Node.js 18+:
 
 ```bash
 npm test
+npm run build
+npm run play
 npm run verify:baseline
-npm run build:development-preview
-npm run build:public-preview
 ```
 
-Para jogar sem download de nova prévia gerada no GitHub, execute localmente `npm run play:development-preview`.
+- `npm run build`: gera o jogo atual e sincroniza os aliases.
+- `npm run play`: gera e abre a prévia atual.
+- `npm run verify:baseline`: confere somente que o arquivo histórico V2.27 permanece intacto.
 
-## Aprovado, experimental e pendente
+Para abrir explicitamente a linha antiga:
 
-- **Aprovado como referência:** V2.27.
-- **Base principal do desenvolvimento:** Gemini Preview, ainda experimental.
-- **Candidato atual:** HTML principal da `main` derivado do Gemini; a branch `gh-pages` pode estar defasada.
-- **Ainda pendente:** inspeção visual lado a lado, testes completos de build e avaliação física em celulares.
+```bash
+npm run build:legacy
+npm run play:legacy
+```
 
-**Estilo:** cidade cozy do interior paraibano — afetos, comércio, árvores, fachadas e cotidiano. **Sem conceitos de idol, palco idol ou elementos do TsuLiPa**. O outro jogo não é biblioteca de assets deste projeto.
+Não criar um novo HTML versionado a cada ajuste. O histórico Git conserva os commits; mantenha um principal gerado e aliases de compatibilidade.
 
-**Geografia:** conservar o território de Belém/PB, Rua Nova e região rural/serrana. As coordenadas locais do Gemini usadas para novos marcos foram confirmadas pelo autor com seu conhecimento e fotografias; registrar essa proveniência separadamente das geometrias OSM. As ilustrações não pretendem representar o contorno cadastral dos prédios.
+## Geografia e nomes
+
+- Nomes de ruas devem permanecer idênticos aos nomes reais validados, inclusive grafia e acentos.
+- POIs e estabelecimentos podem usar nomes ficcionais no jogo. O alias exibido deve ser separado do nome de origem.
+- Geometria OSM, validação local, nome de exibição e arte ilustrativa não são a mesma coisa.
+- Não inferir coordenadas, limites de lote ou acessos sem fonte.
+
+## Salvamento
+
+A versão atual e a V2.27 possuem chaves/esquemas de save diferentes. Não presumir migração automática. Extrações de módulos devem preservar a chave e o formato atuais. Uma futura migração exige backup, validação e reversibilidade.
+
+## Estado de validação
+
+A existência de um HTML gerado não significa que todos os recursos tenham sido validados em navegador ou celular. Consulte a PR de evolução e os próximos passos para saber o que foi efetivamente testado. Não declarar inspeção visual ou teste físico sem execução.
+
+GitHub Pages e qualquer outra distribuição são independentes da visibilidade pública do repositório. Atualizar hospedagem/publicação exige autorização específica.
