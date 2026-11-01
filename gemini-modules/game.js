@@ -678,7 +678,8 @@ function secondaryInStreets(primary=residentsInStreets()){
  for(const def of window.RoncadorSecondaryNeighbors.RESIDENTS){
   const duty=window.RoncadorSecondaryNeighbors.agenda(living,def);
   if(!duty.present)continue;
-  let at=duty.community&&duty.meeting?communityMeetingPoint(def.id,duty.hub):duty.travel?encounterRoadPoint(duty.encounter):walkingPoint(def.id,def.hub,def.variant);
+  const smallWalk=window.RoncadorSecondaryNeighbors.smallWalk?.(living,def,duty);
+  let at=duty.community&&duty.meeting?communityMeetingPoint(def.id,duty.hub):duty.travel?encounterRoadPoint(duty.encounter):walkingPoint(def.id,def.hub,def.variant,smallWalk?.offset||0);
   // Reserve space against protagonists AND already placed neighbors.
   // All alternatives are sampled from the same mapped road itinerary.
   const occupied=primary.concat(placed);
@@ -692,7 +693,7 @@ function secondaryInStreets(primary=residentsInStreets()){
   }
   if(!at)continue;
   const moment=window.RoncadorStreetMoments.choose({id:def.id,hub:duty.hub,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter,x:at.x,y:at.y},elapsed,living);
-  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment,moment},elapsed,living.day);
+  const person=residentMotion.resolve({...at,walking:!!at.walking&&!duty.meeting&&(duty.travel||duty.walking||!!smallWalk&&!smallWalk.paused),def,id:def.id,variant:def.variant,activity:duty.activity,meeting:!!duty.meeting,travel:!!duty.travel,community:!!duty.community,encounter:duty.encounter||null,secondary:true,pause:!!moment||!!smallWalk?.paused,moment},elapsed,living.day);
   // A narrow junction may lack a free roadside spot; omit this frame
   // rather than stacking two illustrated bodies over the same sidewalk.
   if(!duty.meeting&&occupied.some(p=>Math.hypot(p.x-person.x,p.y-person.y)<19))continue;

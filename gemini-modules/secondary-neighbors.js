@@ -75,6 +75,19 @@
   const morning=minute<12*60;
   return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
  }
+ // Mila occasionally follows a longer stretch of her EXISTING road itinerary,
+ // pauses to observe, then rejoins her usual walk. No new POI, path or save key.
+ function smallWalk(clock,def,duty){
+  if(def?.id!=='mila'||!duty?.present||duty.meeting||duty.community||duty.travel||duty.encounter)return null;
+  const day=Number(clock?.day),minute=Number(clock?.minute);
+  if(!Number.isInteger(day)||!Number.isFinite(minute)||day%3!==1)return null;
+  const phase=minute-(16*60+20);
+  if(phase<0||phase>=16)return null;
+  // The extra distance grows and shrinks continuously; only existing sampled
+  // road vertices are used by the caller. During the pause the feet stay put.
+  const offset=phase<6?phase/6*72:phase<9?72:72*(1-(phase-9)/7);
+  return {offset,paused:phase>=6&&phase<9,stage:phase<6?'outbound':phase<9?'observe':'return'};
+ }
  function availableOptions(def,context={}){
   return def?.options?.filter(choice=>{
    if(choice.id==='banca')return def.id==='cica'&&context.marketMorning?.claimed===true;
@@ -94,6 +107,6 @@
   const first=!state.seen.includes(id);if(first)state.seen.push(id);
   return{ok:true,first,reply:choice.reply,unlocked:coreProgress(state)===3};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,availableOptions,coreProgress,interact};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact};
 })(typeof window!=='undefined'?window:globalThis);
 
