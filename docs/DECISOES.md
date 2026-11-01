@@ -23,7 +23,10 @@
 - `gemini-modules/game.js` ainda é grande e deve ser modularizado incrementalmente, preservando comportamento, visual, ordem de processamento e saves.
 - A fonte HTML arquivada em `references/gemini-2026-10-31/` serve como consulta para sistemas ainda não extraídos, não como padrão imutável.
 - `baseline/Belem-Viva-V2-27.html` e o código histórico em `dist/` não são a base ativa. O hash da V2.27 serve somente para verificar que o arquivo histórico não foi alterado.
-- A geração OSM antiga e a representação de mapa embutida na base atual ainda não estão completamente unificadas. Mudanças no GeoJSON não devem ser presumidas como mudanças já incorporadas ao jogo atual.
+- O mapa ativo é composto no build a partir de `source/belem-osm-2026.geojson` por `scripts/current-geodata.cjs`. As tags e os nomes de ruas OSM são a camada geográfica normativa.
+- O build exige igualdade exata da quantidade, IDs e geometria das vias e polígonos com a base revisada; qualquer deriva interrompe a geração para revisão, sem deslocar o mundo silenciosamente.
+- Aparência de pavimento (`roadAppearance`), POIs locais/aliases (`localPlaces`) e rótulos de ruas ainda não confirmados (`unverifiedRoadLabels`) são camadas separadas. Somente `roads[].tags.name` vindo de OSM pode aparecer como nome oficial de rua.
+- O extrato atual tem 462 linhas viárias, 20 polígonos, 9 pontos e 86 nomes distintos em vias nomeadas. A cobertura OSM não garante a completude da malha nem a transitabilidade atual.
 
 ## Salvamento
 
