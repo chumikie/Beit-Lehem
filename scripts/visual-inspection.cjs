@@ -229,7 +229,20 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
             const resident = state.streetResidents.find(person => person.id === id);
             return resident && Math.hypot(resident.x - state.position.x, resident.y - state.position.y) < 39;
           }, candidate.id, { timeout: 18000 }).then(() => true).catch(() => false);
-          if (encounter.reached) await page.keyboard.press('e');
+          if (encounter.reached) {
+            // Exercise the exact notebook button reported as apparently inert,
+            // not only the E shortcut. No NPC or player position is injected.
+            if (mobile) await page.locator('#mobileRoute').click();
+            await page.locator('#openLife').click();
+            const talkButton = page.locator('#residentGrid .resident-card').nth(cardIndex).locator('button');
+            encounter.talkButtonVisible = (await talkButton.textContent()).includes('💬');
+            if (encounter.talkButtonVisible) {
+              await talkButton.click();
+              await page.waitForTimeout(150);
+              encounter.replyFocused = await page.locator('#lifeConversation').evaluate(el =>
+                document.activeElement === el && !!el.textContent?.trim());
+            } else await page.keyboard.press('Escape');
+          }
         }
       }
       if (encounter.reached) {
@@ -237,6 +250,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
         const currentBond = await page.evaluate(id => expeditionState.residentBonds[id], candidate.id);
         encounter.dialog = activeDialogs.at(-1) || null;
         encounter.talked = !!encounter.dialog && currentBond > previousBond;
+        if (encounter.talkButtonVisible && encounter.talked)
+          assert.ok(encounter.replyFocused, name + ': Falar deve destacar a resposta no Caderno');
         // Escape the actual existing conversation dialog before selecting another resident.
         for (let attempt = 0; attempt < 3 && (await openDialogIds()).length; attempt++) {
           await page.keyboard.press('Escape');
