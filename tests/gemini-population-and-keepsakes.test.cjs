@@ -108,7 +108,8 @@ test('personagens secundários reservam espaço uns para os outros na rua',()=>{
  const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
  assert.match(game,/const occupied=primary\.concat\(placed\)/);
  assert.match(game,/const offsets=\[63,90,117,145\]/);
- assert.match(game,/if\(!duty\.meeting&&occupied\.some\(/);
+ assert.match(game,/person\.crowded=!duty\.meeting&&occupied\.some\(/);
+ assert.match(game,/residentMotion\.appearance\(person\.id,!person\.crowded,elapsed\)/);
 });
 
 test('três vizinhos que chegam à mesma calçada recebem espaço separado na própria rota',()=>{
