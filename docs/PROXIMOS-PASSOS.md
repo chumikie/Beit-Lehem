@@ -1,67 +1,73 @@
 # Próximos passos
 
-## Base e direção aprovadas
+## Direção aprovada
 
-- **Feliciano Pedrosa — etapa de pesquisa (01/11/2026):** endereços dos mercados Vida Nova 1/2 e Família confirmados por fontes públicas, mas lote, entrada e lado da via ainda não demonstrados. Não desenhar fachadas de marcas nem interpolar posições por número postal. Critérios e fontes em [ESTUDO-RUA-FELICIANO-PEDROSA.md](ESTUDO-RUA-FELICIANO-PEDROSA.md).
-- **Academias, flora e edifícios (01/11/2026):** separar academias ativas de registros antigos; oito áreas verdes classificadas no extrato OSM não equivalem a árvores cadastradas; nenhum dos 20 polígonos OSM tem `building=*`. Ver [AUDITORIA-ACADEMIAS-FLORA-EDIFICACOES.md](AUDITORIA-ACADEMIAS-FLORA-EDIFICACOES.md) antes de atribuir fachadas, espécies ou número de andares.
+- A **versão atual de Beit Lehem** é a referência visual e técnica ativa.
+- A V2.27 fica congelada como registro histórico e recurso de recuperação; não usar seus sistemas ou visuais como padrão obrigatório.
+- Preservar a geografia ampla e conectada de Belém/PB, Rua Nova e entorno rural/serrano.
+- Manter os nomes reais das ruas exatamente como validados. POIs e estabelecimentos podem usar aliases ficcionais, sem alterar o nome da rua ou apagar a proveniência do dado.
+- O repositório GitHub permanece público. Isso não autoriza, por si só, ativar Pages ou publicar uma build.
 
-- A V2.27 é a referência estável congelada; **a base atual do jogo em desenvolvimento passa a ser o Gemini**, conforme decisão posterior do autor.
-- O Gemini é uma referência mais rica em informações e precisão local. Aproveitar dados, descrições de ruas e estudos visuais em melhorias graduais.
-- O mundo deve continuar amplo e conectado entre Belém, Rua Nova e o entorno rural/serrano. Não reduzir os limites de exploração.
-- Prioridades atuais: mapa, escala, navegação, fachadas e personagens. Novas atividades, moto e contatos ficam pausados.
+## Sequência de trabalho
 
-## Integração em andamento
+### 1. Alinhamento de documentação e build
 
-1. As 17 propostas viárias do Gemini continuam pendentes de validação. Nenhum nome ou piso novo é exibido como confirmado; a fonte OSM mantém seus 86 nomes e 462 geometrias sem alteração.
-2. O estudo ilustrativo de fachadas cresce de três para seis áreas: três referências centrais e três setores visuais preliminares ancorados em geometrias existentes. Nomes e limites exatos dos três novos setores continuam pendentes.
-3. O snapshot `previews/beit-lehem-development.html` agora é gerado a partir da fonte Gemini. A prévia móvel, por enquanto, usa o mesmo HTML responsivo. `dist/` é a linha V2.27 preservada para transportar correções.
+- Concluído nesta etapa: alinhar README, instruções para agentes, decisões, próximos passos, mapa do código e índice de versões à referência atual.
+- Fazer `npm run build` e `npm run play` apontarem para o jogo atual. Preservar a geração antiga em comandos explícitos `build:legacy` e `play:legacy`.
+- Marcar avaliações anteriores de privacidade/publicação como supersedidas quando não refletirem as decisões atuais.
+- Não fazer merge nem atualizar GitHub Pages nesta etapa.
 
-## Integração Gemini já realizada na PR #1
+### 2. Unificar o fluxo geográfico atual
 
-- Sete novos marcos locais ilustrativos (escola, ginásio, confeitaria, bar ficcional, Prefeitura, capela e igreja), com **posições confirmadas pelo autor com base em sua experiência e fotografias**. Essa confirmação local não altera o conteúdo extraído do OSM.
-- Cada marco tem identidade ilustrativa própria e pode receber uma rota pela malha existente. Os sete destinos tiveram rotas encontradas no teste de grafo a partir do ponto inicial.
-- As duas prévias de desenvolvimento foram atualizadas conjuntamente; Gemini Preview permanece separado como referência visual mais rica. A V2.27 está congelada.
-- [Índice de versões e organização](VERSOES-E-ESTRUTURA.md) centraliza links e evita gerar arquivos de cada commit.
+- Mapear a origem exata da geometria de ruas que chega à prévia atual e comparar com `source/belem-osm-2026.geojson`.
+- Definir um fluxo canônico para atualizar o mapa do jogo atual; evitar manter dois mapas que evoluem separadamente sem sinalização.
+- Preservar os nomes reais das ruas byte a byte/grafia a grafia, inclusive acentos, de acordo com a fonte validada.
+- Modelar POIs separadamente: nome de origem, alias no jogo, coordenadas e proveniência. Alias não pode modificar metadados da rua.
+- Criar testes que detectem perda ou alteração acidental de nomes viários e que distingam dados OSM, confirmações locais e ficção.
 
-**Correção de rumo:** o Gemini é a direção principal de riqueza visual, não mero rascunho descartável. Integrar suas cenas e sistemas por etapas, preservando estabilidade, saves e território. A direção artística é **cozy do interior paraibano, não idol**. A inspeção visual real e os testes completos continuam pendentes.
+### 3. Reduzir o custo de geração de casas
 
-## Próxima rodada
+O pré-processamento atual pode repetir buscas por segmentos de rua e casas já aceitas. O caminho proposto é acelerar a consulta sem alterar o resultado visual:
 
-1. Conferir a comparação visual do novo snapshot com a V2.27: amplitude do mapa, leitura das ruas, escala e continuidade das fachadas. O minimapa já mostra a extensão cartográfica completa com a janela do jogador destacada; o mapa ampliado alterna entre a região próxima e o território completo.
-2. Revisar se os seis estudos cobrem trechos com densidade coerente, sem uniformizar todas as casas nem mover personagens.
-3. Continuar enriquecendo a malha rural/serrana a partir de referências específicas, sem inventar coordenadas de lugares ou acessos.
-4. Depois das revisões de espaço, aprimorar navegação e transições de câmera, mantendo o caminho nas vias reais do mapa. Os personagens que caminham pelas ruas usam o mesmo roteador conectado, sem atalhos inventados.
+1. Generalizar o índice espacial de ruas hoje usado para afastamento de árvores.
+2. Construí-lo imediatamente após gerar os segmentos viários, antes do laço de candidatos de casas.
+3. Consultar as células próximas e manter a mesma distância exata ponto-segmento e os limites atuais de cada tipo de casa.
+4. Criar um índice de ocupação de casas por célula para substituir a varredura completa de casas já aceitas; manter a distância euclidiana exata como verificação final.
+5. Preservar ordem dos candidatos, seeds e desempates para que a lista final de casas e suas coordenadas não mudem.
 
-Não integrar novas missões, sistema de moto ou contatos nesta etapa. Cada avanço deve registrar o que mudou, como foi testado e o que ainda é hipótese.
+**Critério de aceitação:** comparar antes/depois com os mesmos dados e seeds e provar igualdade dos candidatos aceitos/coordenadas. Adicionar testes de borda, células vizinhas, coordenadas negativas e distâncias exatamente no limite. Medir também a redução de comparações geométricas; não depender de teste de tempo frágil.
 
-## Próximo trabalho após a troca de base
+### 4. Modularizar o monólito de forma incremental
 
-1. Validar no navegador a prévia Gemini como jogo principal (mapa amplo, lugares pessoais autorizados, efeitos e navegação). Não afirmar que isso já ocorreu.
-2. Corrigir o álbum de seis setores, contadores, desenho próprio do hospital e exportação de HTML sem duplicação de interface.
-3. Projetar migração explícita de diário entre a chave Gemini e a chave V2.27, sempre com backup e opção reversível.
-4. Extrair partes do monólito Gemini para módulos pequenos e testáveis, mantendo seus recursos e o visual cozy intactos.
-5. Refinar a edição de celular sem diminuir mapa ou eliminar recursos. Contatos e moto continuam no Gemini experimental e exigem revisão antes de serem aprovados como sistemas estáveis.
+Separar responsabilidades de `gemini-modules/game.js` sem reescrever o jogo inteiro:
 
+1. Definir um contexto explícito de dependências e estado, reduzindo o uso de novos globais `window.*`.
+2. Extrair e testar a serialização/validação de saves em `save-manager.js`, sem mudar a chave nem o formato atual.
+3. Extrair movimento do jogador, colisão, câmera e controles em `player-controller.js`.
+4. Extrair diálogos, HUD e manipulação de DOM em `ui-controller.js`.
+5. Isolar interações com o mundo em `world-interactions.js`.
+6. Separar renderização em `world-renderer.js` depois que os contratos estiverem estáveis.
+7. Manter `game.js` como composição/inicialização e coordenador dos sistemas.
 
-## Etapa visual priorizada pelo autor — 31/10/2026
+A extração de `game-state.js` deve definir a criação/forma do estado sem transformá-lo em um novo objeto global onipresente. Não fazer a divisão em lote.
 
-**Escopo aprovado:** avançar uma quadra do centro de Belém/PB por vez; dar identidade às cenas urbanas, refinar expressões e revisar a legibilidade no celular. A base a editar é o **Gemini Preview** da PR #1; a V2.27 permanece congelada. Nada de merge, hospedagem ou mudança na malha OSM.
+### 5. Validação integrada
 
-### Primeiro incremento visual: entorno da Matriz
+- Executar testes específicos do módulo alterado e depois `npm test`.
+- Executar `npm run build` e abrir a prévia gerada.
+- Testar rotas completas, salvamento/recarregamento e retomada de aba.
+- Fazer inspeção em desktop e em larguras móveis; não declarar acabamento móvel apenas porque existe um alias HTML com nome mobile.
+- Relatar explicitamente quais testes foram executados e quais inspeções reais continuam pendentes.
 
-1. **Inventário antes de desenhar:** registrar fotografias e vídeos datados que mostrem a Igreja e os arredores; anotar fonte, data, direção da câmera e grau de confiança. A fotografia histórica de 2007 não comprova a pintura atual das casas. A rua exata e o contorno das edificações ficam pendentes quando não há identificação.
-2. **Uma composição controlada:** trabalhar apenas a paleta, os materiais visíveis, volumes de fachada, sombra de beiral, iluminação e vegetação dos edifícios *ilustrativos* já existentes na área. Não inserir prédios adicionais nem mudar coordenadas ou contagem de ruas para preencher vazios.
-3. **Módulo correto:** inventariar com `npm run gemini:list`; extrair `facade-studio` (e só dependências diretamente necessárias) para `gemini-modules/`, sem reescrever o HTML Gemini. Fazer um ajuste pequeno com comparação antes/depois da Matriz.
-4. **Gente em escala:** revisar a relação jogador/moradores/fachadas no zoom próximo e distante. Priorizar espera, olhar e despedida quando o gesto puder ser vinculado a uma rotina; novas atividades e missões continuam pausadas.
-5. **Celular na mesma entrega:** comparar 390 × 844 e uma largura menor; conferir escala, nomes dos personagens, botões de toque, balões, camadas sobrepostas e áreas seguras. A prévia móvel hoje é idêntica à desktop: não declarar adaptação adicional sem editar e testar a geração.
-6. **Portões de conclusão:** testes do módulo, `npm test`, `npm run verify:baseline`, `npm run build:development-preview`, inspeção visual quando autorizada. Preservar save Gemini e imagens/fontes originais. Commit pequeno somente nesta PR, sem merge.
+## Restrições de escopo
 
-**Como o jogador perceberá:** caminhar em torno da Matriz e reconhecer um conjunto de fachadas com materiais, sombras e volumes mais coerentes — sem perder o mapa amplo. A revisão de celular deve deixar o mesmo lugar legível com menos oclusões.
+- Não editar manualmente HTMLs gerados em `previews/`.
+- Não modificar a cópia congelada V2.27 para fazê-la passar em verificações.
+- Não mudar chave/formato de save durante extração de módulos.
+- Não mover ruas reais, inventar coordenadas ou transformar nomes ficcionais de POIs em nomes viários.
+- Não adicionar missões, sistemas ou entidades novas como parte de uma etapa de arquitetura/performance, a menos que o autor peça.
+- Não fazer merge, ativar/atualizar Pages ou publicar sem autorização expressa.
 
-### Fila após esse incremento
+## Histórico de pesquisa local
 
-1. Mercado e ruas comerciais: variação de toldos e fachadas baseada em evidências, conservando a feira e seus horários ficcionais.
-2. Rodoviária: relação entre praça de circulação, sombras, pessoas esperando e os caminhos existentes.
-3. Outros setores e zona rural/serrana: somente após localizar fontes e comparar a abrangência territorial.
-
-**Estado deste registro:** planejamento e critérios definidos; nenhuma alteração de sprite, mapa ou CSS foi implementada por este documento.
+Estudos de fachada, mercado, academia, flora, edifícios e referências visuais devem ser consultados apenas quando a tarefa correspondente voltar à fila. Distinguir fonte pública, confirmação do autor, hipótese e elemento ficcional. Não inferir lotes ou entradas a partir de numeração postal isolada.
