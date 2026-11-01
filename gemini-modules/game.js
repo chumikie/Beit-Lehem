@@ -242,8 +242,8 @@ function applyUserPublicPlaceCorrections(){
    (projection.originLat-place.geo[0])*projection.metersPerDegreeLat]:place.p;
   landmark.p=corrected.slice();
   landmark.positionStatus=place.geo?'user_google_maps_pin':'user_reference_proposed';
-  for(const point of data.points){
-   if(point.tags?.name===landmark.name&&
+  for(const point of [...(data.points||[]),...(data.localPlaces||[])]){
+   if((point.tags?.name||point.displayName)===landmark.name&&
     Math.hypot(point.p[0]-prior[0],point.p[1]-prior[1])<1){
     point.p=corrected.slice();
    }
@@ -576,7 +576,7 @@ function drawRoads(c,z=1,simple=false,viewport=null){c.lineCap='round';c.lineJoi
  if(street){c.strokeStyle='#a69b826b';c.lineWidth=pavementWidth+.7;c.stroke();}
  continue;
  }
- c.strokeStyle=materials[r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
+ c.strokeStyle=materials[data.roadAppearance?.[r.id]?.surface||r.tags.surface]||(major?'#d7cdad':'#e6ddbc');c.lineWidth=pavementWidth;c.stroke();
  if(z>=1.35&&!trail){
   // Residential streets have no repeated centre dashes; the softly shaded
   // curb edges carry the depth cue, without pretending to be road signage.
