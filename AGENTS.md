@@ -16,6 +16,10 @@
 - Nomes de POIs, personagens, comércios e outros elementos de narrativa podem ser aliases ficcionais. Guardar nome de origem e nome exibido em campos separados quando ambos existirem.
 - Não renomear uma rua para adaptar o nome de um estabelecimento; não inferir um endereço, lote, entrada ou coordenada a partir de um nome parecido.
 - Distinguir explicitamente: dado OSM, dado local validado pelo autor, alias ficcional e ilustração artística.
+- O build atual compõe ruas, áreas e pontos OSM de `source/belem-osm-2026.geojson` por `scripts/current-geodata.cjs`; não usar `dist/map.json` como fonte normativa.
+- `roads[].tags.name` é reservado ao nome OSM exato. Sugestões antigas ficam em `unverifiedRoadLabels` e não podem ser mostradas como nome de rua.
+- Acabamento visual de pavimento fica em `roadAppearance`; POIs locais ficam em `localPlaces` com `displayName`/`sourceName` separados.
+- O build bloqueia alterações não revisadas de IDs/quantidade/geometria das vias e polígonos. Não desativar esse guard para contornar divergências.
 - Não reduzir a extensão do território conectado para simplificar uma tarefa. Não deslocar ruas reais para acomodar cenário ilustrativo.
 - A direção de arte atual é cozy do interior paraibano. Não importar estética, elenco ou assets de outro projeto.
 
