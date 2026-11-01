@@ -2068,11 +2068,11 @@ function showCulture(id){if(!loaded||!CULTURE[id])return;const place=culturePlac
  syncContactsUI();save();showCulture(id);notify('Uma nova memória de Belém foi guardada no caderno!');};options.append(button);}
  $('cultureResult').textContent=cultureNotes[id]?'✿ No seu caderno: '+cultureNotes[id]+'.':documentary?'Registro documental: nenhuma caminhada ou chegada ao cruzeiro é simulada.':'As escolhas são do jogador, não depoimentos de moradores.';
  $('cultureRoute').hidden=documentary||!place?.p||!active||reachable;
- const evidence=id==='igreja'?{archive:'archiveChurch',title:'Igreja da Conceição · 2007',caption:'Foto histórica: torre, relógio, três arcos e acabamento escuro. A ilustração se inspira nesses traços, mas não é uma planta fiel.',url:'https://commons.wikimedia.org/wiki/File:Igreja_N%C2%AA_Sr%C2%AA_da_Concei%C3%A7%C3%A3o_Bel%C3%A9m-PB.jpg'}:
-  id==='mercado'?{archive:'archiveMarket',title:'Feira Livre de Belém · 2007',caption:'Foto histórica de toldos, cestos e comércio de rua; não documenta a fachada ou as barracas atuais do Mercado.',url:'https://commons.wikimedia.org/wiki/File:Feira_Livre_de_Bel%C3%A9m-PB.jpg'}:null;
- $('cultureEvidence').hidden=!evidence;
- if(evidence){$('cultureEvidenceImage').src=$(evidence.archive).src;$('cultureEvidenceImage').alt='Fotografia histórica de '+evidence.title;$('cultureEvidenceTitle').textContent=evidence.title;$('cultureEvidenceCaption').textContent=evidence.caption;$('cultureEvidenceLink').href=evidence.url;}
- $('cultureSource').href=story.source;syncMarketToggle();window.RoncadorLandmarks.drawPostcard($('cultureArtwork'),story.kind,fairAtmosphere());
+ // Historical images and source URLs remain in the repository research archive,
+ // but the in-world cultural postcard is always original Canvas artwork.
+ $('cultureEvidence').hidden=true;
+ $('cultureEvidenceImage').removeAttribute('src');
+ syncMarketToggle();window.RoncadorLandmarks.drawPostcard($('cultureArtwork'),story.kind,fairAtmosphere());
  if(!$('cultureDialog').open)showDialog('cultureDialog');}
 function openCultureFromGuide(id){if($('realCityDialog').open)$('realCityDialog').close();showCulture(id);}
 function showNature(){if(!loaded)return;const phases=['🌱','🌿','💧','🌾'];const actions=['Preparar a terra ♧','Plantar macaxeira 🌱','Cuidar da água 💧','Colher e recomeçar 🌾'];const notes=['Um cantinho de terra para começar.','O cultivo começa com paciência.','Água é cuidado — e uma memória muito presente nas entrevistas.','A colheita ilustrativa está pronta! Depois podemos preparar a terra novamente.'];
@@ -2535,12 +2535,11 @@ function showRealCity(){if(!loaded)return;const n=data.streetNameCount||new Set(
 function showCentralBlocks(){
  if(!loaded)return;
  const gallery=$('blockCards');gallery.replaceChildren();
- const refs={matriz:{img:$('archiveChurch').src,alt:'Igreja de Belém, registro de 2007',url:'https://commons.wikimedia.org/wiki/File:Igreja_N%C2%AA_Sr%C2%AA_da_Concei%C3%A7%C3%A3o_Bel%C3%A9m-PB.jpg'},feira:{img:$('archiveMarket').src,alt:'Feira livre de Belém, registro de 2007',url:'https://commons.wikimedia.org/wiki/File:Feira_Livre_de_Bel%C3%A9m-PB.jpg'}};
+ // The atelier uses original Canvas studies, never historical photographs.
  for(const block of centralBlocks){
   const card=document.createElement('article');card.className='central-block-card';
   const art=document.createElement('div');art.className='central-block-art '+block.id;
-  if(refs[block.id]){const img=document.createElement('img');img.src=refs[block.id].img;img.alt=refs[block.id].alt;img.loading='lazy';art.append(img);}
-  else{const symbol=document.createElement('span');symbol.textContent='▥ ✿ ▣';art.append(symbol);}
+  const symbol=document.createElement('span');symbol.textContent='▥ ✿ ▣';art.append(symbol);
   const copy=document.createElement('div');copy.className='central-block-copy';
   const heading=document.createElement('h3');heading.textContent=block.title;
   const details=document.createElement('p');details.textContent=block.detail;
@@ -2553,7 +2552,7 @@ function showCentralBlocks(){
   const miniatureCaption=document.createElement('small');miniatureCaption.className='facade-preview-caption';
   miniatureCaption.textContent='✎ Casario V2.25 · beirais, platibandas, vitrines e detalhes de esquina';
   copy.append(miniature,miniatureCaption);
-  if(refs[block.id]){const link=document.createElement('a');link.textContent='Ver referência histórica ↗';link.href=refs[block.id].url;link.target='_blank';link.rel='noopener noreferrer';copy.append(link);}
+
   const route=document.createElement('button');route.type='button';route.textContent='⌖ Caminhar até este trecho ↗';route.disabled=!active||!block.at;
   route.onclick=()=>{$('blockDialog').close();setRoute(block.at[0],block.at[1]);notify('A rota segue as ruas do OSM; as casas ilustrativas não têm endereço cadastrado.');};
   const nearBlock=block.at&&Math.hypot(player.x-block.at[0],player.y-block.at[1])<=95;
@@ -2704,7 +2703,7 @@ function clickWorld(e){
  if(scene){const place=culturePlace(scene.id);if(scene.id==='pedra_cordeiro')showCulture(scene.id);else if(place?.p){if(cultureWithinReach(place))showCulture(scene.id);else setRoute(...place.p);}else showCulture(scene.id);return;}
  const landmark=data.landmarks.find(l=>Math.hypot(x-l.p[0],y-l.p[1])<10);
  if(landmark){if(cultureWithinReach(landmark))showCulture(landmark.id);else setRoute(...landmark.p);return;}
- if(data.points.some(p=>Math.hypot(x-p.p[0],y-p.p[1])<8)){showRealCity();return;}
+ // Mapped points remain walkable destinations without opening a real-world guide.
  setRoute(x,y);canvas.focus({preventScroll:true});
 }
 $('start').onclick=start;$('interact').onclick=interactAction;$('observe').onclick=observe;$('realCity').onclick=showRealCity;$('natureAtlas').onclick=showNature;$('centralBlocks').onclick=showCentralBlocks;
@@ -2827,7 +2826,7 @@ $('fullMap').onclick=()=>{fullMap=!fullMap;drawBig();};big.addEventListener('cli
 canvas.addEventListener('pointerdown',e=>{dragStart={x:e.clientX,y:e.clientY};});canvas.addEventListener('pointerup',e=>{if(dragStart&&Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)<8)clickWorld(e);dragStart=null;});canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.65,Math.min(3.5,zoom*Math.exp(-e.deltaY*.001)));},{passive:false});
 window.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='v'&&!e.repeat&&!anyDialog()&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){e.preventDefault();showNature();}});
 for(const b of document.querySelectorAll('[data-move]')){b.addEventListener('pointerdown',e=>{e.preventDefault();if(!active)return;b.setPointerCapture(e.pointerId);touches.set(e.pointerId,b.dataset.move);waypoint=null;});for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>touches.delete(e.pointerId));}
-window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();if(k==='escape'&&$('sidebar').classList.contains('open')){$('sidebar').classList.remove('open');syncRoute();return;}if(anyDialog())return;if(k==='enter'&&!active){start();e.preventDefault();return;}if(['w','a','s','d','arrowup','arrowleft','arrowdown','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault();}if(e.repeat)return;if(k==='e'||k===' '){e.preventDefault();interactAction();}if(k==='f'){e.preventDefault();observe();}if(k==='m'){e.preventDefault();showDialog('mapDialog');}if(k==='b'){e.preventDefault();showRealCity();}if(k==='r'){camera.x=player.x;camera.y=player.y;}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();touches.clear();save();});document.addEventListener('visibilitychange',()=>{keys.clear();touches.clear();last=0;if(document.hidden)save();});window.addEventListener('pagehide',save);new ResizeObserver(resize).observe(canvas);window.addEventListener('resize',()=>{if($('mapDialog').open)drawBig();});
+window.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();if(k==='escape'&&$('sidebar').classList.contains('open')){$('sidebar').classList.remove('open');syncRoute();return;}if(anyDialog())return;if(k==='enter'&&!active){start();e.preventDefault();return;}if(['w','a','s','d','arrowup','arrowleft','arrowdown','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault();}if(e.repeat)return;if(k==='e'||k===' '){e.preventDefault();interactAction();}if(k==='f'){e.preventDefault();observe();}if(k==='m'){e.preventDefault();showDialog('mapDialog');}if(k==='r'){camera.x=player.x;camera.y=player.y;}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();touches.clear();save();});document.addEventListener('visibilitychange',()=>{keys.clear();touches.clear();last=0;if(document.hidden)save();});window.addEventListener('pagehide',save);new ResizeObserver(resize).observe(canvas);window.addEventListener('resize',()=>{if($('mapDialog').open)drawBig();});
 const embeddedMap=$('embedded-map-data');
 const mapPromise=Promise.resolve().then(()=>JSON.parse(embeddedMap.textContent));
 const embeddedGeology=$('embedded-geology-data');
