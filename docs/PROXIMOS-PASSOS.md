@@ -117,13 +117,19 @@ Próximo passo: tratar o agrupamento de personagens e placas na câmera inicial,
 
 Próximo passo: avaliar os sprites ainda próximos no corredor central em zoom alto, sem aumentar os limites de deslocamento visual nem tocar nas posições de agenda; qualquer refinamento adicional deve continuar limitado à composição da câmera.
 
-### Subetapa 7.5 — hierarquia de placas e HUD compacto
+### Subetapa 7.5 — correção de espaçamento e legibilidade dos elementos existentes
 
-- No desktop, as placas de pets passam a ter orçamento de três por enquadramento: Bolt tem prioridade e as outras duas são dos pets nomeados mais próximos do jogador entre os que estão no campo visível. Em telas compactas permanece apenas a placa do Bolt, já disponível depois do zoom apropriado.
-- A seleção é calculada a partir dos pontos de rota recebidos e do retângulo visível; não desloca, remove ou reescreve pontos, agendas, itinerários, IDs ou estado salvo. O filtro de sprites da 7.4 permanece separado e inalterado.
-- No mobile, o cartão “Cidade viva” mantém o nome do encontro e continua sendo um botão para abrir o caderno completo; texto secundário e avatares deixam de ocupar o mapa em sobreposição. A informação detalhada continua no caderno dos moradores. O chip da manhã de Francisco recebe apenas espaçamento e tipografia compactos, sem alterar progresso ou missão.
-- `tests/gemini-c15-6-pet-nameplate-priority.test.cjs` cobre orçamento desktop/mobile, prioridade do Bolt, proximidade, descarte de pontos fora da tela, regra noturna e imutabilidade dos dados de entrada; também protege a ação do cartão no mobile.
-- Nenhuma alteração em geometria OSM, coordenadas de personagens/animais, horários, rotas, missões, saves ou HTML gerado. A inspeção visual desta subetapa deve comprovar o resultado em desktop e 390×844 antes de considerar a etapa encerrada.
+
+
+- A correção principal atua em `streetPetCrowdVisible`, filtro de desenho já existente: o intervalo mínimo passa a 88 px em telas compactas e 56 px em desktop, sempre convertido pelo zoom. O filtro apenas evita desenhar silhuetas que se encostam; não cria animais, não altera rotas nem desloca pontos.
+
+- A legibilidade das placas reaproveita `streetPetNameplateVisible` e `streetPetNameplateSlot`, sem um seletor adicional. O slot existente mantém no máximo três placas no desktop e uma em telas compactas; a ordem original dos candidatos preserva a prioridade de Bolt.
+
+- O cartão “Cidade viva” continua sendo o componente existente. No mobile, sua tipografia e largura são ajustadas, a descrição continua disponível quando o jogador está parado e a ocultação durante a caminhada permanece sob a regra original. Somente os avatares decorativos redundantes são ocultados nesse enquadramento.
+
+- As regressões ficam junto de `tests/gemini-c15-pet-silhouette.test.cjs`, cobrindo a nova distância visual, resposta ao zoom, imutabilidade dos pontos de rota e limite do slot de placas. Não é criado módulo, entidade, sistema ou arquivo de teste isolado.
+
+- Nenhuma alteração em geometria OSM, coordenadas, agendas, horários, rotas, missões ou saves. Nenhum HTML gerado versionado foi editado.
 
 ### 8. Modularizar o monólito de forma incremental
 

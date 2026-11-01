@@ -94,10 +94,12 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  assert.equal(helpers.streetPetCrowdVisible(original,placed,1,390),true);
  assert.equal(helpers.streetPetCrowdVisible({x:20,y:24},placed,1,390),false,
   'silhuetas a menos de 44 px não são empilhadas em viewport móvel');
- assert.equal(helpers.streetPetCrowdVisible({x:60,y:24},placed,1,390),true);
- assert.equal(helpers.streetPetCrowdVisible({x:50,y:24},[],1,1440),true,
-  'a densidade desktop mantém o intervalo menor');
- assert.equal(helpers.streetPetCrowdVisible({x:50,y:24},[],2,390),true,
+ assert.equal(helpers.streetPetCrowdVisible({x:90,y:24},placed,1,390),false,
+  'o corpo ilustrado precisa de pelo menos 88 px de respiro no mobile');
+ assert.equal(helpers.streetPetCrowdVisible({x:110,y:24},placed,1,390),true);
+ assert.equal(helpers.streetPetCrowdVisible({x:70,y:24},[],1,1440),true,
+  'o desktop usa o intervalo visual menor de 56 px');
+ assert.equal(helpers.streetPetCrowdVisible({x:60,y:24},[],2,390),true,
   'em zoom alto a distância mínima em unidades do mundo diminui');
  assert.equal(JSON.stringify(original),snapshot,'o ponto original nunca é alterado');
  assert.equal(placed.length,2);
@@ -118,4 +120,19 @@ test('C15.5: nomes de moradores ficam limitados a uma placa no mobile',()=>{
  const source=game.slice(game.indexOf('function layoutResidentNameplates('),
   game.indexOf('function drawDistantResident('));
  assert.match(source,/const limit=phone\?1:marketCrowd\?2:3/);
+});
+test('C15.6: o limite das placas reaproveita o slot de colisão existente',()=>{
+ const helpers=vm.runInNewContext(groupOffsetSource+';({streetPetNameplateVisible,streetPetNameplateSlot})',{Math});
+ const occupied=[],wide=[{x:0,y:0},{x:100,y:0},{x:200,y:0},{x:300,y:0}];
+ assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},2.2,false),true);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.2,false),true);
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.2,true),false);
+ for(let i=0;i<3;i++)assert.notEqual(helpers.streetPetNameplateSlot(wide[i],40,occupied,3),null);
+ assert.equal(helpers.streetPetNameplateSlot(wide[3],40,occupied,3),null,
+  'a quarta placa não deve disputar o mesmo enquadramento desktop');
+ assert.equal(occupied.length,3);
+ const compact=[];
+ assert.notEqual(helpers.streetPetNameplateSlot(wide[0],40,compact,1),null);
+ assert.equal(helpers.streetPetNameplateSlot(wide[1],40,compact,1),null,
+  'o slot compacto conserva apenas a identificação prioritária já existente');
 });

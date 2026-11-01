@@ -39,7 +39,8 @@ function setupMobileWalkingHud(){
    .street-pulse{width:min(176px,calc(100vw - 30px));padding:7px 9px;gap:3px}
    .street-pulse-label{font-size:6px;letter-spacing:.35px}
    .street-pulse strong{font-size:10px;line-height:1.15}
-   .street-pulse #streetResidentsHint,.street-pulse #streetMomentHint,
+   .street-pulse #streetResidentsHint{white-space:normal;line-height:1.25}
+   .street-pulse #streetMomentHint{font-size:7px;line-height:1.2}
    .street-pulse .street-pulse-avatars{display:none}
    .fair-day-note{max-width:calc(100vw - 34px);padding:6px 9px;font-size:8px}
   }
@@ -1928,9 +1929,9 @@ function streetPetGroupOffset(pet,at,companions,people){
  return distance>9?{x:x*9/distance,y:y*9/distance}:{x,y};
 }
 function streetPetCrowdVisible(at,placed,zoom,screenWidth){
- // Keep the original road point and itinerary; this is screen-space decluttering.
- // On phones reserve a little more breathing room between visible silhouettes.
- const compact=screenWidth<=600,minPixels=compact?44:26,minWorld=minPixels/Math.max(.5,zoom);
+ // Correct the spacing of the existing sprites in screen space; route points stay untouched.
+ // The illustrated animal bodies are wider than their anchor points, especially on phones.
+ const compact=screenWidth<=600,minPixels=compact?88:56,minWorld=minPixels/Math.max(.5,zoom);
  if(placed.some(other=>Math.hypot(other.x-at.x,other.y-at.y)<minWorld))return false;
  placed.push({x:at.x,y:at.y});
  return true;
@@ -1938,20 +1939,8 @@ function streetPetCrowdVisible(at,placed,zoom,screenWidth){
 function streetPetNameplateVisible(pet,zoom,compact=false){
  return !!pet.name&&(compact?!!pet.bolt&&zoom>2:pet.bolt?zoom>1.2:zoom>2.1);
 }
-function streetPetNameplateSelection(candidates,companions,view,playerPosition,zoom,compact=false,daylight=true){
- const eligible=[];
- for(let index=0;index<candidates.length;index++){
-  const pet=candidates[index],at=companions[index]?.at;
-  if(!pet?.name||!at||!Number.isFinite(at.x)||!Number.isFinite(at.y))continue;
-  if(!daylight&&pet.variant!==7)continue;
-  if(at.x<view.left-18||at.x>view.right+18||at.y<view.top-18||at.y>view.bottom+18)continue;
-  if(!streetPetNameplateVisible(pet,zoom,compact))continue;
-  eligible.push({id:pet.id,bolt:!!pet.bolt,distance:Math.hypot(at.x-playerPosition.x,at.y-playerPosition.y)});
- }
- eligible.sort((a,b)=>(Number(b.bolt)-Number(a.bolt))||a.distance-b.distance||a.id.localeCompare(b.id));
- return eligible.slice(0,compact?1:3).map(item=>item.id);
-}
-function streetPetNameplateSlot(at,width,occupied){
+function streetPetNameplateSlot(at,width,occupied,limit=Infinity){
+ if(occupied.length>=limit)return null;
  // Try a few compact vertical lanes around a pet; hide the label if every
  // slot is already occupied rather than drawing overlapping name cards.
  for(const y of [-28,-42,-56]){
@@ -2096,7 +2085,6 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
  const companions=candidates.map(pet=>({id:pet.id,at:pet.bolt?boltCityPoint():walkingPoint(pet.id,pet.hub,pet.variant)}));
  const occupiedNameplates=[],drawnPetCenters=[];
  const compactViewport=w<=600;
- const visiblePetNameplates=new Set(streetPetNameplateSelection(candidates,companions,view,player,zoom,compactViewport,daylight));
  for(const [index,pet] of candidates.entries()){
   if(!daylight&&pet.variant!==7)continue;
   const at=companions[index].at;if(!at)continue;
@@ -2107,8 +2095,8 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
   const visualCenter={x:at.x+spriteOffset.x,y:at.y+spriteOffset.y};
   if(!streetPetCrowdVisible(visualCenter,drawnPetCenters,zoom,w))continue;
   const labelWidth=pet.name?Math.max(24,pet.name.length*4.6+8):0;
-  const labelY=visiblePetNameplates.has(pet.id)
-   ? streetPetNameplateSlot(visualCenter,labelWidth,occupiedNameplates)
+  const labelY=streetPetNameplateVisible(pet,zoom,compactViewport)
+   ? streetPetNameplateSlot(visualCenter,labelWidth,occupiedNameplates,compactViewport?1:3)
    : null;
   const drawPet=()=>{
   // Character-specific rhythm, without changing street positions or save data.
