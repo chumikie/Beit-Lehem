@@ -131,7 +131,14 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     html = replaceExactlyOnce(html, before, after, 'Identidade visual Beit Lehem');
   }
 
-  // Fictional in-world presentation: keep research in the archived source,
+  // The archived HTML keeps the historical character label; update only
+  // rendered copy, never the `damiao` IDs used by older save data.
+  html=replaceExactlyOnce(html,'title="Seu Damião">🧺<small>Damião</small>',
+    'title="Seu Francisco">🧺<small>Francisco</small>','Cartão estático de Francisco');
+  html=replaceExactlyOnce(html,'Damião, bancas e tarefas são ficcionais;',
+    'Francisco, bancas e tarefas são ficcionais;','Descrição estática da feira');
+
+  // Fictional in-world presentation: keep research in the archived source:
   // but exclude documentary controls and the two photo payloads from play.
   html=replaceExactlyOnce(html,'▦ <span>Quadras</span>','✎ <span>Ateliê</span>','Nome do ateliê');
   html=replaceExactlyOnce(html,'▦ ATELIÊ DAS RUAS · BELÉM/PB','▦ ATELIÊ DE BEIT LEHEM','Título do ateliê');
