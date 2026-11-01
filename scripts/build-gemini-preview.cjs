@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {applyOverrides}=require('./gemini-workbench.cjs');
+const {composeCurrentMap,extractEmbeddedMap,replaceEmbeddedMap}=require('./current-geodata.cjs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const SOURCE_RELATIVE = path.join('references', 'gemini-2026-10-31', 'experimento-anonimizado.html.txt');
@@ -28,6 +29,14 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT, outputRelative = OUTPUT_
   let html = fs.readFileSync(sourcePath, 'utf8');
   const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
   html=workbench.html;
+  // The offline game map is composed from the canonical municipal OSM extract.
+  // The geometry guard rejects silent road/area changes; presentation and local
+  // place aliases are kept in separate layers rather than mutating OSM tags.
+  const osmPath=path.join(projectRoot,'source','belem-osm-2026.geojson');
+  if(!fs.existsSync(osmPath))throw new Error('Fonte OSM canônica ausente: source/belem-osm-2026.geojson');
+  const osm=JSON.parse(fs.readFileSync(osmPath,'utf8'));
+  const currentMap=composeCurrentMap(osm,extractEmbeddedMap(html));
+  html=replaceEmbeddedMap(html,currentMap);
   // Static markup is not part of game.js overrides. Keep the initial DOM
   // consistent with the current fictional character name from the first paint.
   html=replaceExactlyOnce(html,'<h3>A manhã de Damião</h3>',
