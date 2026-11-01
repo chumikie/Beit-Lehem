@@ -22,9 +22,16 @@ const builtHtml = fs.readFileSync(result.outputPath, 'utf8');
 // CI-only probe: measure the actual render() call without changing shipped game modules.
 const renderCall = 'move(dt,t/1000);render(t/1000);renderedFrames++;';
 assert.equal(builtHtml.split(renderCall).length, 2, 'render probe insertion point changed');
+const uiCall = 'updateUI();uiClock=0;';
+assert.equal(builtHtml.split(uiCall).length, 2, 'UI probe insertion point changed');
 const html = builtHtml.replace(renderCall,
-  'move(dt,t/1000);{const p=performance.now();render(t/1000);'+
-  'window.__ciRenderSamples?.push({at:p,ms:performance.now()-p});}renderedFrames++;');
+  '{const p=performance.now();move(dt,t/1000);'+
+  'window.__ciMoveSamples?.push({at:p,ms:performance.now()-p});}'+
+  '{const p=performance.now();render(t/1000);'+
+  'window.__ciRenderSamples?.push({at:p,ms:performance.now()-p});}renderedFrames++;')
+  .replace(uiCall,
+    '{const p=performance.now();updateUI();'+
+    'window.__ciUiSamples?.push({at:p,ms:performance.now()-p});}uiClock=0;');
 const map = extractEmbeddedMap(html);
 
 assert.equal(map.roads.length, 462);
@@ -152,6 +159,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   const page = await context.newPage();
   await page.addInitScript(() => {
     window.__ciRenderSamples = [];
+    window.__ciMoveSamples = [];
+    window.__ciUiSamples = [];
     window.__ciLongTasks = [];
     try {
       new PerformanceObserver(list => {
@@ -163,6 +172,8 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   const cdp = await context.newCDPSession(page);
   await cdp.send('Performance.enable');
   async function samplePerformance(phase, durationMs = 850) {
+    const rounds = [];
+    for (let round = 0; round < 3; round++) {
     const start = await page.evaluate(() => performance.now());
     const before = await cdp.send('Performance.getMetrics');
     await page.waitForTimeout(durationMs);
@@ -176,19 +187,26 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
         canvas: canvas ? { width: canvas.width, height: canvas.height,
           cssWidth: +css.width.toFixed(2), cssHeight: +css.height.toFixed(2) } : null,
         frames: window.__ciRenderSamples.filter(s => s.at >= start && s.at < end),
+        moves: window.__ciMoveSamples.filter(s => s.at >= start && s.at < end),
+        uiUpdates: window.__ciUiSamples.filter(s => s.at >= start && s.at < end),
         longTasks: window.__ciLongTasks.filter(s => s.at >= start && s.at < end),
       };
     }, { start, end });
     const values = metrics => Object.fromEntries(metrics.metrics.map(m => [m.name, m.value]));
     const a = values(before), b = values(after);
     const durations = observed.frames.map(s => s.ms).sort((a, b) => a - b);
+    const movement = observed.moves.map(s => s.ms).sort((a, b) => a - b);
+    const uiUpdates = observed.uiUpdates.map(s => s.ms).sort((a, b) => a - b);
     const intervals = observed.frames.slice(1).map((s, i) => s.at - observed.frames[i].at)
       .sort((a, b) => a - b);
     const pct = (arr, q) => arr.length ? +arr[Math.min(arr.length - 1, Math.ceil(arr.length*q)-1)].toFixed(2) : null;
-    const summary = { phase, elapsedMs: +(end-start).toFixed(1), dpr: observed.dpr,
+    const summary = { round: round+1, elapsedMs: +(end-start).toFixed(1), dpr: observed.dpr,
       canvas: observed.canvas, frames: durations.length,
       renderMs: { p50: pct(durations,.5), p95: pct(durations,.95), max: pct(durations,1),
         over33ms: durations.filter(n => n > 1000/30).length },
+      moveMs: { p50: pct(movement,.5), p95: pct(movement,.95), max: pct(movement,1) },
+      uiMs: { count: uiUpdates.length, p50: pct(uiUpdates,.5),
+        p95: pct(uiUpdates,.95), max: pct(uiUpdates,1) },
       frameIntervalMs: { p50: pct(intervals,.5), p95: pct(intervals,.95), max: pct(intervals,1) },
       longTasks: { count: observed.longTasks.length,
         maxMs: Math.max(0,...observed.longTasks.map(s => s.ms)) },
@@ -196,7 +214,9 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
       layoutMs: +((b.LayoutDuration-a.LayoutDuration)*1000).toFixed(2),
       paintMs: +((b.PaintDuration-a.PaintDuration)*1000).toFixed(2) };
     assert.ok(summary.canvas?.width > 0 && summary.canvas?.height > 0);
-    return summary;
+    rounds.push(summary);
+    }
+    return { phase, rounds };
   }
   page.on('pageerror', error => pageErrors.push(name + ': ' + error.message));
   page.on('console', message => {
