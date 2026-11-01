@@ -3607,7 +3607,7 @@
       <strong id="lifeClock">Dia 1 · segunda-feira · 08:30</strong>
       <p id="fairStatus" class="life-fair-status">✿ Na segunda do jogo, a feira ganha vida.</p>
       <div class="life-cast" aria-label="Moradores do jogo">
-        <span id="castDamiao" title="Seu Damião">🧺<small>Damião</small></span>
+        <span id="castDamiao" title="Seu Francisco">🧺<small>Francisco</small></span>
         <span id="castLucia" title="Dona Lúcia">🌷<small>Lúcia</small></span>
         <span id="castBia" title="Bia">📚<small>Bia</small></span>
       </div>
@@ -3652,7 +3652,7 @@
       <button id="marketChapterAction" class="market-chapter-action" type="button">Começar o passeio ↗</button>
       <p id="marketStreetResult" class="market-street-result" hidden></p>
       <button id="marketReturnStreet" class="market-chapter-action" type="button" hidden>⌖ Rever nossa banca na rua</button>
-      <small>Os pontos das ruas vêm do OSM. Damião, bancas e tarefas são ficcionais; não indicam vendedores ou horários reais.</small>
+      <small>Os pontos das ruas vêm do OSM. Francisco, bancas e tarefas são ficcionais; não indicam vendedores ou horários reais.</small>
     </section>
     <section id="fairQuestCard" class="fair-quest-card" aria-label="Missão cozy opcional da cesta de histórias">
       <div class="fair-quest-eyebrow"><span>🧺 CAPÍTULO 02</span><span>MISSÃO COZY</span></div>
@@ -8298,7 +8298,7 @@ function syncKawaiiUI(){
  const acc=window.RoncadorKawaiiMoto.currentAccessory(kawaiiState);
  $('toggleMotoBtn').classList.toggle('active-moto',riding);
  $('motoBtnLabel').textContent=riding?'Pilotando · '+skin.name.split(' ')[1]:'Motinha Kawaii';
- $('sordaHudCount').textContent=kawaiiState.sordas+' pão'+(kawaiiState.sordas===1?'':'es');
+ $('sordaHudCount').textContent=kawaiiState.sordas+(kawaiiState.sordas===1?' pão':' pães');
  const stars=collected.size*10+window.RoncadorBelemContacts.totalHearts(belemContacts)*5+kawaiiState.sordasGifted*5+kawaiiState.ferrisRides*10;
  if($('kawaiiStatsBadge'))$('kawaiiStatsBadge').textContent='★ '+stars+' pts · '+acc.icon;
 }
