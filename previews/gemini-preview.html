@@ -7889,6 +7889,7 @@ function cultureInteractionHint(culture,guide,resident,secondary,mission){
   ?'Visitar '+culture.name+' (E). Para observar os arredores, use F ou o botão Observar.':'';
 }
 function interactAction(){
+ if(!active||anyDialog())return;
  if(nearGuide){talkGuide();return;}
  if(nearResident?.meeting){talkResident(nearResident.id);return;}
  if(nearResident){talkResident(nearResident.id);return;}
