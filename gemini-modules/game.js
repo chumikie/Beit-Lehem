@@ -384,10 +384,13 @@ function drawRuralShrub(c,x,y,r,seed){
  c.restore();
 }
 function house(c,b){
- c.save();c.translate(b.x,b.y);
+ // The roof, wall and extra facade layers must share the same road-aligned
+ // footprint used by collisions, including the street-facing side.
+ c.save();c.translate(b.x,b.y);c.rotate(b.angle);
+ if(b.side===1)c.scale(1,-1);
  const x=-b.w/2,shop=b.seed%9===0,flat=b.seed%4===0;
  const roofType=b.seed%3,doorLeft=b.seed%2===0,far=zoom<1.3;
- const wallHeight=7+(b.seed%4),frontY=b.h*.06;
+ const wallHeight=7+(b.seed%4),frontY=b.h*.13;
  // World-space ground shadow follows the screen's light direction, not lot rotation.
  c.fillStyle='#354a3b2a';c.beginPath();c.ellipse(2,b.h*.35+5,b.w*.64,b.h*.35,0,0,Math.PI*2);c.fill();
  // Side boundary: low plaster wall or hedge softens the gaps between neighboring
@@ -399,11 +402,8 @@ function house(c,b){
    c.beginPath();c.moveTo(edge,frontY+wallHeight-1);c.lineTo(edge+side*3.5,frontY+wallHeight-1);c.stroke();
   }
  }
- // Keep a hint of the parcel's bearing without letting a 90°/180° road turn
- // the roof edge-on or hide it behind the south-facing front wall.
- const roofBearing=Math.atan(Math.tan(b.angle));
- const roofAngle=Math.max(-.42,Math.min(.42,roofBearing));
- c.save();c.rotate(roofAngle);
+ // This roof is already inside the lot transform; rotating it again would
+ // separate it from the wall on diagonal streets.
  const roofY=-b.h*.5,roofDepth=b.h*.62;
  const roofs=['#c98268','#c39a75','#a2a492','#d19a83','#829c94'];
  roundRect(c,x-1,roofY-1,b.w+2,roofDepth+2,roofType===1?2.6:1.8,roofs[b.color],'#79594b70');
@@ -417,8 +417,7 @@ function house(c,b){
   }
   c.strokeStyle='#fff3d18f';c.lineWidth=.85;c.beginPath();c.moveTo(x,roofY+1);c.lineTo(x+b.w,roofY+1);c.stroke();
  }
- c.restore();
- // A 7–10 px vertical south-facing wall gives the homes a readable 3/4 volume.
+ // A 7–10 unit street-facing wall gives the homes a readable 3/4 volume.
  const walls=['#f2e6cb','#e9dfc7','#e7d8bd','#f3e7d3'];
  roundRect(c,x,frontY,b.w,wallHeight,1,walls[b.seed%walls.length],'#ad9e85');
  c.fillStyle='#6954473b';c.fillRect(x,frontY,b.w,1.4);

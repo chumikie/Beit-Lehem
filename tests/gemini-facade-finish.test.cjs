@@ -10,7 +10,7 @@ assert.ok(start>=0&&end>start,'house drawing function must be available');
 
 function paintedHouse(seed,zoom){
  const layers=[];
- const ctx={save(){},restore(){},translate(){},rotate(){},beginPath(){},ellipse(){},arc(){},fill(){},moveTo(){},lineTo(){},stroke(){layers.push({stroke:true});},fillRect(){layers.push({rect:true});},closePath(){}};
+ const ctx={save(){},restore(){},translate(){},rotate(){},scale(){},beginPath(){},ellipse(){},arc(){},fill(){},moveTo(){},lineTo(){},stroke(){layers.push({stroke:true});},fillRect(){layers.push({rect:true});},closePath(){}};
  const draw=vm.runInNewContext(source.slice(start,end)+';house',{
   zoom,detailedFacades:false,
   roundRect:(_c,x,y,width,height,radius,fill,stroke)=>layers.push({x,y,width,height,radius,fill,stroke})
@@ -37,15 +37,35 @@ test('distant roofs omit small decoration without losing silhouette',()=>{
  assert.ok(distant.some(layer=>layer.width===26),'roof remains present from afar');
 });
 
-test('roof may follow the parcel but doors and windows remain upright on screen',()=>{
+test('roof, wall and doors use the same street-aligned lot transform',()=>{
  const section=source.slice(start,end);
- assert.match(section,/c\.rotate\(roofAngle\)/);
- assert.match(section,/Math\.max\(-\.42,Math\.min\(\.42,roofBearing\)\)/);
- assert.doesNotMatch(section,/c\.scale\(1,-1\)/);
- assert.ok(section.indexOf('c.restore();\n // A 7–10 px vertical')>section.indexOf('c.rotate(roofAngle)'),
-  'roof transform ends before the front wall');
+ assert.match(section,/c\.rotate\(b\.angle\)/);
+ assert.match(section,/if\(b\.side===1\)c\.scale\(1,-1\)/);
+ assert.doesNotMatch(section,/c\.rotate\(roofAngle\)/);
  assert.match(section,/wallHeight=7\+\(b\.seed%4\)/);
  assert.match(section,/frontY\+1\.5/);
+});
+
+test('C7: casa, fachadas adicionais e colisão compartilham ângulo e lados',()=>{
+ const base=source.slice(start,end);
+ const studio=fs.readFileSync(require.resolve('../gemini-modules/facade-studio.js'),'utf8');
+ const blocks=fs.readFileSync(require.resolve('../gemini-modules/central-blocks.js'),'utf8');
+ const collision=source.slice(source.indexOf('function blockedByHouse('),source.indexOf('\nfunction mayAdvanceOnMappedRoute('));
+ for(const detail of [base,studio,blocks]){
+  assert.match(detail,/\.rotate\((?:b|home)\.angle\)/);
+  assert.match(detail,/\.side===1\)c\.scale\(1,-1\)/);
+ }
+ assert.match(collision,/Math\.cos\(house\.angle\)/);
+ assert.match(collision,/Math\.abs\(lx\)<house\.w\/2\+5/);
+ // All drawing layers now agree at horizontal, diagonal and near-vertical lots.
+ for(const zoomLevel of [.65,1.15,1.85,2.85,3.5])for(const angle of [0,Math.PI/6,Math.PI/3,Math.PI/2,-Math.PI/3]){
+  const transforms=[];
+  const ctx={save(){},restore(){},translate(){},rotate:a=>transforms.push(a),scale(){},
+   beginPath(){},ellipse(){},arc(){},fill(){},moveTo(){},lineTo(){},stroke(){},fillRect(){}};
+  const draw=vm.runInNewContext(base+';house',{zoom:zoomLevel,detailedFacades:false,roundRect(){}});
+  draw(ctx,{x:0,y:0,w:18,h:13,angle,side:1,seed:4,color:2});
+  assert.deepEqual(transforms,[angle],'roof is never rotated twice');
+ }
 });
 
 test('denser decorative lots preserve the street coordinates and save format',()=>{
