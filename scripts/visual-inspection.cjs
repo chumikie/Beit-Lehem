@@ -58,14 +58,6 @@ const server = http.createServer((req, res) => {
   res.end(html);
 });
 
-function visible(element) {
-  if (!element) return false;
-  const style = getComputedStyle(element);
-  const rect = element.getBoundingClientRect();
-  return style.display !== 'none' && style.visibility !== 'hidden' &&
-    rect.width > 0 && rect.height > 0;
-}
-
 async function collectLayout(page, label) {
   return page.evaluate(({ label }) => {
     const selectors = [
@@ -141,7 +133,7 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
   await page.waitForFunction(() => {
     const welcome = document.querySelector('#welcome');
     return welcome && getComputedStyle(welcome).display === 'none';
-  }, { timeout: 15000 });
+  }, null, { timeout: 15000 });
   await page.waitForTimeout(800);
 
   // Zoom one notch for a close inspection of houses, vegetation and street labels.
@@ -198,15 +190,17 @@ async function captureViewport(browser, baseUrl, name, viewport, mobile) {
     const right = page.locator('#touchPad [data-move="right"]');
     movement.controlVisible = await right.isVisible().catch(() => false);
     if (movement.controlVisible) {
-      await right.dispatchEvent('pointerdown', {
-        pointerId: 41, pointerType: 'touch', isPrimary: true,
-        button: 0, buttons: 1, clientX: 10, clientY: 10
+      const box = await right.boundingBox();
+      assert.ok(box, 'controle tátil precisa ter uma área clicável');
+      const touch = await context.newCDPSession(page);
+      const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      await touch.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ id: 1, x: point.x, y: point.y, radiusX: 5, radiusY: 5, force: 1 }]
       });
       await page.waitForTimeout(650);
-      await right.dispatchEvent('pointerup', {
-        pointerId: 41, pointerType: 'touch', isPrimary: true,
-        button: 0, buttons: 0, clientX: 10, clientY: 10
-      });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await touch.detach();
     }
   } else {
     await page.keyboard.down('ArrowRight');
