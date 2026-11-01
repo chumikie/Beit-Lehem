@@ -197,6 +197,19 @@
     if(!Object.hasOwn(activities,id))return null;
     return{activity:activities[id],shift:Math.sin(Math.PI*phase)*11};
   }
+  // Descriptions of existing everyday gestures; no new places, appointments or
+  // save fields. The extra week offset avoids repeating the same weekday text.
+  const DAILY_ACTIVITIES={
+    damiao:{morning:['conversando no mercado','conferindo os cestos com calma','observando o movimento da feira'],afternoon:['trocando notícias perto da banca','organizando as ideias para a feira','fazendo uma pausa entre conversas']},
+    lucia:{morning:['observando os jardins','reparando nas folhas e flores','conversando sobre pequenas lembranças'],afternoon:['trocando histórias e cuidando das flores','observando a sombra sobre as plantas','descansando entre conversas perto da Matriz']},
+    bia:{morning:['lendo enquanto espera','revisando anotações do caderno','observando as chegadas e despedidas'],afternoon:['estudando e planejando novos caminhos','organizando as ideias do caderno','pensando nas histórias das viagens']}
+  };
+  function dailyActivity(s,id,period){
+    const options=DAILY_ACTIVITIES[id]?.[period];
+    if(!options)return '';
+    const day=Math.max(1,Math.floor(Number(s?.day)||1));
+    return options[(day-1+Math.floor((day-1)/7))%options.length];
+  }
   function agenda(s,id){
     const hour=s.minute/60,weekday=(s.day-1)%7;
     if(hour<8||hour>=20)return{present:false,activity:'descansando em casa',hub:null};
@@ -214,11 +227,11 @@
     if(variation)return variation;
     if(typeof window==='undefined'&&weekday===4&&hour>=16.5&&hour<17)
       return{present:true,hub:'mercado',activity:'encontrando amigos na feira',meeting:true};
-    if(id==='damiao')return hour<13||hour>=16&&hour<18?{present:true,hub:'mercado',activity:morningDeparture(s,id)?.activity||(weekday===0?'organizando a feira':'conversando no mercado')}:{present:false,hub:null,activity:'fazendo uma pausa e almoçando'};
+    if(id==='damiao')return hour<13||hour>=16&&hour<18?{present:true,hub:'mercado',activity:morningDeparture(s,id)?.activity||(weekday===0&&hour<13?'organizando a feira':dailyActivity(s,id,hour<13?'morning':'afternoon'))}:{present:false,hub:null,activity:'fazendo uma pausa e almoçando'};
     // Fictional half-past-eight start keeps the Matriz chapter accessible just
     // after the Mercado morning; it does not claim a real local resident schedule.
-    if(id==='lucia')return hour>=8.5&&hour<12||hour>=14.5&&hour<18.5?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||(hour<12?'observando os jardins':'trocando histórias e cuidando das flores')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
-    if(id==='bia')return hour>=8&&hour<11||hour>=15&&hour<19?{present:true,hub:'rodoviaria',activity:morningDeparture(s,id)?.activity||(hour<11?'lendo enquanto espera':'estudando e planejando novos caminhos')}:{present:false,hub:null,activity:'em casa, lendo e fazendo uma pausa'};
+    if(id==='lucia')return hour>=8.5&&hour<12||hour>=14.5&&hour<18.5?{present:true,hub:'igreja',activity:morningDeparture(s,id)?.activity||dailyActivity(s,id,hour<12?'morning':'afternoon')}:{present:false,hub:null,activity:'em casa, entre plantas e costuras'};
+    if(id==='bia')return hour>=8&&hour<11||hour>=15&&hour<19?{present:true,hub:'rodoviaria',activity:morningDeparture(s,id)?.activity||dailyActivity(s,id,hour<11?'morning':'afternoon')}:{present:false,hub:null,activity:'em casa, lendo e fazendo uma pausa'};
     return{present:false,hub:null,activity:'em sua rotina'};
   }
   function mood(s,id){
@@ -298,6 +311,6 @@
     return{ok:true,text:choice.effect,progress:careProgress(s)};
   }
   function careProgress(s){return RESIDENTS.filter(person=>Number(s?.people?.[person.id]?.careCount)>0).length;}
-  return{DAYS,RESIDENTS,CARE,fresh,restore,label,isMarketMorning,weeklyVariation,weeklyReunion,weeklyVisitAgenda,smallWalkForDay,smallWalkAt,smallWalkAgenda,smallWalkOccurred,lastWeekRoutine,morningDeparture,agenda,mood,advance,tomorrow,event,talk,care,careProgress};
+  return{DAYS,RESIDENTS,CARE,fresh,restore,label,isMarketMorning,weeklyVariation,weeklyReunion,weeklyVisitAgenda,smallWalkForDay,smallWalkAt,smallWalkAgenda,smallWalkOccurred,lastWeekRoutine,morningDeparture,dailyActivity,agenda,mood,advance,tomorrow,event,talk,care,careProgress};
 });
 
