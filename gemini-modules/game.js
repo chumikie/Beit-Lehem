@@ -458,7 +458,15 @@ function drawTree(c,x,y,r,seed,tone='street'){
  const colors=tone==='shade'?['#78977e','#7d9d82','#6f8e70','#8ca889','#76977b']:
   tone==='canopy'?['#7ca06e','#7fa579','#719365','#94ad80','#88a579']:
   ['#779d68','#719c77','#628d5e','#8da77b','#90ad79'];
- c.fillStyle=colors[seed%5];c.beginPath();c.arc(x,y-r*.39,r*.72,0,7);c.arc(x-r*.39,y-r*.67,r*.56,0,7);c.arc(x+r*.37,y-r*.68,r*.58,0,7);c.fill();
+ // Three gentle crown profiles reuse the established palette and footprint.
+ // They are artistic silhouettes, not identified species or mapped trees.
+ const crown=seed%3,spread=crown===0?1.07:crown===1?.92:1;
+ const leftLift=crown===1?.76:.67,rightLift=crown===2?.79:.68;
+ c.fillStyle=colors[seed%5];c.beginPath();
+ c.arc(x,y-r*.39,r*.72,0,7);
+ c.arc(x-r*.39*spread,y-r*leftLift,r*(crown===1?.51:.56),0,7);
+ c.arc(x+r*.37*spread,y-r*rightLift,r*(crown===2?.53:.58),0,7);
+ c.fill();
  c.fillStyle=lightPhase==='tarde'?'#e2d59b4a':lightPhase==='anoitecer'?'#98b28e38':'#bad2a05e';c.beginPath();c.ellipse(x-r*.22,y-r*.87,r*.37,r*.24,-.2,0,7);c.fill();
  c.fillStyle='#eff3cc70';for(let i=0;i<4;i++){const a=i*2.25+seed*.29;c.beginPath();c.arc(x+Math.cos(a)*r*.39,y-r*.56+Math.sin(a)*r*.3,1.05,0,7);c.fill();}
  c.restore();
