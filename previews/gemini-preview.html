@@ -7828,6 +7828,37 @@ function talkResident(id){
  meetResident(id);
  renderLife();showDialog('lifeDialog');
 }
+// The three linked chapters live in the travel journal, but their invitation
+// happens in the resident notebook. Keep a direct, contextual continuation
+// there so a conversation does not become a hunt through unrelated panels.
+function chapterConversationFollowup(id,market,lucia,bia){
+ if(id==='damiao'&&market.talked&&!market.claimed)return {title:'🧺 Continuar a manhã com Francisco',chapter:'market'};
+ if(id==='lucia'&&market.claimed&&lucia.talked&&!lucia.claimed)return {title:'🌱 Cuidar da muda com Lúcia',chapter:'lucia'};
+ if(id==='bia'&&lucia.claimed&&bia.talked&&!bia.claimed)return {title:'✉ Escrever a carta com Bia',chapter:'bia'};
+ return null;
+}
+function renderConversationFollowup(){
+ let action=$('chapterConversationFollowup');
+ if(!action){
+  action=document.createElement('button');action.id='chapterConversationFollowup';action.type='button';
+  action.className='resident-action';$('lifeConversation').insertAdjacentElement('afterend',action);
+ }
+ const nearby=residentsInStreets().some(p=>p.id===careResidentId&&Math.hypot(player.x-p.x,player.y-p.y)<43);
+ const next=nearby&&chapterConversationFollowup(careResidentId,marketMorning,luciaGarden,biaLetters);
+ const available=next&&(next.chapter==='market'?marketWorkerAvailable():next.chapter==='lucia'?luciaAvailable():biaAvailable());
+ action.hidden=!next||!active;
+ if(!next||!active)return;
+ action.disabled=!available;
+ action.textContent=available?next.title+' ↗':'☾ '+next.title+' · volte durante a rotina habitual';
+ action.setAttribute('aria-label',available?next.title:'Atividade de capítulo indisponível neste horário; consulte a rotina do morador');
+ action.onclick=()=>{
+  if(!available)return;
+  $('lifeDialog').close();
+  if(next.chapter==='market')marketChapterAction();
+  else if(next.chapter==='lucia')luciaChapterAction();
+  else biaChapterAction();
+ };
+}
 function drawResidentPortrait(def,index){
  const portrait=document.createElement('canvas');portrait.width=92;portrait.height=104;portrait.className='resident-portrait';
  portrait.setAttribute('role','img');portrait.setAttribute('aria-label','Retrato kawaii ilustrado de '+def.name);
@@ -8142,6 +8173,7 @@ function renderLife(){
  if(!living.notes.length){memories.textContent='O diário ainda espera sua primeira conversa.';}
  else for(const note of living.notes.slice(0,5)){const p=document.createElement('p');p.textContent='Dia '+note.day+' · '+note.text;memories.append(p);}
  renderCareChoices();
+ renderConversationFollowup();
  $('lifeRest').disabled=!active;
 }
 function showLife(){if(!loaded)return;$('sidebar').classList.remove('open');syncRoute();renderLife();showDialog('lifeDialog');lastJournalDay=living.day;save();}
