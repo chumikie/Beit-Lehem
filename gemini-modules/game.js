@@ -34,6 +34,7 @@ function setupMobileWalkingHud(){
    .world-tools button{width:44px;height:44px}
    .sky-mood{top:210px}
    .street-pulse.is-walking{padding:7px 10px;gap:2px}
+   .street-pulse.is-walking #streetResidentsHint,.street-pulse.is-walking #streetMomentHint{display:none}
    /* The encounter stays tappable; secondary copy remains in the resident notebook. */
    .street-pulse{width:min(176px,calc(100vw - 30px));padding:7px 9px;gap:3px}
    .street-pulse-label{font-size:6px;letter-spacing:.35px}
