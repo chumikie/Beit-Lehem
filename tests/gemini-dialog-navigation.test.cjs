@@ -34,7 +34,7 @@ test('diálogo não cancela rota de clique e suspende movimento de teclado e toq
 });
 
 test('fechar diálogos preserva destino, câmera e controles existentes',()=>{
- assert.match(source,/document\.querySelectorAll\('dialog'\)\.forEach\(d=>\{d\.addEventListener\('close',\(\)=>\{keys\.clear\(\);updateUI\(\);\}\)/);
+ assert.match(source,/document\.querySelectorAll\('dialog'\)\.forEach\(d=>\{d\.addEventListener\('close',\(\)=>\{keys\.clear\(\);touches\.clear\(\);updateUI\(\);\}\)/);
  assert.match(source,/\$\('interact'\)\.onclick=interactAction;\$\('observe'\)\.onclick=observe/);
  assert.match(source,/for\(const b of document\.querySelectorAll\('\[data-move\]'\)\)/);
 });
