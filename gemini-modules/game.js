@@ -1929,7 +1929,7 @@ function streetPetCrowdVisible(at,placed,zoom,screenWidth){
  return true;
 }
 function streetPetNameplateVisible(pet,zoom,compact=false){
- return !!pet.name&&(compact?pet.bolt&&zoom>2:pet.bolt?zoom>1.2:zoom>2.1);
+ return !!pet.name&&(compact?!!pet.bolt&&zoom>2:pet.bolt?zoom>1.2:zoom>2.1);
 }
 function streetPetNameplateSlot(at,width,occupied){
  // Try a few compact vertical lanes around a pet; hide the label if every
