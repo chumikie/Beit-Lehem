@@ -4,6 +4,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
+const groupOffsetSource=game.slice(game.indexOf('function streetPetGroupOffset('),game.indexOf('function drawCozyPetSprite('));
 const petSource=game.slice(game.indexOf('function drawCozyPetSprite('),game.indexOf('function drawPuddles('));
 
 test('C15.3: preserva os quatro pets originais e identifica nove animais personalizados',()=>{
@@ -33,7 +34,7 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
   boltCityPoint:()=>({x:10,y:20}),walkingPoint:()=>({x:10,y:20}),boltRestingByGreen:()=>false,
   streetPetBehavior:()=>({resting:false,bounce:.78,tailRate:3.2,curious:false,observing:false}),
   streetPetVisualOffset:()=>({x:0,y:0}),streetPetGesture:()=> 'none',roundRect:()=>{}};
- const draw=vm.runInNewContext(petSource+';drawStreetPets',scope);
+ const draw=vm.runInNewContext(groupOffsetSource+'\n'+petSource+';drawStreetPets',scope);
  const queue=[];draw(ctx,1,{left:-100,right:100,top:-100,bottom:100},[],queue);
  assert.equal(queue.length,13);
  for(const item of queue){
