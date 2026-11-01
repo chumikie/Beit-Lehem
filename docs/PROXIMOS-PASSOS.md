@@ -63,12 +63,17 @@
 
 **Validação oficial do HEAD da Etapa 6:** `npm test` **400/400**, zero falhas (Node 22; 18,91 s); build temporário **955.404 bytes**; inspeção Chromium desktop/móvel concluída; artefato enviado com sucesso. [Execução completa no GitHub Actions](https://github.com/chumikie/Beit-Lehem/actions/runs/41334796719).
 
-### 7. Reconstrução urbana guiada por evidências — primeira subetapa
+### 7. Reconstrução urbana guiada por evidências — primeira subetapa concluída
 
 - Criar uma matriz que separa evidência documental, geometria OSM, memória local e interpretação arquitetônica; não tratar ausência de edifício no extrato como ausência física na cidade.
 - Reclassificar as áreas de estudo por pontos OSM ou corredores calculados diretamente sobre nomes/geometrias OSM literais. Os raios/corredores são apenas limites de composição visual, não perímetros de bairros ou lotes.
 - Alinhar a frente ilustrada de cada casa ao rumo da rua geradora e voltá-la visualmente para a via. A transformação é exclusivamente de renderização: não altera centros, dimensões, ângulos salvos, grafo, missões ou saves.
 - A auditoria de projeção confirmou que a fórmula ativa é coerente: X=(lon−origemLon)×escalaLon; Y=(origemLat−lat)×escalaLat; GPS inverso usa origemLat−Y/escalaLat. Corrigir a anotação antiga de sinal Y no relatório geográfico; não mover os pinos.
+- **Resultado da subetapa 7.1 (HEAD 124f5533):** matriz setorial registrada em `docs/MATRIZ-EVIDENCIAS-URBANAS-2026-11-01.md`; âncoras de rua calculadas na geometria OSM literal; fachadas rotacionadas para o lado da rua; sem alteração de coordenadas das casas, ruas, áreas, POIs, missões, horários ou formato de save.
+- **Projeção:** round-trip GPS aprovado; sinal Y positivo validado para Pedra do Cordeiro e Parque São Luís. A anotação negativa anterior foi retificada em `docs/AUDITORIA-GEOGRAFICA-ETAPA-1.md`; nenhum pino foi movido.
+- **Regressões:** `npm test` **412/412**, zero falhas. Inspeção Playwright desktop 1440×960 e móvel 390×844 aprovada; sem overflow e sem page errors JavaScript. Build temporário **960.876 bytes**, 462 vias, 20 áreas, 9 pontos OSM, 9 POIs locais e 86 nomes; nenhum HTML versionado escrito.
+- [CI da subetapa 7.1](https://github.com/chumikie/Beit-Lehem/actions/runs/41341075932) · [artefato de capturas e relatório](https://github.com/chumikie/Beit-Lehem/actions/runs/41341075932/artifacts/13097490673).
+
 - Próximas subetapas: passeios e limites visuais interpretativos, composição de quarteirões e diversidade de fachadas; só serão desenhados como arte quando não houver lotes/edifícios verificados. Não inventar calçadas mapeadas, entradas ou muros cadastrais.
 
 ### 8. Modularizar o monólito de forma incremental
