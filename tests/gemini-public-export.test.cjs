@@ -21,10 +21,16 @@ test('a edição pública permite contatos fictícios revisados e bloqueia refer
 test('export público remove metadados e mantém jogo sem externos obrigatórios',()=>{
  assert.ok(!publicHtml.startsWith('<!--'));
  assert.ok(!publicHtml.includes('fonts.googleapis.com'));
- assert.equal((publicHtml.match(/data:image\/jpeg;base64,/g)||[]).length,2);
+ assert.equal((publicHtml.match(/data:image\/jpeg;base64,/g)||[]).length,0);
  assert.ok(!publicHtml.includes('/9j/4Qn8RXhpZg'));
  assert.ok(publicHtml.includes('aria-label="Beit Lehem"'));
  assert.ok(publicHtml.includes("const STORE='roncador-expedition-v2-referencias-gemini'"));
+});
+test('a cidade ficcional não expõe links documentais e fotos de Belém na interface',()=>{
+ assert.ok(!source.includes('data:image/jpeg;base64,'));
+ assert.match(source, /id="fictional-world-ui"/);
+ assert.ok(!source.includes('Ver referência histórica ↗'));
+ assert.ok(source.includes('Ateliê'));
 });
 test('mapa original é idêntico no pacote público',()=>{
  assert.equal(mapData(publicHtml),mapData(source));
