@@ -104,7 +104,8 @@ test('C15.5: densidade de pets é decluttered em pixels sem mover pontos de rota
  assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},1.5,true),false);
  assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},2.1,true),true);
  assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},2.5,true),false);
- assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},3.5,true),false,\n  'no celular os nomes dos demais pets permanecem no diário, sem disputar a câmera');
+ assert.equal(helpers.streetPetNameplateVisible({name:'Catito'},3.5,true),false,
+  'no celular os nomes dos demais pets permanecem no diário, sem disputar a câmera');
 });
 
 test('C15.5: a câmera usa a largura real do canvas para ativar o perfil compacto',()=>{
