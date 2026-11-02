@@ -32,7 +32,10 @@ assert.equal(html.split(petFunction).length,2,'pet drawing function changed');
 html = html.replace(petFunction,
   "window.__c21SetScene=(hub,magnification)=>{"+
   "const resident=hub==='bia'?residentsInStreets().find(item=>item.id==='bia'):null;"+
-  "const place=resident?{p:[resident.x,resident.y]}:data.landmarks.find(item=>item.id===hub);"+
+  "const streetNames={'rua-joao-pessoa':'Rua João Pessoa','rua-vicente-cado':'Rua Vicente Cado',"+
+  "'rua-feliciano-pedrosa':'Rua Feliciano Pedrosa','rua-joaquim-rodrigues':'Rua Joaquim Rodrigues'};"+
+  "const street=streetNames[hub]?labels.find(item=>item.name===streetNames[hub]):null;"+
+  "const place=resident?{p:[resident.x,resident.y]}:street?{p:[street.x,street.y]}:data.landmarks.find(item=>item.id===hub);"+
   "if(!place)throw Error('Missing scene '+hub);"+
   "player.x=place.p[0];player.y=place.p[1];player.moving=false;"+
   "camera.x=player.x;camera.y=player.y;zoom=magnification;};"+petFunction);
@@ -98,6 +101,19 @@ async function main() {
       console.log('C21 ' + JSON.stringify(entry));
     }
   }
+  // FJ1.0 research captures: four verified OSM streets at the C21 landmark
+  // reference viewport (1440×900, DPR 1, zoom 2.85). Temporary HTML only.
+  for (const hub of ['rua-joao-pessoa','rua-vicente-cado',
+    'rua-feliciano-pedrosa','rua-joaquim-rodrigues']) {
+    await page.evaluate(hub => window.__c21SetScene(hub,2.85), hub);
+    await page.waitForTimeout(800);
+    const position = await page.evaluate(() => expeditionState.position);
+    assert.ok(Number.isFinite(position.x) && Number.isFinite(position.y));
+    const screenshot = `fj1-${hub}-zoom2-85-1440x900.png`;
+    await page.screenshot({path:path.join(outputDir,screenshot),animations:'disabled',timeout:15000});
+    console.log('FJ1 capture ' + JSON.stringify({hub,position,screenshot}));
+  }
+
   fs.writeFileSync(path.join(outputDir,'c21-label-report.json'),JSON.stringify(report,null,2));
   const rendered=report.scenarios.flatMap(scenario=>scenario.labels);
   assert.ok(rendered.some(label=>label.name==='Jekki'),'a cena deve incluir a placa real de Jekki');
