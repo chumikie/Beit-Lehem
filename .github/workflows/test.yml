@@ -1,0 +1,98 @@
+name: Test suite
+
+on:
+  push:
+    branches:
+      - chore/consolidar-html-principal-2026-11-01
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'push' }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: npm test (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run complete test suite
+        run: npm test
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Audit nameplate strokes and collisions in Chromium (temporary HTML only)
+        run: node scripts/label-visual-audit.cjs
+
+      - name: Inspect desktop and mobile gameplay in a temporary browser
+        run: node scripts/visual-inspection.cjs
+
+      - name: Upload temporary visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beit-lehem-visual-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/beit-lehem-visual-review/
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Compare original and indexed road searches on the same Chromium runner
+        run: node scripts/paired-performance.cjs
+
+      - name: Upload temporary paired performance audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: beit-lehem-paired-performance-${{ github.run_id }}
+          path: ${{ runner.temp }}/beit-lehem-paired-performance/paired-report.json
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Build current preview outside the repository
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const os = require('node:os');
+          const path = require('node:path');
+          const { buildGeminiPreview } = require('./scripts/build-gemini-preview.cjs');
+          const { extractEmbeddedMap } = require('./scripts/current-geodata.cjs');
+
+          const temporaryOutput = path.relative(
+            process.cwd(),
+            path.join(os.tmpdir(), 'beit-lehem-build-validation.html')
+          );
+          const result = buildGeminiPreview(process.cwd(), temporaryOutput);
+          const html = fs.readFileSync(result.outputPath, 'utf8');
+          const map = extractEmbeddedMap(html);
+
+          if (map.roads.length !== 462 || map.areas.length !== 20 ||
+              map.points.length !== 9 || map.localPlaces.length !== 9 ||
+              map.streetNameCount !== 86) {
+            throw new Error('O build temporário não contém as camadas geográficas esperadas.');
+          }
+          if (!map.unverifiedRoadLabels.every(label => label.displayedAsStreetName === false)) {
+            throw new Error('Rótulos viários não verificados não podem aparecer como ruas reais.');
+          }
+          console.log(
+            'Build temporário OK: ' + result.bytes + ' bytes; ' +
+            map.roads.length + ' vias, ' + map.areas.length + ' áreas, ' +
+            map.points.length + ' pontos OSM e ' + map.localPlaces.length +
+            ' POIs locais. Nenhum preview versionado foi escrito.'
+          );
+          NODE

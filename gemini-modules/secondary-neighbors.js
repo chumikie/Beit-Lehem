@@ -38,7 +38,72 @@
    morning:'confere seu pequeno maço de bilhetes',afternoon:'reorganiza papéis e memórias',
    greeting:'Gosto de guardar recados de quem chega e de quem vai. Nenhuma partida precisa apagar uma amizade.',
    options:[{id:'envelope',label:'Ajudar a separar envelopes',reply:'Téo alinha os envelopes e coloca um coração no de cima. “Pronto, ninguém se perde!”'},
-    {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]}
+    {id:'recado',label:'Escrever um recado gentil',reply:'“Volte quando puder.” Téo lê a mensagem e a guarda com carinho.'}]},
+  {id:'celina',name:'Celina',hub:'mercado',variant:14,tone:'#b88f74',icon:'🍊',role:'A curiosa dos sabores',
+   morning:'observa as frutas e imagina combinações de sabores',afternoon:'anota receitas inventadas num bloquinho',
+   greeting:'Uma receita também pode ser uma lembrança. Hoje estou inventando uma bem colorida!',
+   options:[{id:'sabores',label:'🍊 Imaginar uma combinação de frutas',reply:'Celina imagina uma mistura de frutas e ri: “Essa merece um nome bem bonito!”'},
+    {id:'receita',label:'📒 Conversar sobre receitas de família',reply:'“Cada família tem seu jeitinho”, diz Celina. Vocês trocam ideias sem atribuir receitas a ninguém da cidade.'}]},
+  {id:'davi',name:'Davi',hub:'igreja',variant:15,tone:'#89a6b8',icon:'🎵',role:'Amigo dos sons da rua',
+   morning:'escuta os sons tranquilos do começo do dia',afternoon:'marca ritmos leves com as mãos',
+   greeting:'Às vezes a rua parece ter uma música só dela. Você já parou para escutar?',
+   options:[{id:'ritmo',label:'🎵 Inventar um ritmo suave',reply:'Davi acompanha duas batidas baixinho: “Pronto, uma música só nossa!”'},
+    {id:'escuta',label:'👂 Prestar atenção aos sons ao redor',reply:'Vocês ficam em silêncio por um instante, percebendo os passos ilustrativos da cidade.'}]},
+  {id:'iris',name:'Íris',hub:'igreja',variant:17,tone:'#b4a0c4',icon:'🍃',role:'Observadora da luz e do vento',
+   morning:'repara na brisa e na claridade das ruas',afternoon:'observa as mudanças de sombra no passeio',
+   greeting:'Tem dia que a mesma rua parece outra só porque a luz mudou.',
+   options:[{id:'vento',label:'🍃 Fazer uma pausa para sentir a brisa',reply:'Íris sorri: “É bom ter um minuto sem pressa.”'},
+    {id:'luz',label:'☀ Observar a claridade do caminho',reply:'Vocês observam o desenho da luz sobre o chão, sem registrar um acontecimento inventado.'}]},
+  {id:'noel',name:'Noel',hub:'rodoviaria',variant:19,tone:'#9caa79',icon:'🧳',role:'Colecionador de caminhos imaginados',
+   morning:'organiza no caderno nomes de lugares que gostaria de conhecer',afternoon:'descansa e pensa nos caminhos de volta',
+   greeting:'Viajar pode começar com uma pergunta: para onde você gostaria de passear?',
+   options:[{id:'destino',label:'🧳 Imaginar um passeio',reply:'Noel desenha um caminho fictício no caderno: “Um dia a gente inventa outras paradas.”'},
+    {id:'volta',label:'🏡 Conversar sobre voltar para casa',reply:'“Às vezes o melhor da viagem é reconhecer o caminho de volta”, diz Noel.'}]},
+  {id:'breno',name:'Breno',hub:'missao:0',variant:21,tone:'#85a99a',icon:'👟',role:'Companheiro de caminhadas',
+   morning:'caminha com calma e conta os passos',afternoon:'faz uma pausa para alongar os braços',
+   greeting:'Uma voltinha já muda meu dia. E você, gosta mais de andar cedo ou à tardinha?',
+   options:[{id:'passos',label:'👟 Conversar sobre caminhadas',reply:'Breno sorri: “O importante é encontrar um ritmo bom para a gente.”'},
+    {id:'pausa',label:'🌿 Fazer uma pausa no passeio',reply:'Vocês param por um instante no caminho mapeado, sem sair da rua.'}]},
+  {id:'amelia',name:'Amélia',hub:'missao:1',variant:22,tone:'#c19b9a',icon:'📚',role:'Leitora de palavras bonitas',
+   morning:'lê algumas linhas do próprio caderno',afternoon:'imagina pequenos versos sobre a cidade',
+   greeting:'Gosto de inventar versos. Nenhum precisa ser perfeito para guardar um sentimento.',
+   options:[{id:'verso',label:'📚 Inventar um versinho',reply:'Amélia inventa uma frase sobre o vento: “Essa fica no nosso caderno imaginário!”'},
+    {id:'palavra',label:'✿ Escolher uma palavra para hoje',reply:'“Acolhimento”, escolhe Amélia. “É uma palavra que dá vontade de voltar.”'}]},
+  {id:'nina',name:'Nina',hub:'missao:2',variant:23,tone:'#9fadd0',icon:'🐦',role:'Observadora de passarinhos ilustrativos',
+   morning:'observa o céu e escuta pássaros imaginados',afternoon:'anota as cores que percebe no horizonte',
+   greeting:'Eu gosto de olhar para cima, mas sempre fico no caminho. O céu muda sem avisar.',
+   options:[{id:'ceu',label:'🐦 Contemplar o céu',reply:'Nina observa as nuvens ilustrativas: “Cada dia tem um desenho diferente!”'},
+    {id:'cores',label:'🎨 Imaginar cores de pássaros',reply:'Vocês inventam cores para um passarinho de papel, sem identificar espécies reais.'}]},
+  {id:'otavio',name:'Otávio',hub:'missao:0',variant:25,tone:'#ada185',icon:'♟️',role:'Amigo dos jogos de raciocínio',
+   morning:'inventa desafios de lógica enquanto caminha',afternoon:'imagina movimentos de um jogo de tabuleiro',
+   greeting:'Gosto de pensar nas escolhas, mas não precisa ter pressa para acertar.',
+   options:[{id:'jogo',label:'♟️ Imaginar uma jogada',reply:'Otávio pensa um instante: “Essa jogada foi esperta, hein?”'},
+    {id:'escolha',label:'◇ Conversar sobre decisões',reply:'“Às vezes mudar de ideia faz parte do jogo”, comenta Otávio.'}]},
+  {id:'rute',name:'Rute',hub:'missao:1',variant:26,tone:'#b1a0c6',icon:'📷',role:'Colecionadora de enquadramentos imaginados',
+   morning:'observa ângulos e sombras das ruas',afternoon:'descreve imagens que gostaria de desenhar',
+   greeting:'Gosto de reparar nos pequenos detalhes. Eles cabem numa fotografia imaginada.',
+   options:[{id:'quadro',label:'📷 Imaginar um enquadramento',reply:'Rute escolhe um recorte da paisagem sem afirmar que tirou uma foto real.'},
+    {id:'detalhe',label:'👀 Escolher um detalhe para observar',reply:'“Olha como a luz muda a cor desse caminho”, diz Rute.'}]},
+  {id:'luma',name:'Luma',hub:'rua:Rua Clovis Bezerra',variant:28,tone:'#9b9acb',icon:'🌙',role:'Curiosa do céu noturno ilustrativo',
+   morning:'imagina desenhos de estrelas no caderno',afternoon:'observa as cores do céu ao entardecer',
+   greeting:'Gosto de inventar constelações no papel. O céu de verdade tem muito mais mistérios.',
+   options:[{id:'estrelas',label:'🌙 Imaginar uma constelação',reply:'Luma liga pontinhos num desenho fictício: “Parece um caminho para casa!”'},
+    {id:'tarde',label:'🌅 Conversar sobre o anoitecer',reply:'“A luz muda devagar e a gente quase não percebe”, comenta Luma.'}]},
+  {id:'tobias',name:'Tobias',hub:'rua:Rua Nunes',variant:29,tone:'#8fb2a0',icon:'🪁',role:'Inventor de pipas de papel',
+   morning:'imagina formas de pipas no caderno',afternoon:'observa a direção da brisa na rua',
+   greeting:'Uma pipa de papel começa com uma boa ideia. Nem precisa levantar voo de verdade.',
+   options:[{id:'pipa',label:'🪁 Imaginar uma pipa colorida',reply:'Tobias desenha uma pipa fictícia e escolhe duas cores bem alegres.'},
+    {id:'vento',label:'🍃 Conversar sobre o vento',reply:'“Melhor observar a brisa daqui mesmo”, diz Tobias, permanecendo no caminho.'}]},
+  {id:'marta',name:'Marta',hub:'rua:Rua Antônio Borges de Lima',variant:30,tone:'#bf9f87',icon:'🧩',role:'Criadora de pequenos quebra-cabeças',
+   morning:'imagina jogos de encaixar formas',afternoon:'desenha peças geométricas no bloquinho',
+   greeting:'Quando duas peças se encontram, parece que uma história ficou completa.',
+   options:[{id:'pecas',label:'🧩 Imaginar duas peças',reply:'Marta desenha duas formas que se encaixam: “Pronto, uma descoberta pequenininha!”'},
+    {id:'formas',label:'◇ Procurar formas na paisagem',reply:'Vocês reparam em linhas e círculos das ilustrações, sem alterar as construções.'}]},
+  {id:'gil',name:'Gil',hub:'rua:Rua Feliciano Pedrosa',variant:31,tone:'#a6ad7d',icon:'🕺',role:'Amigo das danças discretas',
+   morning:'marca passos suaves enquanto passeia',afternoon:'imagina uma coreografia curta',
+   greeting:'Dois passinhos e um sorriso já fazem meu dia ficar mais leve.',
+   options:[{id:'passos',label:'🕺 Inventar dois passinhos',reply:'Gil marca um ritmo baixinho no lugar: “Sem atrapalhar quem está passando!”'},
+    {id:'pausa',label:'♡ Conversar sobre dançar com calma',reply:'“Não precisa de palco; às vezes a alegria cabe num gesto”, diz Gil.'}]}
  ]);
  const coreProgress=state=>['cica','nara','teo'].filter(id=>state?.seen?.includes(id)).length;
  const fresh=()=>({seen:[],lastHelp:{},choices:{},recados:{stage:0},connections:{damiaoTeo:false,biaTeo:false,zecaLucia:false,zecaLuciaDay:0},marketLegacy:{kind:null,day:0}});
@@ -70,6 +135,17 @@
   if(kind==='conversa')return person==='damiao'?'Francisco lembra da conversa sem pressa que vocês tiveram depois de arrumar a banca.':person==='cica'?'Ciça comenta: “Francisco gostou tanto daquela conversa tranquila na feira.”':'';
   return '';
  }
+ // The following-day reply is derived solely from a saved help choice.
+ // It does not create a new memory, reward, or assertion of an unseen event.
+ const NEXT_DAY_REPLIES={
+  cica:{fitas:'As fitas que organizamos ontem continuam bem arrumadinhas. Obrigada!',cores:'Ainda estou pensando nas cores que escolhemos ontem.',banca:'A fita que preparamos ontem ficou guardada com carinho.'},
+  nara:{desenho:'Voltei a olhar a janelinha que desenhamos ontem.',sombra:'A luz de hoje me fez lembrar das sombras que observamos ontem.','janela-bia':'Guardei o desenho da janela que fizemos ontem para a carta de Bia.','paisagem-bia':'Ainda lembro da paisagem que desenhamos ontem para os planos de Bia.'}
+ };
+ function nextDayReply(state,clock,id){
+  const day=Number(clock?.day),last=state?.lastHelp?.[id],choice=state?.choices?.[id];
+  if(!Number.isInteger(day)||!Number.isInteger(last)||day!==last+1)return '';
+  return NEXT_DAY_REPLIES[id]?.[choice]||'';
+ }
  function rememberConnection(state,key){
   if(!['damiaoTeo','biaTeo'].includes(key)||!state||typeof state!=='object')return false;
   state.connections=state.connections||{damiaoTeo:false,biaTeo:false};
@@ -93,6 +169,8 @@
  // Day and hour are deliberately fictional; anchors are existing OSM landmark routes.
  // Fictional weekly variations; never claims residents' real schedules.
  const WEEKLY_ROUTINES={
+  cica:{morning:['separa fitas para o passeio','confere as cores no caderno','dobra tecidos com calma'],afternoon:['observa as cores da feira','organiza as fitas que levou','descansa e escolhe uma combinação de tons']},
+  nara:{morning:['esboça uma janela no caderno','observa a luz sobre as fachadas','compara desenhos de portas'],afternoon:['repassa os traços que guardou','descansa e observa as sombras','imagina novas formas para o caderno']},
   rosa:{morning:['observa o movimento e anota uma história','organiza seu caderninho de conversas','cumprimenta quem passa sem pressa'],afternoon:['faz uma pausa e relembra uma visita','procura uma frase bonita para guardar','descansa e troca notícias com conhecidos']},
   zeca:{morning:['confere as folhas de um vaso ilustrativo','observa a sombra sobre as plantas','separa ideias para cuidar de uma muda'],afternoon:['descansa e conta histórias de jardins','repara nas plantas ao longo do caminho','conversa sobre os cuidados do quintal']},
   mila:{morning:['experimenta cores no caderno','desenha formas de portas e janelas','separa ideias de fitas e tecidos'],afternoon:['observa padrões nas fachadas','compara cores de pequenos desenhos','imagina uma estampa para as amigas']}
@@ -104,17 +182,46 @@
   const morning=(Number(clock?.minute)||0)<12*60;
   return scenes[morning?'morning':'afternoon'][weekday%3];
  }
+ // A short fictional return from a celebration. All three walkers keep their
+ // existing OSM street itineraries and hubs; no new landmark or save state.
+ const DAWN_LINES=Object.freeze({
+  cica:'Ainda estou lembrando das risadas da festa. Olha só: já tem um fio de luz no céu!',
+  nara:'Voltando da festa, vi o céu clarear devagar. Dá vontade de guardar essa cor no caderno.',
+  teo:'São cinco e cinquenta e quatro! A festa ficou para trás, mas a conversa ainda acompanha a volta.'
+ });
+ function dawnReturn(clock,id){
+  const minute=Number(clock?.minute);
+  if(!Number.isFinite(minute)||minute<350||minute>=410||!Object.hasOwn(DAWN_LINES,id))return null;
+  return {line:DAWN_LINES[id],activity:minute<354?'voltando da festa pelas ruas':minute<390?'voltando da festa e vendo o céu clarear':'despedindo-se dos amigos ao amanhecer'};
+ }
  function agenda(clock,def){
+  const dawn=dawnReturn(clock,def.id);
+  if(dawn)return{present:true,hub:def.hub,activity:dawn.activity,walking:Number(clock.minute)%30<22,dawn:true};
   const community=root?.RoncadorStreetCommunity?.agenda(clock,def.id);
   if(community)return community.present&&weeklyActivity(clock,def)?{...community,activity:weeklyActivity(clock,def)}:community;
   const minute=Math.max(0,Math.min(1440,Number(clock?.minute)||0));
   const weekday=((Number(clock?.day)||1)-1)%7;
-  const open=def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
+  const open=def.id==='cica'?(minute>=8*60&&minute<18*60):
+   def.id==='nara'?(minute>=8*60&&minute<18*60):
+   def.id==='zeca'?(minute>=7*60+30&&minute<11*60+30||minute>=15*60&&minute<17*60+30):
    def.id==='mila'?(minute>=9*60&&minute<12*60||minute>=14*60&&minute<19*60):
+   def.id==='celina'?(minute>=7*60+30&&minute<11*60||minute>=15*60&&minute<17*60):
+   def.id==='davi'?(minute>=9*60&&minute<12*60||minute>=16*60&&minute<19*60):
+   def.id==='iris'?(minute>=7*60&&minute<10*60||minute>=15*60&&minute<18*60):
+   def.id==='noel'?(minute>=10*60&&minute<12*60||minute>=16*60&&minute<20*60):
+   def.id==='breno'?(minute>=7*60&&minute<10*60+30||minute>=16*60&&minute<18*60):
+   def.id==='amelia'?(minute>=9*60&&minute<12*60||minute>=15*60&&minute<18*60):
+   def.id==='nina'?(minute>=7*60+30&&minute<11*60||minute>=15*60&&minute<17*60):
+   def.id==='otavio'?(minute>=10*60&&minute<12*60||minute>=17*60&&minute<20*60):
+   def.id==='rute'?(minute>=8*60&&minute<11*60||minute>=14*60&&minute<17*60):
+   def.id==='luma'?(minute>=9*60&&minute<11*60||minute>=17*60&&minute<21*60):
+   def.id==='tobias'?(minute>=8*60&&minute<11*60||minute>=15*60&&minute<18*60):
+   def.id==='marta'?(minute>=10*60&&minute<12*60||minute>=15*60&&minute<19*60):
+   def.id==='gil'?(minute>=7*60+30&&minute<10*60||minute>=16*60&&minute<19*60):
    (minute>=8*60&&minute<12*60||minute>=14*60&&minute<18*60);
   if(!open || (def.id==='cica'&&weekday===6))return{present:false,activity:'descansando'};
   const morning=minute<12*60;
-  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%60<18};
+  return {present:true,hub:def.hub,activity:weeklyActivity(clock,def)||(morning?def.morning:def.afternoon),walking:minute%30<22};
  }
  // Mila occasionally follows a longer stretch of her EXISTING road itinerary,
  // pauses to observe, then rejoins her usual walk. No new POI, path or save key.
@@ -155,6 +262,6 @@
   if(threadAdvanced){state.recados=state.recados||{stage:0};state.recados.stage=stage+1;}
   return{ok:true,first,reply:choice.reply+(threadAdvanced?' ✉️ '+step.story:''),unlocked:coreProgress(state)===3,threadAdvanced,threadComplete:threadAdvanced&&stage===2};
  }
- root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine};
+ root.RoncadorSecondaryNeighbors={RESIDENTS,RECADOS,fresh,restore,agenda,dawnReturn,smallWalk,availableOptions,coreProgress,interact,recadoStage,recadoLine,rememberConnection,rememberFairChoice,fairMemoryLine,nextDayReply};
 })(typeof window!=='undefined'?window:globalThis);
 

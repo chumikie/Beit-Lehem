@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {applyOverrides}=require('./gemini-workbench.cjs');
+const {composeCurrentMap,extractEmbeddedMap,replaceEmbeddedMap}=require('./current-geodata.cjs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const SOURCE_RELATIVE = path.join('references', 'gemini-2026-10-31', 'experimento-anonimizado.html.txt');
@@ -17,9 +18,9 @@ function replaceExactlyOnce(source, search, replacement, label) {
   return source.slice(0, first) + replacement + source.slice(first + search.length);
 }
 
-function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
+function buildGeminiPreview(projectRoot = PROJECT_ROOT, outputRelative = OUTPUT_RELATIVE) {
   const sourcePath = path.join(projectRoot, SOURCE_RELATIVE);
-  const outputPath = path.join(projectRoot, OUTPUT_RELATIVE);
+  const outputPath = path.join(projectRoot, outputRelative);
 
   if (!fs.existsSync(sourcePath)) {
     throw new Error(`Fonte experimental não encontrada: ${SOURCE_RELATIVE}`);
@@ -28,6 +29,14 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   let html = fs.readFileSync(sourcePath, 'utf8');
   const workbench=applyOverrides(html,path.join(projectRoot,'gemini-modules'));
   html=workbench.html;
+  // The offline game map is composed from the canonical municipal OSM extract.
+  // The geometry guard rejects silent road/area changes; presentation and local
+  // place aliases are kept in separate layers rather than mutating OSM tags.
+  const osmPath=path.join(projectRoot,'source','belem-osm-2026.geojson');
+  if(!fs.existsSync(osmPath))throw new Error('Fonte OSM canônica ausente: source/belem-osm-2026.geojson');
+  const osm=JSON.parse(fs.readFileSync(osmPath,'utf8'));
+  const currentMap=composeCurrentMap(osm,extractEmbeddedMap(html));
+  html=replaceEmbeddedMap(html,currentMap);
   // Static markup is not part of game.js overrides. Keep the initial DOM
   // consistent with the current fictional character name from the first paint.
   html=replaceExactlyOnce(html,'<h3>A manhã de Damião</h3>',
@@ -103,7 +112,7 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   html = replaceExactlyOnce(
     html,
     '<title>Trilhas de Roncador — Expedição</title>',
-    '<title>Beit Lehem — Prévia experimental Gemini</title>',
+    '<title>Beit Lehem</title>',
     'Identificação da aba da prévia'
   );
 
@@ -114,7 +123,7 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
     ['<span>TRILHAS<span class="brand-sub">de Roncador</span></span>',
      '<span>BEIT<span class="brand-sub">LEHEM</span></span>'],
     ["document.title = 'Trilhas do Roncador — Belém Viva · V2.27 Cozy';",
-     "document.title = 'Beit Lehem — Belém/PB · Jogo cozy';"],
+     "document.title = 'Beit Lehem';"],
     ["document.querySelector('.brand-sub').textContent = 'do Roncador';",
      "document.querySelector('.brand-sub').textContent = 'LEHEM';"],
     ["document.querySelector('.edition').textContent = '☼ BELÉM VIVA · V2.27';",
@@ -150,8 +159,8 @@ function buildGeminiPreview(projectRoot = PROJECT_ROOT) {
   }
   if(/data:image\/jpeg;base64,/i.test(html))throw new Error('Fotografia real permaneceu na prévia');
   html=replaceExactlyOnce(html,'</head>',
-    '<style id="fictional-world-ui">#realCity,#realCityDialog,#cultureEvidence,#cultureSource{display:none!important}</style></head>',
-    'Interface ficcional sem guia externo');
+    '<style id="fictional-world-ui">#realCity,#realCityDialog,#cultureEvidence,#cultureSource{display:none!important}</style><style id="mobile-street-name-fit">@media(max-width:800px){.location{max-width:min(210px,calc(100vw - 152px));font-size:9px;letter-spacing:.15px;padding:6px 8px}}</style></head>',
+    'Interface ficcional e nome completo da rua em telas móveis');
   if (html.includes(brokenInitialization)) {
     throw new Error('A inicialização incorreta de kawaiiState permaneceu na cópia gerada.');
   }

@@ -7,7 +7,10 @@
   damiao:{kind:'rest',offset:0},lucia:{kind:'flower',offset:9},
   bia:{kind:'read',offset:17},cica:{kind:'ribbon',offset:5},
   nara:{kind:'sketch',offset:13},teo:{kind:'letter',offset:21},
-  rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8}
+  rosa:{kind:'rest',offset:26},zeca:{kind:'flower',offset:30},mila:{kind:'ribbon',offset:8},
+  celina:{kind:'look',offset:11},davi:{kind:'rest',offset:19},iris:{kind:'look',offset:24},noel:{kind:'read',offset:3},
+  breno:{kind:'rest',offset:7},amelia:{kind:'read',offset:16},nina:{kind:'look',offset:29},otavio:{kind:'look',offset:2},rute:{kind:'sketch',offset:22},
+  luma:{kind:'sketch',offset:10},tobias:{kind:'look',offset:20},marta:{kind:'sketch',offset:27},gil:{kind:'rest',offset:4}
  };
  const CYCLE=33,DURATION=3.4;
  let porches=[];
@@ -16,7 +19,14 @@
   return porches.length;
  }
  const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
- function choose(person,elapsed,world){
+ function routineKind(person,defaultKind){
+  const activity=typeof person?.activity==='string'?person.activity.toLowerCase():'';
+  if(person?.id==='damiao'&&/cestos|organizando a feira/.test(activity))return'rest';
+  if(person?.id==='cica'&&/fitas|tecidos|cores/.test(activity))return'ribbon';
+  if(person?.id==='bia'&&/caderno|estudando|anotações|lendo/.test(activity))return'read';
+  return defaultKind;
+ }
+ function choose(person,elapsed,world,weather='sol'){
   const config=GESTURES[person?.id];
   if(!config||person.meeting||person.travel||person.arriving||person.community||person.encounter||!Number.isFinite(elapsed)||!world||world.minute<7*60||world.minute>=20*60)return null;
   // An occasional fictional doorstep gesture at the cooler end of the day.
@@ -37,14 +47,18 @@
   // schedules, shopfronts or geographic claims are introduced.
   const commerce=['mercado','sonho_doce','bar_prosa'].includes(hub);
   const waiting=hub==='rodoviaria';
-  const kind=commerce&&morning?'look':waiting&&afternoon?'rest':
+  const ordinaryKind=commerce&&morning?'look':waiting&&afternoon?'rest':
    hub==='igreja'&&afternoon?'flower':config.kind;
+  const ordinaryGesture=routineKind(person,ordinaryKind);
+  // The optional illustrated drizzle briefly interrupts paper/cloth gestures.
+  // This is only a pose: the existing schedule, streets and encounters prevail.
+  const kind=weather==='chuvisco'&&['read','sketch','ribbon','letter'].includes(ordinaryGesture)?'look':ordinaryGesture;
   const duration=commerce&&morning?2.9:waiting&&afternoon?3.7:DURATION;
   const phase=((elapsed+config.offset+(Math.max(1,world.day||1)-1)*2)%CYCLE+CYCLE)%CYCLE;
   if(phase>=duration)return null;
   const strength=smooth(Math.min(1,phase/.65,(duration-phase)/.65));
   return{kind,strength,phase,hubRoutine:commerce&&morning||waiting&&afternoon};
  }
- return{GESTURES,CYCLE,DURATION,choose,setHouses};
+ return{GESTURES,CYCLE,DURATION,choose,setHouses,routineKind};
 });
 

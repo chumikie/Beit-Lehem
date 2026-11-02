@@ -37,7 +37,7 @@ test('salvamentos antigos e duplicados não inventam lembranças',()=>{
 
 test('o comando observar preserva descobertas e aceita pausas depois delas',()=>{
  assert.match(source,/if\(observeRuaNovaPath\(\)\)return;/);
- assert.match(source,/if\(observations\.has\(key\)\)\{if\(observeWorldMoment\(\)\)return;/);
+ assert.match(source,/if\(observeWorldMoment\(\)\)return;\s*let key='vila'/);
  assert.match(source,/worldMoments=restoreWorldMoments\(saved\.worldMoments,living\.day\)/);
  assert.match(source,/lastJournalDay=1;worldMoments=\[\]/);
 });

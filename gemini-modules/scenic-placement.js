@@ -100,7 +100,11 @@
             if (d < 6) penalty += 32 + 21 * (6-d);
           }
           for (const mission of data.missions) if (contains(bounds(candidate, 17), ...mission.p)) penalty += 650;
-          for (const place of data.points) if (place.tags.name!==item.name && contains(bounds(candidate, 10), ...place.p)) penalty += 270;
+          const mappedPlaces = [...(data.points || []), ...(data.localPlaces || [])];
+          for (const place of mappedPlaces) {
+            const displayName = place.displayName || place.tags?.name;
+            if (displayName !== item.name && contains(bounds(candidate, 10), ...place.p)) penalty += 270;
+          }
           if (contains(bounds(candidate, 25), ...data.start)) penalty += 320;
           for (const prior of scenes) if (intersects(bounds(candidate, 14), bounds(prior, 14))) penalty += 1200;
           // Keep decorated lots near the reference, but avoid covering roads.

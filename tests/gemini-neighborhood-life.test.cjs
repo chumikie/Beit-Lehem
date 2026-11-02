@@ -9,7 +9,7 @@ test('hábitos variam por hora e preservam âncoras existentes',()=>{
  const begin=source.indexOf(open),end=source.indexOf('</script>',begin+open.length);
  assert.ok(begin>=0&&end>begin);
  const map=JSON.parse(source.slice(begin+open.length,end));
- const known=new Set([...map.landmarks.map(x=>x.id),...map.missions.map((_,i)=>'missao:'+i)]);
+ const known=new Set([...map.landmarks.map(x=>x.id),...map.missions.map((_,i)=>'missao:'+i),...map.roads.filter(r=>r.tags?.name).map(r=>'rua:'+r.tags.name)]);
  for(const minute of [6*60,9*60,13*60,18*60,21*60]){
   const list=plan({day:1,minute},false);
   assert.ok(list.every(x=>known.has(x.hub)));

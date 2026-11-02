@@ -19,6 +19,10 @@ test('somente dois polígonos OSM de Belém/PB entram na camada, sem mudar vias'
  assert.deepEqual(Array.from(projected,w=>w.p.length),[169,596]);
  assert.equal(map.roads.length,462);
  assert.equal(map.areas.length,20);
+ const [lon,lat]=hydro.features[0].geometry.coordinates[0][0];
+ assert.ok(Math.abs(projected[0].p[0][0]-(lon-map.projection.originLon)*map.projection.metersPerDegreeLon)<.001);
+ assert.ok(Math.abs(projected[0].p[0][1]-(map.projection.originLat-lat)*map.projection.metersPerDegreeLat)<.001,
+  'água usa a mesma orientação norte/sul de gpsFor');
  assert.equal(context.projectVerifiedWater({...hydro,metadata:{CD_MUN:'1501402'}},map.projection).length,0);
  assert.equal(context.projectVerifiedWater({...hydro,features:[{...hydro.features[0],id:'way/1',geometry:{type:'Polygon',coordinates:[[[0,0],[1,0],[0,1],[0,0]]]}}]},map.projection).length,0);
 });

@@ -97,13 +97,13 @@
   if(hour<6||hour>=22)return[];
   const busy=hour>=8&&hour<12||hour>=16&&hour<20;
   const number=isFair?16:busy?14:hour>=20?7:hour<8?6:11;
-  // Rotate locations across the real, already verified Gemini POI anchors:
-  // neighbourhoods, schools, shops and quieter outer streets. Fixed IDs and
-  // anchor assignment within a day prevent flicker or mid-walk teleportation.
-  const hubs=['escola_anita','bar_prosa','rodoviaria','capela_luz',
-   'mercado','parque_sao_luis','hospital_santa_lucia','xaviezao',
-   'sagrada_familia','sonho_doce','igreja','prefeitura',
-   'pedra_cordeiro','missao:5','missao:2','missao:1'];
+  // Only loaded landmark IDs or streets present in the OSM road graph may
+  // anchor a walker. Former unregistered POI IDs silently hid most passers.
+  // Fixed IDs/anchors within each day prevent flicker or mid-walk teleportation.
+  const hubs=['rua:Rua Clovis Bezerra','rua:Rua Nunes','rodoviaria','rua:Rua Antônio Borges de Lima',
+   'mercado','rua:Rua Feliciano Pedrosa','rua:Rua Deputado Antônio Davila Lins','rua:Rua Joaquim Rodrigues',
+   'rua:Rua Flávio Ribeiro','rua:Rua Brasiliana da Costa','igreja','rua:Rua Severino Ismael',
+   'rua:Rua Abdias Machado','rua:Rua São Sebastião','rua:Rua Luiz Gomes','rua:Rua São Joaquim'];
   const rotation=(day-1)%hubs.length;
   return Array.from({length:number},(_,i)=>{
    const id='passeio-'+(i+1),hub=hubs[(i+rotation)%hubs.length];
@@ -120,6 +120,9 @@
    const centralPhase=central?((phase+i*3)%59):phase;
    const resting=central?centralPhase<4.5:phase<5&&(role==='senhora'||role==='vizinho'||role==='vitrine');
    const looking=central&&centralPhase>=6&&centralPhase<9;
+   // Ordinary walkers occasionally notice the street without a scripted event.
+   // Their feet pause on the same already selected OSM itinerary.
+   const observing=!central&&role==='passeante'&&phase>=23&&phase<26;
    const neighborWave=(role==='vizinho'||role==='senhora'||central)&&centralPhase>=12&&centralPhase<14.5;
    const waveStrength=neighborWave?Math.max(0,Math.min(.72,(centralPhase-12)/.8,(14.5-centralPhase)/.8)):0;
    const wavedUntil=waves.get(id)||0;
@@ -130,11 +133,11 @@
     role==='vitrine'?'observando a vitrine':
     role==='espera'?(resting?'aguardando com calma':looking?'observando chegadas':neighborWave?'acenando numa despedida':'seguindo seu caminho'):
     role==='observador'?(resting?'apreciando a praça':looking?'observando a Matriz':neighborWave?'cumprimentando conhecidos':'caminhando pelo centro'):
-    role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):'caminhando pelo bairro';
+    role==='vizinho'?(resting?'descansando na calçada':'cumprimentando conhecidos'):observing?'observando o caminho':'caminhando pelo bairro';
    const kind=(role==='vitrine'||role==='feira'||role==='observador')?'look':'rest';
-   const gestureStrength=resting?Math.max(0,Math.min(.65,centralPhase/.9,(4.5-centralPhase)/.9)):looking?Math.max(0,Math.min(.6,(centralPhase-6)/.6,(9-centralPhase)/.6)):0;
+   const gestureStrength=resting?Math.max(0,Math.min(.65,centralPhase/.9,(4.5-centralPhase)/.9)):looking?Math.max(0,Math.min(.6,(centralPhase-6)/.6,(9-centralPhase)/.6)):observing?Math.max(0,Math.min(.6,(phase-23)/.6,(26-phase)/.6)):0;
    return {id,variant:i+1,hub,def:null,localRole:role,activity,
-    pause:resting||looking||waving||neighborWave,moment:resting||looking?{kind:looking?'look':kind,strength:gestureStrength}:null,
+    pause:resting||looking||observing||waving||neighborWave,moment:resting||looking||observing?{kind:looking||observing?'look':kind,strength:gestureStrength}:null,
     social:waving?{pose:'wave',facing:1,intensity:Math.max(0,Math.min(1,waveAge/.35,(3.8-waveAge)/.5)),react:true}:
      neighborWave?{pose:'wave',facing:i%2?1:-1,intensity:waveStrength}:null,
     greeting:waving?{age:waveAge}:null};

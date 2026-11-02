@@ -31,6 +31,14 @@
   const group=ARCHETYPES[home.centralBlock];
   return {block:home.centralBlock,kind:group[seed%group.length],shade:seed%4,detail:seed%3,roof:seed%3,returnWall:seed%4===1,shop:home.centralBlock==='feira'&&seed%3!==2,seed};
  }
+ function frontageMode(style){
+  const seed=style.seed,block=style.block;
+  if(block==='feira')return seed%5===0?'mixed':'commercial';
+  if(block==='feliciano')return seed%4===0?'mixed':'commercial';
+  if(block==='vicente')return seed%4===0?'commercial':seed%5===0?'mixed':'residential';
+  if(block==='matriz')return seed%7===0?'mixed':'residential';
+  return seed%6===0?'mixed':'residential';
+ }
  function statistics(houses){
   const result={total:0,matriz:0,feira:0,joao:0,clovis:0,feliciano:0,vicente:0,kinds:{}};
   for(const home of houses){const style=variant(home);if(!style)continue;result.total++;result[style.block]++;result.kinds[style.kind]=(result.kinds[style.kind]||0)+1;}
@@ -42,13 +50,89 @@
   if(!Array.isArray(state)||!SKETCH_IDS.includes(id)||!nearby||state.includes(id))return{recorded:false,unlocked:state?.length===SKETCH_IDS.length};
   state.push(id);return{recorded:true,unlocked:state.length===SKETCH_IDS.length,progress:state.length};
  }
+
+ function drawFrontage(c,home,style,palette,night,distant){
+  const width=home.w,height=home.h,seed=style.seed,left=-width/2;
+  const front=-height/2+height*.63,faceH=height*.37;
+  const ground=front+faceH-1.1;
+  // The foreground is clipped to the existing illustrative house envelope.
+  // It is a painted setback cue, never a parcel, building or collision shape.
+  c.save();if(typeof c.rect==='function'&&typeof c.clip==='function'){c.beginPath();c.rect(left+.8,front+1,width-1.6,Math.max(1,faceH-1.5));c.clip();}
+  const mode=frontageMode(style);
+  if(mode==='commercial'){
+   c.fillStyle=night?'#8c8b7550':'#c7b99a88';
+   c.fillRect(left+1,ground,width-2,1.1);
+   const bays=style.block==='feira'?3:style.block==='feliciano'?2:1;
+   const bayWidth=(width-2)/bays;
+   for(let i=0;i<bays;i++){
+    const bx=left+1+i*bayWidth;
+    c.fillStyle=['#78958c55','#c28b6d55','#b4a77c55'][((seed+i)%3)];
+    c.fillRect(bx+1,front+2,Math.max(.8,bayWidth-2),Math.max(1,faceH-3.4));
+    c.strokeStyle='#f5ead4a8';c.lineWidth=.55;
+    c.strokeRect(bx+1,front+2,Math.max(.8,bayWidth-2),Math.max(1,faceH-3.4));
+    if(!distant){
+     c.fillStyle=style.block==='feira'?'#c58d69':'#b78368';
+     c.fillRect(bx+.7,front+1.15,Math.max(1,bayWidth-1.4),1.35);
+     c.fillStyle='#f8e8cf';c.fillRect(bx+.8,front+1.25,Math.max(.5,bayWidth-1.6),.28);
+    }
+   }
+   if(!distant){
+    c.strokeStyle='#8b7966a8';c.lineWidth=.8;
+    for(let i=1;i<bays;i++){const x=left+1+i*bayWidth;c.beginPath();c.moveTo(x,front+1.5);c.lineTo(x,ground+.7);c.stroke();}
+   }
+  }else if(mode==='mixed'){
+   // Transitional front: a low planted edge, short anonymous fascia and
+   // offset path soften the shift between shop rhythm and residential gates.
+   // The whole composition remains inside the same clipped house envelope.
+   c.fillStyle=night?'#617d5d66':palette.plant+'77';
+   c.fillRect(left+1.2,ground-1.05,width-2.4,.72);
+   const side=seed%2?1:-1;
+   const fasciaX=side>0?left+width*.48:left+1.2;
+   const fasciaW=width*.34;
+   c.fillStyle=style.block==='matriz'?'#b8a88b88':'#c39b7b88';
+   c.fillRect(fasciaX,front+1.9,fasciaW,1.05);
+   c.fillStyle='#f4e7d1a8';
+   c.fillRect(fasciaX+.45,front+2.05,Math.max(.6,fasciaW-.9,.6),.24);
+   c.strokeStyle='#9b8a73a8';c.lineWidth=.7;
+   c.beginPath();c.moveTo(left+1,ground+.02);c.lineTo(left+width-1,ground+.02);c.stroke();
+   const pathX=side>0?left+width*.28:left+width*.72;
+   c.fillStyle='#ddc9a6';c.fillRect(pathX-.55,ground-1.9,1.1,1.9);
+   c.fillStyle=palette.plant;c.beginPath();c.arc(side>0?left+width*.82:left+width*.18,ground-1.1,.85,0,Math.PI*2);c.fill();
+  }else{
+   // A narrow planted strip and stepping path suggest a private setback.
+   // Both remain inside the already existing illustrative house envelope.
+   c.fillStyle=night?'#617d5d88':palette.plant+'88';
+   c.fillRect(left+1.2,ground-1.15,width-2.4,.85);
+   const pathX=left+width*(seed%2?.68:.32);
+   c.fillStyle='#ddc9a6';c.fillRect(pathX-.65,ground-2.05,1.3,2.15);
+   c.fillStyle='#b8a88e';c.fillRect(pathX-.65,ground-1.05,1.3,.22);
+   const gateWidth=Math.max(2.2,Math.min(4.8,width*.28));
+   const gateCenter=left+width*(seed%2?.68:.32),gateLeft=gateCenter-gateWidth/2;
+   const gateRight=gateCenter+gateWidth/2;
+   c.strokeStyle=seed%3===0?'#7f927f':'#b5a58b';c.lineWidth=1.15;
+   c.beginPath();c.moveTo(left+1,ground+.05);c.lineTo(gateLeft,ground+.05);
+   c.moveTo(gateRight,ground+.05);c.lineTo(left+width-1,ground+.05);c.stroke();
+   c.fillStyle='#d4c2a5';c.fillRect(left+1,ground-.35,Math.max(.6,gateLeft-left-1),.65);
+   c.fillRect(gateRight,ground-.35,Math.max(.6,left+width-1-gateRight),.65);
+   c.fillStyle='#a58d70';c.fillRect(gateLeft-.35,ground-.65,.55,1.1);
+   c.fillRect(gateRight-.2,ground-.65,.55,1.1);
+   if(!distant){
+    c.strokeStyle='#758b81';c.lineWidth=.55;
+    for(let x=gateLeft+.45;x<gateRight-.2;x+=.9){c.beginPath();c.moveTo(x,ground-.48);c.lineTo(x,ground+.35);c.stroke();}
+    c.fillStyle=palette.plant;c.beginPath();c.arc(left+width*(seed%2?.22:.82),ground-1.25,1.05,0,Math.PI*2);c.fill();
+    c.fillStyle='#b88b70';c.fillRect(left+width*(seed%2?.22:.82)-.65,ground-1,.95,.7);
+   }
+  }
+  c.restore();
+ }
  function draw(c,home,phase='manha',minute=8*60,zoomLevel=1.85){
   const style=variant(home);if(!style)return false;
   const palette=PALETTES[style.block],seed=style.seed,night=phase==='anoitecer'||minute>=18*60||minute<6*60;
   const width=home.w,height=home.h;
   // Only microdetails are reduced at distant zoom; facade and lot are unchanged.
   const distant=zoomLevel<1.15;
-  c.save();c.translate(home.x,home.y);c.rotate(home.angle);
+  // Keep windows and trim upright on screen at every street bearing.
+  c.save();c.translate(home.x,home.y);
   const left=-width/2,top=-height/2,front=top+height*.63,faceH=height*.37;
   // Roof: one thin ridge + uneven ceramic joints; no added footprint.
   c.strokeStyle=style.shade%2?'#f8ddbb88':'#f2e7c988';c.lineWidth=.65;
@@ -162,6 +246,7 @@
    c.fillStyle='#4a90c2';c.beginPath();c.ellipse(left+width*.72,top+height*.22,2.4,1.6,0,0,Math.PI*2);c.fill();
    c.strokeStyle='#2f658d';c.lineWidth=.45;c.stroke();
   }
+  drawFrontage(c,home,style,palette,night,distant);
   c.restore();return true;
  }
  function drawPreview(canvas,block,phase='manha'){
@@ -182,6 +267,6 @@
   }
   return true;
  }
- return{ARCHETYPES,PALETTES,SKETCH_IDS,variant,statistics,restoreSketches,recordSketch,draw,drawPreview};
+ return{ARCHETYPES,PALETTES,SKETCH_IDS,variant,frontageMode,statistics,restoreSketches,recordSketch,draw,drawPreview};
 });
 

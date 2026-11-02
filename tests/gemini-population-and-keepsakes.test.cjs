@@ -8,8 +8,8 @@ const moments=require('../gemini-modules/street-moments.js');
 
 test('nove moradores nomeados, sem perder o álbum dos três vizinhos originais',()=>{
  const ids=neighbors.RESIDENTS.map(x=>x.id);
- assert.equal(ids.length,6);
- assert.equal(new Set(ids).size,6);
+ assert.equal(ids.length,19);
+ assert.equal(new Set(ids).size,19);
  assert.deepEqual(['cica','nara','teo'].map(x=>ids.includes(x)),[true,true,true]);
  const old=neighbors.restore({seen:['cica','nara','teo'],choices:{cica:'fitas',nara:'desenho',teo:'recado'}});
  assert.equal(neighbors.coreProgress(old),3);
@@ -107,8 +107,9 @@ test('personagens secundários reservam espaço uns para os outros na rua',()=>{
  const fs=require('node:fs');
  const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
  assert.match(game,/const occupied=primary\.concat\(placed\)/);
- assert.match(game,/const offsets=\[63,90,117,145\]/);
- assert.match(game,/if\(!duty\.meeting&&occupied\.some\(/);
+ assert.match(game,/const offsets=\[63,90,117,145,180,220\]/);
+ assert.match(game,/person\.crowded=!duty\.meeting&&occupied\.some\(/);
+ assert.match(game,/residentMotion\.appearance\(person\.id,!person\.crowded,elapsed\)/);
 });
 
 test('três vizinhos que chegam à mesma calçada recebem espaço separado na própria rota',()=>{
@@ -119,7 +120,7 @@ test('três vizinhos que chegam à mesma calçada recebem espaço separado na pr
  assert.ok(start>=0&&end>start,'função de distribuição encontrada');
  const definitions=['rosa','zeca','mila'].map((id,i)=>({id,hub:'mercado',variant:10+i}));
  const context={
-  living:{day:1},elapsed:0,
+  living:{day:1},elapsed:0,skyMode:'sol',
   window:{
    RoncadorSecondaryNeighbors:{RESIDENTS:definitions,agenda:()=>({present:true,hub:'mercado',walking:false})},
    RoncadorStreetLife:{sample:(_path,offset)=>({x:offset/2,y:0,walking:false})},
@@ -141,8 +142,9 @@ test('três vizinhos que chegam à mesma calçada recebem espaço separado na pr
 test('balão comunitário mantém tamanho contido nas ruas e no celular',()=>{
  const fs=require('node:fs');
  const game=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
- assert.match(game,/const width=phone\?108:124,height=27\+rows\.length\*9,top=cy-87\+bounce/);
- assert.match(game,/const phone=matchMedia\('\(max-width:800px\)'\)\.matches,rows=wrapEncounterSpeech\(speech,phone\?20:26\)/);
+ assert.match(game,/drawScreenSpeechCard\(c,cx,cy-45\+bounce,speaker,speech,'community'\)/);
+ assert.match(game,/const mobile=w<=600,width=Math\.min\(mobile\?248:282,w-24\)/);
+ assert.match(game,/speechCardRect\(screenX,screenY,width,height,w,h,mobile\)/);
 });
 
 test('nomes priorizam proximidade sem cobrir rostos no desktop e no celular',()=>{
@@ -174,7 +176,7 @@ test('nomes priorizam proximidade sem cobrir rostos no desktop e no celular',()=
 test('balões completos exigem zoom e proximidade sem remover as cenas',()=>{
  const fs=require('node:fs');
  const source=fs.readFileSync(require.resolve('../gemini-modules/game.js'),'utf8');
- assert.equal(source.split('if(zoom<1.6||Math.hypot(player.x-cx,player.y-cy)>76)').length-1,2);
+ assert.equal(source.split('if(zoom<1.25||Math.hypot(player.x-cx,player.y-cy)>105)').length-1,2);
  assert.ok(source.includes('RoncadorEncounterChoreography.draw'));
 });
 
@@ -191,7 +193,7 @@ test('Mercado limita nomes e legendas de pontos sem apagar moradores ou POIs',()
   {id:'b',def:{name:'Bia'},x:60,y:0},
   {id:'c',def:{name:'Ciça'},x:92,y:0}
  ];
- assert.ok(layout(people,{x:0,y:0},1.85,false).length<=1);
+ assert.ok(layout(people,{x:0,y:0},1.85,false).length<=2);
  assert.equal(layout(people,{x:0,y:0},1.4,false).length,0);
  assert.ok(source.includes('const mayLabel=zoom>(busyMarket?1.9:1.45)'));
  assert.ok(source.includes('RoncadorLandmarks?.drawMarkers'));

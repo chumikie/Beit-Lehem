@@ -49,3 +49,21 @@ test('não cria atalho quando o próximo ponto pertence a trecho desconectado',(
  assert.equal(blocked.x,0);
  assert.equal(blocked.walking,false);
 });
+test('retomar uma aba inativa não teletransporta o morador para o destino',()=>{
+ const graph={route:(from,to)=>({distance:80,points:[{x:from[0],y:from[1]},{x:40,y:0},{x:to[0],y:to[1]}]})};
+ const motion=create(graph);
+ motion.resolve({id:'lucia',x:0,y:0,walking:true},0,1);
+ const resumed=motion.resolve({id:'lucia',x:80,y:0,walking:true},60,1);
+ assert.ok(resumed.x<5,'a posição anterior é preservada ao retomar a aba');
+ assert.equal(resumed.arriving,true,'o caminho do grafo é usado para retomar a caminhada');
+ const later=motion.resolve({id:'lucia',x:80,y:0,walking:true},60.08,1);
+ assert.ok(later.x>resumed.x&&later.x<80,'continua caminhando sem salto');
+});
+test('morador em esquina congestionada reaparece gradualmente',()=>{
+ const motion=create(null);
+ assert.equal(motion.appearance('rosa',true,0),1);
+ const fading=motion.appearance('rosa',false,.08);
+ assert.ok(fading>0&&fading<1);
+ const returning=motion.appearance('rosa',true,.16);
+ assert.ok(returning>fading&&returning<1);
+});

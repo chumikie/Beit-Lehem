@@ -22,7 +22,9 @@
    junctions=Array.isArray(points)?points.filter(p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y)):[];
    return junctions.length;
   }
-  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<22);}
+  // Reserve the immediate crossing, not entire short streets on either side.
+  // The graph route and crowd-clearance gates below remain mandatory.
+  function nearJunction(p){return junctions.some(j=>Math.hypot(j.x-p.x,j.y-p.y)<12);}
   function nearbyPorch(a,b){
    const x=(a.x+b.x)/2,y=(a.y+b.y)/2;
    return porches.some(h=>Math.hypot(h.x-x,h.y-y)<34&&
@@ -33,7 +35,9 @@
    if(clock.day!==day||now<last||now-last>10){active=null;nextCheck=0;cooldown.clear();personal.clear();recentSpots.length=0;day=clock.day;}
    last=now;
    for(let i=recentSpots.length-1;i>=0;i--)if(recentSpots[i].until<=now)recentSpots.splice(i,1);
-   const eligible=p=>p&&!p.meeting&&!p.travel&&!p.arriving;
+   // Respect an existing short daily gesture. A greeting may begin once the
+   // resident finishes observing, resting or tending their belongings.
+   const eligible=p=>p&&!p.meeting&&!p.travel&&!p.arriving&&!p.pause&&!p.moment;
    if(clock.minute<7*60||clock.minute>=20*60)active=null;
    if(active){
     const pair=active.ids.map(id=>people.find(p=>p.id===id));

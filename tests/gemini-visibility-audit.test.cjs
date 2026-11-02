@@ -35,7 +35,7 @@ test('novos moradores têm horários e percursos existentes',()=>{
  const api=global.RoncadorSecondaryNeighbors;
  assert.equal(api.RESIDENTS.length>=6,true);
  for(const def of api.RESIDENTS){
-  const place=data.landmarks.find(p=>p.id===def.hub);
+  const place=def.hub.startsWith('missao:')?data.missions[Number(def.hub.slice(7))]:def.hub.startsWith('rua:')?{p:data.roads.find(r=>r.tags?.name===def.hub.slice(4))?.p?.[0]}:data.landmarks.find(p=>p.id===def.hub);
   assert.ok(place,'lugar de '+def.name);
   assert.ok(graph.route(data.start,place.p),'rota até '+def.name);
  }
@@ -55,9 +55,9 @@ test('as três prévias incluem as versões atuais dos módulos e preservam o sa
 });
 
 test('o botão de conversa escolhe o morador mais próximo, inclusive secundários',()=>{
- assert.match(game,/const closestSpeaker=residentSnapshot\.concat\(secondarySnapshot\)\.reduce/);
+ assert.match(game,/const closestSpeaker=closestReachableSpeaker\(residentSnapshot,secondarySnapshot\)/);
  assert.match(game,/nearSecondary=closestSpeaker\?\.person\.secondary/);
- assert.match(previews[0],/const closestSpeaker=residentSnapshot\.concat\(secondarySnapshot\)\.reduce/);
+ assert.match(previews[0],/const closestSpeaker=closestReachableSpeaker\(residentSnapshot,secondarySnapshot\)/);
 });
 
 test('opções especiais exibem marca discreta apenas quando disponíveis',()=>{
