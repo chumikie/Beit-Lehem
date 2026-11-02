@@ -37,9 +37,10 @@ const server = http.createServer((req, res) => {
 const overlaps = (a, b) => Math.abs(a.x-b.x) < (a.width+b.width)/2 &&
   Math.abs(a.y-b.y) < (a.height+b.height)/2;
 
+let browser;
 async function main() {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const browser = await chromium.launch({ headless:true, args:['--disable-dev-shm-usage'] });
+  browser = await chromium.launch({ headless:true, args:['--disable-dev-shm-usage'] });
   const context = await browser.newContext({ viewport:{width:1440,height:900}, deviceScaleFactor:1 });
   const page = await context.newPage();
   const errors = [];
@@ -56,6 +57,7 @@ async function main() {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:20000 });
   await page.locator('#start').click();
   await page.waitForFunction(() => expeditionState.active, null, {timeout:15000});
+  console.log('C21: Chromium started; rendering nine isolated landmark scenarios.');
 
   const report = { sourceSha: process.env.GITHUB_SHA || null, temporaryBuild:true,
     browser:browser.version(), scenarios:[], errors };
@@ -94,8 +96,11 @@ async function main() {
   fs.writeFileSync(path.join(outputDir,'c21-label-report.json'),JSON.stringify(report,null,2));
   assert.deepEqual(errors,[], 'Chromium page errors');
   await context.close();
-  await browser.close();
 }
 
 main().catch(error => { console.error(error); process.exitCode=1; })
-  .finally(() => server.close());
+  .finally(async () => {
+    await browser?.close().catch(() => {});
+    server.closeAllConnections();
+    server.close();
+  });

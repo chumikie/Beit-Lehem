@@ -37,11 +37,11 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.56.1
           npx playwright install --with-deps chromium
 
-      - name: Inspect desktop and mobile gameplay in a temporary browser
-        run: node scripts/visual-inspection.cjs
-
       - name: Audit nameplate strokes and collisions in Chromium (temporary HTML only)
         run: node scripts/label-visual-audit.cjs
+
+      - name: Inspect desktop and mobile gameplay in a temporary browser
+        run: node scripts/visual-inspection.cjs
 
       - name: Upload temporary visual review
         if: always()
