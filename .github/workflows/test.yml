@@ -40,6 +40,9 @@ jobs:
       - name: Inspect desktop and mobile gameplay in a temporary browser
         run: node scripts/visual-inspection.cjs
 
+      - name: Audit nameplate strokes and collisions in Chromium (temporary HTML only)
+        run: node scripts/label-visual-audit.cjs
+
       - name: Upload temporary visual review
         if: always()
         uses: actions/upload-artifact@v4
