@@ -27,6 +27,14 @@ html = html.replace(petPaint,
   .replace(residentPaint,
     "window.__c21Record?.({kind:'resident',name:label.name,x:label.x,y:label.y,"+
     "width:label.width,height:13,strokeWidth:c.lineWidth});" + residentPaint);
+const petFunction = 'function drawStreetPets(c,time,view,people=[],renderables=null){';
+assert.equal(html.split(petFunction).length,2,'pet drawing function changed');
+html = html.replace(petFunction,
+  "window.__c21SetScene=(hub,magnification)=>{"+
+  "const place=data.landmarks.find(item=>item.id===hub);"+
+  "if(!place)throw Error('Missing hub '+hub);"+
+  "player.x=place.p[0];player.y=place.p[1];player.moving=false;"+
+  "camera.x=player.x;camera.y=player.y;zoom=magnification;};"+petFunction);
 
 const server = http.createServer((req, res) => {
   if (req.url !== '/' && req.url !== '/index.html') return res.writeHead(404).end();
@@ -64,18 +72,14 @@ async function main() {
   for (const hub of ['igreja','mercado','rodoviaria']) {
     for (const magnification of [1.85,2.85,3.5]) {
       await page.evaluate(({hub,magnification}) => {
-        const place = data.landmarks.find(item => item.id === hub);
-        if (!place) throw Error(`Missing hub ${hub}`);
-        player.x=place.p[0];player.y=place.p[1];player.moving=false;
-        camera.x=player.x;camera.y=player.y;
-        zoom=magnification;
+        window.__c21SetScene(hub,magnification);
         window.__c21Labels=[];
       }, {hub,magnification});
       await page.waitForTimeout(800);
       const raw = await page.evaluate(() => ({
         labels:window.__c21Labels,
         location:document.querySelector('#location')?.textContent,
-        viewport:{zoom, dpr:devicePixelRatio},
+        viewport:{zoom:expeditionState.zoom, dpr:devicePixelRatio},
         population:{people:expeditionState.streetPopulation.length,pets:expeditionState.streetPets.length}
       }));
       const labels = [...new Map(raw.labels.map(l => [`${l.kind}:${l.name}`,l])).values()];
