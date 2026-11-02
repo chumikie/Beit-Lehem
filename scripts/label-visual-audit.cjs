@@ -99,6 +99,10 @@ async function main() {
     }
   }
   fs.writeFileSync(path.join(outputDir,'c21-label-report.json'),JSON.stringify(report,null,2));
+  const rendered=report.scenarios.flatMap(scenario=>scenario.labels);
+  assert.ok(rendered.some(label=>label.name==='Jekki'),'a cena deve incluir a placa real de Jekki');
+  assert.ok(rendered.every(label=>label.strokeWidth<=.8),
+    'placas de nomes não podem herdar traços superiores ao próprio contorno de 0,7');
   assert.deepEqual(errors,[], 'Chromium page errors');
   await context.close();
 }

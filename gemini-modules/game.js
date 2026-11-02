@@ -1914,8 +1914,10 @@ function drawStreetLife(c,time,view,renderables=null,speechOverlays=null){
  // in half, and the higher-priority conversation overlay comes after them.
  const drawNameplates=()=>{for(const label of nameplates){
   if(speechActive&&speaker&&Math.abs(label.x-speechX)<speechWidth/2+label.width/2+3&&label.y>=speechBottom-55&&label.y<=speechBottom+8)continue;
+  c.save();c.lineWidth=.7;
   roundRect(c,label.x-label.width/2,label.y-6.5,label.width,13,5,'#fffcf1ed','#b4c2a1');
   c.font='750 8px system-ui';c.fillStyle='#526746';c.textAlign='center';c.textBaseline='middle';c.fillText(label.name,label.x,label.y);
+  c.restore();
  }};
  if(speechOverlays)speechOverlays.push(drawNameplates);else drawNameplates();
 }
@@ -2211,6 +2213,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
    c.fillStyle='#7aa275';c.beginPath();c.ellipse(9,-12,2.1,1.2,-.6,0,Math.PI*2);c.fill();
   }
   if(pet.name&&labelY!==null){
+   c.lineWidth=.7;
    roundRect(c,-labelWidth/2,labelY,labelWidth,10,4,'#fff9ebee','#b89f7d');
    c.fillStyle='#5c4a38';c.font='bold 6.5px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(pet.name,0,labelY+5);
   }
