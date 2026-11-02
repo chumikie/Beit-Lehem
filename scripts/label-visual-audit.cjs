@@ -31,8 +31,9 @@ const petFunction = 'function drawStreetPets(c,time,view,people=[],renderables=n
 assert.equal(html.split(petFunction).length,2,'pet drawing function changed');
 html = html.replace(petFunction,
   "window.__c21SetScene=(hub,magnification)=>{"+
-  "const place=data.landmarks.find(item=>item.id===hub);"+
-  "if(!place)throw Error('Missing hub '+hub);"+
+  "const resident=hub==='bia'?residentsInStreets().find(item=>item.id==='bia'):null;"+
+  "const place=resident?{p:[resident.x,resident.y]}:data.landmarks.find(item=>item.id===hub);"+
+  "if(!place)throw Error('Missing scene '+hub);"+
   "player.x=place.p[0];player.y=place.p[1];player.moving=false;"+
   "camera.x=player.x;camera.y=player.y;zoom=magnification;};"+petFunction);
 
@@ -65,11 +66,11 @@ async function main() {
   await page.goto(url, { waitUntil:'domcontentloaded', timeout:20000 });
   await page.locator('#start').click();
   await page.waitForFunction(() => expeditionState.active, null, {timeout:15000});
-  console.log('C21: Chromium started; rendering nine isolated landmark scenarios.');
+  console.log('C21: Chromium started; rendering landmarks and Bia at her actual location.');
 
   const report = { sourceSha: process.env.GITHUB_SHA || null, temporaryBuild:true,
     browser:browser.version(), scenarios:[], errors };
-  for (const hub of ['igreja','mercado','rodoviaria']) {
+  for (const hub of ['igreja','mercado','rodoviaria','bia']) {
     for (const magnification of [1.85,2.85,3.5]) {
       await page.evaluate(({hub,magnification}) => {
         window.__c21SetScene(hub,magnification);
