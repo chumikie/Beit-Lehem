@@ -5464,9 +5464,10 @@ function house(c,b){
  roundRect(c,x-1,roofY-1,b.w+2,roofDepth+2,roofType===1?2.6:1.8,roofs[b.color],zoom<.95?'#79594b88':'#79594b70');
  if(!far){
   c.strokeStyle='#f6d9a67c';c.lineWidth=.65;
+  const tilePitch=b.seed%4===0?5.7:5;
   for(let row=2;row<roofDepth-1;row+=3.2){
    c.beginPath();c.moveTo(x,roofY+row);c.lineTo(x+b.w,roofY+row);c.stroke();
-   for(let col=x+2+(Math.floor(row/3.2)%2)*2;col<x+b.w;col+=5){
+   for(let col=x+2+((Math.floor(row/3.2)+b.seed)%2)*2;col<x+b.w;col+=tilePitch){
     c.beginPath();c.moveTo(col,roofY+row-2);c.lineTo(col,roofY+row);c.stroke();
    }
   }
@@ -6365,7 +6366,10 @@ function drawKawaiiWalker(c,person,time){
  c.moveTo(1,-22+expressiveBrowLift);c.quadraticCurveTo(3,-23.4+expressiveBrowLift,5,-22+expressiveBrowLift);c.stroke();
  c.fillStyle='#55473d';c.strokeStyle='#695349';c.lineWidth=.8;c.beginPath();
  if(blink||shy||farewell||person.social?.react||affection?.expression==='joy'&&!person.walking){c.moveTo(-4.4+gaze,-18.8);c.quadraticCurveTo(-3+gaze,-20.6,-1.6+gaze,-18.8);c.moveTo(1.6+gaze,-18.8);c.quadraticCurveTo(3+gaze,-20.6,4.4+gaze,-18.8);c.stroke();}
- else{c.arc(-3+gaze,-18.8,surprised?1.45:1.15,0,7);c.arc(3+gaze,-18.8,surprised?1.45:1.15,0,7);c.fill();}
+ else{
+  c.arc(-3+gaze,-18.8,surprised?1.45:1.15,0,7);c.arc(3+gaze,-18.8,surprised?1.45:1.15,0,7);c.fill();
+  c.fillStyle='#fff5dc';c.beginPath();c.arc(-3.35+gaze,-19.2,.37,0,7);c.arc(2.65+gaze,-19.2,.37,0,7);c.fill();
+ }
  if(damiao){c.fillStyle='#a68672';c.beginPath();c.ellipse(-1.8,-15.8,2.4,.8,-.18,0,7);c.ellipse(1.8,-15.8,2.4,.8,.18,0,7);c.fill();}
  c.fillStyle='#da9792';c.beginPath();c.ellipse(-5,-16.7,2,1.25,0,0,7);c.ellipse(5,-16.7,2,1.25,0,0,7);c.fill();
  c.strokeStyle='#a06f61';c.lineWidth=.8;c.beginPath();
@@ -6417,7 +6421,10 @@ function drawSecondaryWalker(c,person,time){
  if(teo){roundRect(c,-9,-30,17,5,2,'#5e7eaf');roundRect(c,1,-27,11,2,1,'#53759e');}
  c.fillStyle='#473f3a';c.strokeStyle='#6b4f4b';c.lineWidth=.8;c.beginPath();
  if(person.social?.react||affection?.expression==='joy'&&!person.walking){c.moveTo(-4.2+gaze,-19);c.quadraticCurveTo(-3+gaze,-21,-1.8+gaze,-19);c.moveTo(1.8+gaze,-19);c.quadraticCurveTo(3+gaze,-21,4.2+gaze,-19);c.stroke();}
- else{c.arc(-3+gaze,-19,1.1,0,7);c.arc(3+gaze,-19,1.1,0,7);c.fill();}
+ else{
+  c.arc(-3+gaze,-19,1.1,0,7);c.arc(3+gaze,-19,1.1,0,7);c.fill();
+  c.fillStyle='#fff5dc';c.beginPath();c.arc(-3.3+gaze,-19.4,.34,0,7);c.arc(2.7+gaze,-19.4,.34,0,7);c.fill();
+ }
  c.strokeStyle='#a06762';c.lineWidth=.85;c.beginPath();c.arc(0,-16.5,affection?.expression==='joy'?2.9:affection?.expression==='warm'?2.4:1.6,.15,Math.PI-.15);c.stroke();
  c.fillStyle='#db9a8e';c.beginPath();c.ellipse(-5,-17,1.8,1,0,0,7);c.ellipse(5,-17,1.8,1,0,0,7);c.fill();
  // Props tell the story: Ciça's ribbons, Nara's sketchbook, Téo's envelopes.
@@ -6904,7 +6911,10 @@ function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
   goku:['#f6f0e5','#292e32'],princesa:['#664b41','#a87455']};
  const [fur,patch]=colors[coat];
  const small=coat==='artemis';
- const size=coat==='goku'?.59:small?.82:coat==='catito'?1.13:coat==='bob'?.78:coat==='bethowen'?1.14:coat==='princesa'?1.23:coat==='jekki'?.96:1;
+ // A pet should read smaller than a resident and a house, including near landmarks.
+ // Preserve each animal's existing relative size and coat; change only Canvas scale.
+ const baseSize=coat==='goku'?.59:small?.82:coat==='catito'?1.13:coat==='bob'?.78:coat==='bethowen'?1.14:coat==='princesa'?1.23:coat==='jekki'?.96:1;
+ const size=Math.max(pet.cat?.5:.45,baseSize*(pet.cat?.62:.64));
  c.save();c.scale(size,size);
  if(far){
   // Wide zoom uses species silhouette + signature coat, not subpixel facial strokes.
@@ -6971,6 +6981,10 @@ function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
   }else if(coat==='mimi'){
    c.strokeStyle='#b76d3e';c.lineWidth=.9;c.beginPath();c.moveTo(-9,-13);c.lineTo(-9,-11);c.moveTo(-5,-13);c.lineTo(-5,-11);c.stroke();
   }
+  // Colored inner ears keep the feline silhouette legible when reduced.
+  c.fillStyle='#d89b95';c.beginPath();
+  for(const ear of [-10,-4]){c.moveTo(ear-1.25,-13.8);c.lineTo(ear-.9,-16.1);c.lineTo(ear+.3,-13.8);c.closePath();}
+  c.fill();
  }else if(coat==='jekki'){
   c.fillStyle='#272629';c.beginPath();c.moveTo(-11,-12);c.lineTo(-12,-19);c.lineTo(-7,-14);c.closePath();c.fill();
   c.beginPath();c.moveTo(-5,-13);c.lineTo(-3,-19);c.lineTo(-2,-12);c.closePath();c.fill();
@@ -6999,8 +7013,10 @@ function drawCozyPetSprite(c,pet,time,behavior,far,gesture='none'){
   c.strokeStyle='#756457';c.lineWidth=.7;c.moveTo(-10,-10);c.lineTo(-8,-10);c.moveTo(-6.5,-10);c.lineTo(-4.5,-10);c.stroke();
  }else{
   c.arc(-9,-10,coat==='goku'?1.25:.8,0,Math.PI*2);c.arc(-5.5,-10,coat==='goku'?1.25:.8,0,Math.PI*2);c.fill();
+  c.fillStyle='#fff8e8';c.beginPath();c.arc(-9.2,-10.25,.28,0,Math.PI*2);c.arc(-5.7,-10.25,.28,0,Math.PI*2);c.fill();
  }
- c.fillStyle=pet.cat?'#ac786d':'#3e3734';c.beginPath();c.arc(-11,-7.4,1,0,Math.PI*2);c.fill();
+ c.fillStyle=pet.cat?'#c88889':'#3e3734';c.beginPath();c.arc(pet.cat?-7:-11,-7.4,pet.cat?.75:1,0,Math.PI*2);c.fill();
+ if(pet.cat){c.strokeStyle='#9c776f';c.lineWidth=.45;c.beginPath();c.moveTo(-7,-6.7);c.quadraticCurveTo(-8,-5.5,-8.7,-6.2);c.moveTo(-7,-6.7);c.quadraticCurveTo(-6,-5.5,-5.3,-6.2);c.stroke();}
  if(coat==='jekki'&&!far){c.strokeStyle='#e6a5a0';c.lineWidth=1.5;c.beginPath();c.moveTo(-11,-6);c.lineTo(-11,gesture==='greet'?-4.5:-3.3);c.stroke();}
  if(gesture==='shy'){
   c.fillStyle='#dbb6ad';c.beginPath();c.ellipse(-4,-7,1.6,.65,0,0,Math.PI*2);c.fill();
@@ -7053,7 +7069,7 @@ function drawStreetPets(c,time,view,people=[],renderables=null){
    pet.coat==='goku'?.65:pet.coat==='princesa'?.85:pet.coat==='bob'?.4:pet.coat==='hani'?.35:pet.coat==='catito'?.45:1;
   const bounce=reduce?0:Math.sin(time*(behavior.resting?1.25:pet.cat?3.7:5.2)*energy+pet.variant)*behavior.bounce*energy;
    c.save();c.translate(at.x+spriteOffset.x,at.y+spriteOffset.y);
-  c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,3,8,2.3,0,0,7);c.fill();
+  c.fillStyle='#3d58452f';c.beginPath();c.ellipse(0,2.5,pet.coat==='goku'?4:5.5,1.5,0,0,7);c.fill();
   // Ground contact stays fixed while the animal's body bobs or reacts.
   c.translate(0,bounce);
   if(!reduce&&gesture==='shy')c.translate(1.2,0);

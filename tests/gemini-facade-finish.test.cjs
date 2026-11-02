@@ -31,6 +31,14 @@ test('wall and roof treatments vary deterministically between nearby houses',()=
  assert.ok(colors.size>=3,'adjacent houses should not all have the same wall color');
 });
 
+test('arte: ritmo das telhas alterna por seed, sem modificar o lote OSM',()=>{
+ const section=source.slice(start,end);
+ assert.match(section,/tilePitch=b\.seed%4===0\?5\.7:5/);
+ assert.match(section,/Math\.floor\(row\/3\.2\)\+b\.seed/);
+ const once=paintedHouse(4,2.85),again=paintedHouse(4,2.85);
+ assert.deepEqual(once,again,'mesma casa deve gerar exatamente a mesma arte');
+});
+
 test('distant roofs omit small decoration without losing silhouette',()=>{
  const distant=paintedHouse(7,.9),near=paintedHouse(7,1.85);
  assert.ok(near.length>distant.length,'close view provides additional depth detail');

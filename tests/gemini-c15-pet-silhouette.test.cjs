@@ -22,6 +22,24 @@ test('C15.3: preserva os quatro pets originais e identifica nove animais persona
  assert.match(petSource,/far\|\|reduce\|\|behavior\.resting/);
 });
 
+test('arte: pets ficam menores que moradores sem perder porte relativo nem cores próprias',()=>{
+ const source=game.slice(game.indexOf('function drawCozyPetSprite('),game.indexOf('function drawStreetPets('));
+ const draw=vm.runInNewContext(source+';drawCozyPetSprite',{Math,roundRect(){}});
+ const sizes={};
+ for(const [coat,cat] of [['bolt',false],['catito',true],['artemis',true],['mimi',true],
+  ['hani',true],['jekki',false],['bethowen',false],['bob',false],['goku',false],['princesa',false]]){
+  const ctx={save(){},restore(){},scale(x,y){assert.equal(x,y);sizes[coat]=x;},beginPath(){},
+   moveTo(){},lineTo(){},quadraticCurveTo(){},ellipse(){},arc(){},fill(){},stroke(){}};
+  draw(ctx,{coat,cat},0,{},true);
+  assert.ok(sizes[coat]>=.45&&sizes[coat]<=.8,`${coat} deve ocupar menos mundo ilustrado`);
+ }
+ assert.ok(sizes.princesa>sizes.goku,'o porte relativo dos cães permanece reconhecível');
+ assert.ok(sizes.catito>sizes.artemis,'o porte relativo dos gatos permanece reconhecível');
+ assert.match(source,/Colored inner ears/,'orelhas felinas devem conservar desenho próprio');
+ assert.doesNotMatch(source,/localStorage|walkingPoint|pet\.x\s*=|pet\.y\s*=/,
+  'o refinamento de sprite não muda posição, rota ou save');
+});
+
 test('C15: nomes dos pets não competem pelo mesmo espaço visual',()=>{
  const helpers=vm.runInNewContext(groupOffsetSource+';({streetPetNameplateVisible,streetPetNameplateSlot})');
  assert.equal(helpers.streetPetNameplateVisible({name:'Bolt',bolt:true},1.3),true);
@@ -61,7 +79,7 @@ test('C15: sombra permanece no chão antes da oscilação do corpo',()=>{
  for(const item of queue){
   operations.length=0;item.draw();
   const firstMove=operations.findIndex(op=>op[0]==='translate');
-  const shadow=operations.findIndex(op=>op[0]==='ellipse'&&op[3]===8&&op[4]===2.3);
+  const shadow=operations.findIndex(op=>op[0]==='ellipse'&&[4,5.5].includes(op[3])&&op[4]===1.5);
   const bounce=operations.findIndex((op,i)=>i>firstMove&&op[0]==='translate');
   assert.ok(firstMove>=0&&shadow>firstMove&&bounce>shadow);
   assert.ok(Math.hypot(operations[firstMove][1]-10,operations[firstMove][2]-20)<=9.01,
