@@ -165,3 +165,103 @@ A extração de `game-state.js` deve definir a criação/forma do estado sem tra
 ## Histórico de pesquisa local
 
 Estudos de fachada, mercado, academia, flora, edifícios e referências visuais devem ser consultados apenas quando a tarefa correspondente voltar à fila. Distinguir fonte pública, confirmação do autor, hipótese e elemento ficcional. Não inferir lotes ou entradas a partir de numeração postal isolada.
+
+## FJ1 — fatia vertical jogável Matriz → Mercado (proposta para decisão, 2026-11-02)
+
+Este roteiro corresponde à proposta externa chamada “C12.0–C12.6”, **não** às etapas históricas C12/C12.1 deste projeto. Nada abaixo foi implementado nesta atualização documental. O alvo de **10–15 minutos é tempo real de sessão**, a verificar com pessoas, não duração garantida ou mudança no relógio fictício do jogo.
+
+### Situação atual, sem confundir hipótese com implementação
+
+| Elemento | Estado comprovado | Lacuna a avaliar |
+|---|---|---|
+| Caminhada pela Matriz e Mercado | Grafo de ruas OSM, destinos e controles de caminhada existem e passam no CI. | Tempo de descoberta e percurso de pessoas novas sem atalhos de teste. |
+| “A manhã de Francisco” | Chegada, conversa, toldo, frutas, cestos, agradecimento e álbum têm estado/salvamento. | Começo orientado na Matriz e fechamento explícito de uma sessão curta. |
+| Reconhecimento de vizinhos | Relações, encontros e memórias condicionais já existem em histórias maiores. | Um momento 4 consistente com **um encontro realmente registrado** durante essa fatia. |
+| Etiquetas de animais | C11–C21 já introduziram limites e a C21 corrigiu o contorno. | Medir colisões de plaquinhas com sprites, balões e marcos no HEAD antes de novo ajuste. |
+| Exportar/importar save | Save local v3 existente; compatibilidade com saves antigos é testada. | Fluxo seguro de download, validação e restauração controlada, sem nova chave. |
+| Apresentação móvel | CI Chromium cobre 390×844 e 320×640. | Adicionar cenário de 360×640 e observar pessoas reais em dispositivo frio, só quando aprovado. |
+| Silhueta dos marcos | Matriz, Mercado e Rodoviária possuem arte e legenda. | Reconhecimento sem rótulos, evitando inventar chão ou geografia. |
+
+### Critérios provisórios FJ1 — não são os A1–A9 oficiais do Claude
+
+- **P1 — Entrada:** início da manhã compreensível na Matriz; participante encontra a primeira ação sem tutorial obrigatório.
+- **P2 — Percurso:** caminhada contínua da Matriz ao Mercado pelas ruas OSM existentes, sem teleporte obrigatório.
+- **P3 — Marcos:** participante identifica Matriz/Mercado/Rodoviária pelo conjunto visual sem depender exclusivamente da legenda; quatro corredores viários são avaliados como orientação, não como adivinhação de nomes.
+- **P4 — História:** sequência curta coerente de chegada, conversa, pequena ajuda, reconhecimento condicional e fechamento, sem retirar diálogos existentes.
+- **P5 — Memória verdadeira:** um vizinho só reconhece a personagem pelo que aconteceu no save; sem afirmar encontro não realizado.
+- **P6 — Fechamento e tempo:** resumo fiel das ações realizadas, opção clara de continuar explorando e aferição da meta de 10–15 minutos em sessões de teste, sem cronômetro punitivo.
+- **P7 — Continuidade portátil:** exportação/importação local e reversível, com validação, confirmação e preservação da chave/esquema atual e dos saves existentes.
+- **P8 — Interfaces:** desktop, 390×844 e 360×640 legíveis e operáveis, sem ocultar controles, caminhos, conversa ou legenda essencial.
+- **P9 — Não regressão:** preservar OSM, 36 moradores, 13 animais, rotas, histórias, diálogos, arte não aprovada, HUD, saves, V2.27, suíte e CI.
+
+Quando o documento original chegar, criar uma tabela de equivalência **P1–P9 ↔ A1–A9**, sem atribuir conteúdos inventados aos critérios oficiais.
+
+### Etapas em PRs futuras distintas — backlog, não PRs abertas agora
+
+Cada linha prevê **uma PR futura de escopo pequeno**, somente após aprovar a base de integração e o roteiro. A PR #2 atual não será dividida, fechada, mesclada ou publicada nesta rodada.
+
+| Nome Claude → FJ1 | Uma PR planejada | Tarefas pequenas | Critérios provisórios |
+|---|---|---|---|
+| C12.0 → **FJ1.0** | Protocolo e teste exploratório | 1. Preparar formulário sem dados pessoais; 2. acompanhar 3–5 sessões do fluxo já existente; 3. registrar tempos e travas; 4. priorizar problemas observados. **Não exigir exportação ainda inexistente.** | P1, P2, P3, P6, P8 |
+| C12.1 → **FJ1.1** | Save portátil | 1. Auditoria do esquema v3; 2. exportar JSON local; 3. validar importação sem execução de conteúdo; 4. prévia e confirmação de substituição; 5. teste de ida e volta e arquivo inválido. Nenhuma chave nova. | P7, P9 |
+| C12.2 → **FJ1.2** | Escala e etiquetas | 1. Capturas do mesmo estado nos zooms; 2. medir silhuetas e retângulos de balões/placas; 3. corrigir **um** conflito comprovado; 4. regressão de posições e identidades. Não aplicar redução geral sem prova. | P3, P8, P9 |
+| C12.3 → **FJ1.3** | Abertura e encerramento | 1. Testar primeiro convite na Matriz; 2. adaptar as etapas já existentes do Mercado; 3. reconhecimento condicional (momento 4); 4. resumo fiel (momento 5); 5. retomada após save. | P1, P4, P5, P6, P9 |
+| C12.4 → **FJ1.4** | Celular | 1. Cenários Chromium 390×844 e 360×640; 2. verificar controle, balões e HUD; 3. corrigir só sobreposição reproduzida; 4. manter regressão 320×640. Não pedir teste no celular aquecido. | P2, P8, P9 |
+| C12.5 → **FJ1.5** | Chão e leitura dos marcos | 1. Teste cego de silhueta; 2. selecionar **um** marco insuficientemente reconhecido; 3. propor tratamento mínimo dentro da arte ilustrativa; 4. comparar com escala/OSM inalterados e pedir aprovação artística. | P3, P9 |
+| C12.6 → **FJ1.6** | Segunda validação | 1. Repetir protocolo com 3–5 participantes, sem presumir que serão os mesmos; 2. confrontar métricas da FJ1.0; 3. verificar save e conclusão; 4. entregar achados e decisão artística ao autor. | P1–P9 |
+
+Uma PR por etapa não significa sete PRs criadas agora. Evitar PRs simultâneas contra a main; decidir a base de cada uma depois da revisão da PR #2. Em cada rodada entregar URL da PR, SHA, arquivos alterados, CI efetivo, evidências dos sete pontos e pendências.
+
+### Cinco momentos da manhã — composição proposta
+
+1. **Chegada à Matriz (futuro enquadramento):** o jogador percebe os caminhos e escolhe seguir para o Mercado, sem forçar deslocamento.
+2. **Caminhada real:** a rota segue o grafo OSM existente, com observações opcionais.
+3. **Feira e gentileza (já parcialmente jogável):** conversar com Francisco e, se quiser, estender toldo, separar frutas e empilhar cestos ilustrativos; agradecer e guardar lembrança.
+4. **Ser reconhecido por uma vizinha — texto novo, NÃO implementado.** Somente quando o estado confirmar que Ciça presenciou uma ajuda/conversa anterior:
+   - **Ciça:** “Oxente, você por aqui de novo! Lembrei da ajuda que deu na banca.”
+   - **Lia:** “Foi uma manhã boa, né?”
+   - **Ciça:** “Foi sim. Gentileza dessas fica na lembrança.”
+   
+   **Alternativa quando não existe lembrança válida** (não fingir reconhecimento):
+   - **Ciça:** “Bom dia! Tá conhecendo o movimento da feira?”
+   - **Lia:** “Tô caminhando sem pressa.”
+   - **Ciça:** “Pois faça isso. Cada canto tem seu encanto.”
+   
+   Ambas são falas **ficcionais**, sem atribuir hábitos, fatos ou diálogos a comerciantes ou moradores reais.
+5. **Fechar a manhã — texto novo, NÃO implementado.** Depois das tarefas efetivamente concluídas:
+   - **Francisco:** “Prontinho. A banca ficou arrumada. Obrigado pela mãozinha, viu?”
+   - **Lia:** “Gostei de passar a manhã por aqui.”
+   - **Francisco:** “E eu gostei da companhia. A conversa fica pra outro dia.”
+   
+   **Cartão de resumo condicional:** “Hoje você saiu da Matriz, caminhou até o Mercado e conversou com Francisco. [Se for verdade: ajudou com toldo/frutas/cestos.] [Se for verdade: reencontrou Ciça.] Uma lembrança dessa manhã ficou no álbum.” Não listar ações ausentes; não criar prêmio fictício nem encerrar a exploração livre. Se houver saída antecipada, mostrar “Você pode retomar de onde parou”, não uma conclusão falsa.
+
+### Roteiro de teste com 3–5 jogadores — primeiro ciclo FJ1.0
+
+**Antes:** consentimento simples para registrar observações anônimas, sem coletar nome completo, conta, chave de save ou qualquer conteúdo pessoal. Uma pessoa modera, outra observa se disponível. Apresentar o objetivo como “passear pela cidade e encontrar uma manhã de feira”, sem ensinar o caminho. Não pedir testes em celular aquecido; testes físicos dependem de aprovação e aparelho frio.
+
+**Durante (até 15 min como meta, sem interromper abruptamente se demorar):**
+
+1. Começar com save descartável/isolado em sessão de pesquisa; registrar dispositivo, viewport, zoom e versão/commit. Não usar save pessoal.
+2. Iniciar na Matriz. Perguntar “O que você acha que dá para fazer primeiro?”. Registrar **tempo até a primeira ação**, hesitação e pedidos de ajuda.
+3. Pedir “Encontre o Mercado pelas ruas do jogo”. Registrar tempo de partida, desvios, cliques errados, uso de mapa, rota, etiqueta e HUD.
+4. No Mercado, deixar descobrir Francisco e as tarefas sem conduzir. Registrar tempo até primeira conversa, número de tentativas, dúvidas e estado real do capítulo.
+5. Observar se aparece reconhecimento coerente ou confusão com moradores; na FJ1.0 anotar apenas o comportamento já existente, pois o momento 4 novo ainda não estará implementado.
+6. Perguntar “Você sabe quando essa manhã terminou e se seu progresso ficou guardado?”. No primeiro ciclo, **não** alegar conclusão nova/exportação como pronta.
+7. Se houver bloqueio, anotar minuto, lugar, elemento coberto, ação tentada, mensagem recebida e intervenção do moderador. Salvar captura apenas com consentimento e sem informações pessoais.
+
+**Após (3–5 min):** perguntas abertas: “Onde você achou que estava?”, “Qual foi o primeiro destino?”, “Como reconheceu o Mercado?”, “Qual fala ficou na memória?”, “Em que momento ficou perdido?”, “O que achou que foi salvo?”, “O que teria vontade de fazer depois?”. Escala de clareza 1–5 para começo, caminhada, conversa e fim. Registro mínimo por participante: T0, primeira ação, chegada ao Mercado, conversa, ajuda, percepção de fim, travas e observações. Não fazer média esconder casos individuais em amostra de 3–5.
+
+### Teste de reconhecimento dos marcos sem legenda
+
+Usar **cópias de capturas Chromium** do mesmo SHA, ângulo, escala, horário e tamanho; ocultar somente a legenda nominal **na cópia de pesquisa**, sem patch no jogo ou no OSM. Apresentar individualmente Matriz, Mercado e Rodoviária em ordem aleatória; dar até 10 s por imagem e perguntar: “Que lugar parece ser?”, “Que detalhe ajudou?” e “Quanta certeza você tem (1–5)?”. Registrar acerto espontâneo, tempo, pistas citadas e confusões. Depois mostrar a legenda como controle para distinguir desconhecimento da cidade de silhueta ambígua.
+
+Para as **quatro ruas**, não exigir que um novato adivinhe nomes OSM apenas por telhados. Testar orientação (“Você percebe uma rua, acesso, cruzamento e por onde seguiria?”), continuidade da caminhada e correspondência com o mapa. Candidatas com nomes OSM verificados: Rua João Pessoa, Rua Vicente Cado, Rua Feliciano Pedrosa e Rua Joaquim Rodrigues. Confirmar com o autor os quatro enquadramentos.
+
+Critério quantitativo de reconhecimento ainda **não aprovado**: com apenas 3–5 pessoas, reportar cada resposta e não transformar uma porcentagem isolada em veredito artístico. O autor decide se a silhueta merece mudança.
+
+### Entrega para revisão independente a cada rodada
+
+- Link da PR e commit SHA exato (se ainda não houver PR futura, informar “planejada, não criada”).
+- Comparação com baseline visual do mesmo cenário em **sete referências**: Matriz, Mercado, Rodoviária e quatro ruas confirmadas; mesmo zoom/viewport/horário quando possível.
+- Dizer o que mudou na arte e o que permaneceu igual, distinguindo resultado de Chromium emulado de teste real.
+- CI, contagem de testes, integridade do mapa/saves e pendências de aprovação. Nenhuma publicação, merge ou aprovação artística automática.
