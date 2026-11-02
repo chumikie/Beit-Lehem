@@ -50,8 +50,10 @@ async function main() {
       if (window.__c21Labels.length < 1200) window.__c21Labels.push(label);
     };
   });
+  // Match the established CI browser conditions: never wait on remote assets.
+  await page.route('https://**/*', route => route.abort());
   const url = `http://127.0.0.1:${server.address().port}/`;
-  await page.goto(url, { waitUntil:'load', timeout:60000 });
+  await page.goto(url, { waitUntil:'domcontentloaded', timeout:20000 });
   await page.locator('#start').click();
   await page.waitForFunction(() => expeditionState.active, null, {timeout:15000});
 
@@ -85,7 +87,7 @@ async function main() {
         collisions, population:raw.population};
       report.scenarios.push(entry);
       const screenshot = `c21-${hub}-${String(magnification).replace('.','-')}.png`;
-      await page.screenshot({ path:path.join(outputDir,screenshot), animations:'disabled' });
+      await page.screenshot({ path:path.join(outputDir,screenshot), animations:'disabled',timeout:15000 });
       console.log('C21 ' + JSON.stringify(entry));
     }
   }
